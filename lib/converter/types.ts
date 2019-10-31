@@ -17,6 +17,48 @@ export interface IParseInfo {
   readonly default?: IElementInfo;
 }
 
+interface IAssociativeCollection {
+  delim?: string;
+  keyType?: string;
+  valueType?: string;
+}
+
+interface ITextNodeCollection {
+  assoc?: IAssociativeCollection;
+}
+
+interface IAttributeNodeCollection {
+  delim?: string;
+  open?: string;
+  close?: string;
+  assoc?: IAssociativeCollection;
+}
+
+interface IMatcher {
+  primitives?: ReadonlyArray<string>;
+  // collection
+  date?: {
+    format?: string
+  };
+  symbol?: {
+    prefix?: string,
+    global?: boolean
+  };
+  string?: boolean;
+}
+
+interface IAttributesMatcher extends IMatcher {
+  collection?: IAttributeNodeCollection;
+}
+
+interface ITextNodesMatcher extends IMatcher {
+  collection?: ITextNodeCollection;
+}
+interface ICoercionEntity<T extends IMatcher> {
+  trim?: boolean;
+  matchers?: T;
+}
+
 export interface ISpec {
   labels?: {
     element?: string;
@@ -24,42 +66,11 @@ export interface ISpec {
     text?: string;
   };
   coercion?: {
-    attributes?: {
-      trim?: boolean,
-      matchers?: {
-        primitives?: ReadonlyArray<string>,
-        collection?: {
-          delim?: string,
-          open?: string,
-          close?: string,
-          assoc?: {
-            delim?: string,
-            keyType?: string,
-            valueType?: string
-          }
-        },
-        date?: {
-          format?: string
-        },
-        symbol?: {
-          prefix?: string,
-          global?: boolean
-        },
-        string?: boolean
-      }
-    },
-    textNodes?: {
-      trim?: boolean
-    }
+    attributes?: ICoercionEntity<IAttributesMatcher>,
+    textNodes?: ICoercionEntity<ITextNodesMatcher>
   };
 }
 
 export interface IConverter {
-  // These 'any' types for nodes, should eventually have declarations written for them
-  //
-  buildElement(elementNode: Node, parentNode: Node, parseInfo: IParseInfo): any;
-}
-
-export interface IValidateSpecThrowIfMissingFn {
-  (labelName: string, from: string, container: any): void;
+  buildElement (elementNode: Node, parentNode: Node, parseInfo: IParseInfo): any;
 }
