@@ -2,7 +2,7 @@
 export interface IElementInfo {
   // 'id' is optional so that user can specify an object without an id for default
   //
-  readonly id?: string;
+  readonly id: string;
   readonly recurse?: string;
   readonly discards?: ReadonlyArray<string>;
   readonly descendants?: {
@@ -12,8 +12,10 @@ export interface IElementInfo {
   };
 }
 
+export const EmptyElementInfo: IElementInfo = { id: 'name' };
+
 export interface IParseInfo {
-  readonly elements: ReadonlyArray<IElementInfo>;
+  readonly elements: ReadonlyMap<string, IElementInfo>;
   readonly default?: IElementInfo;
 }
 
@@ -72,5 +74,7 @@ export interface ISpec {
 }
 
 export interface IConverter {
-  buildElement (elementNode: Node, parentNode: Node, parseInfo: IParseInfo): any;
+  // Need to figure out the correct Node type
+  //
+  buildElement (elementNode: any, parentNode: any, parseInfo: IParseInfo): any;
 }
