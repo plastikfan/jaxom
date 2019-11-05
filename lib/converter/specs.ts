@@ -1,7 +1,8 @@
 
 import * as types from './types';
 
-const CollectionTypePlaceholder = '<type>';
+export const CollectionTypeLabel = 'type';
+export const CollectionTypePlaceHolder = `<${CollectionTypeLabel}>`;
 
 const fullSpecWithDefaults: types.ISpec = Object.freeze({
   name: 'full-spec-with-defaults',
@@ -17,7 +18,7 @@ const fullSpecWithDefaults: types.ISpec = Object.freeze({
         primitives: ['number', 'boolean'],
         collection: {
           delim: ',',
-          open: `!${CollectionTypePlaceholder}[`,
+          open: `!${CollectionTypePlaceHolder}[`,
           close: ']',
           assoc: {
             delim: '=',
@@ -122,11 +123,9 @@ const fullSpec: types.ISpec = Object.freeze({
   }
 });
 
-const Specs = Object.freeze({
+export const Specs = Object.freeze({
   default: defaultSpec,
   attributesAsArraySpec: attributesAsArraySpec,
   fullSpec: fullSpec,
   fullSpecWithDefaults: fullSpecWithDefaults
 });
-
-export = Specs;

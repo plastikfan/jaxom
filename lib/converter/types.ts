@@ -36,8 +36,12 @@ interface IAttributeNodeCollection {
   assoc?: IAssociativeCollection;
 }
 
+export type ContextType = 'attributes' | 'textNodes';
+export type MatcherType = 'number' | 'boolean' | 'primitives' | 'collection' | 'date' | 'symbol' | 'string';
+export type PrimitiveType = 'number' | 'boolean' | 'date' | 'symbol' | 'string';
+
 interface IMatcher {
-  primitives?: ReadonlyArray<string>;
+  primitives?: ReadonlyArray<PrimitiveType>;
   // collection
   date?: {
     format?: string

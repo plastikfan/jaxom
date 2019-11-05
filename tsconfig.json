@@ -10,7 +10,7 @@
     "strictNullChecks": true,
     "target": "es5",
     "types": [
-      "mocha"
+      "mocha", "node"
     ],
     "lib": [
       "es5",
