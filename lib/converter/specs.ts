@@ -35,9 +35,6 @@ const fullSpecWithDefaults: types.ISpec = Object.freeze({
         },
         string: true
       }
-    },
-    textNodes: {
-      trim: true
     }
   }
 });

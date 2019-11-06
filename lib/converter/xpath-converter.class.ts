@@ -44,7 +44,7 @@ export class XpathConverter implements types.IConverter {
       throw new Error('null spec not permitted');
     }
 
-    this.makeMatchers();
+    this.makeTransformers();
   }
 
   /**
@@ -136,10 +136,10 @@ export class XpathConverter implements types.IConverter {
     //
     const attributeNodes: any = xpath.select('@*', localNode) || [];
     let element: any = {};
-    const attributesLens = ['labels', 'attributes'];
+    const attributesPath = ['labels', 'attributes'];
 
-    if (R.hasPath(attributesLens)(this.spec)) {
-      const attributesLabel = R.view(R.lensPath(attributesLens))(this.spec) as string;
+    if (R.hasPath(attributesPath)(this.spec)) {
+      const attributesLabel = R.view(R.lensPath(attributesPath))(this.spec) as string;
       // Build attributes as an array identified by labels.attributes
       //
       element[attributesLabel] = R.reduce((acc: any, attrNode: any) => {
@@ -192,10 +192,10 @@ export class XpathConverter implements types.IConverter {
       // and string are iterated in insertion order. Iterative only whilst
       // we don't have a successful coercion result.
       //
-      R.keys(matchers).some((m: types.MatcherType) => {
-        const matchFn = this.getMatcher(R.toLower(m) as types.MatcherType);
-        console.log(`+++ find matcher iteration .... m: ${m}`);
-        const result = matchFn.call(this, rawValue, 'attribute', this.spec);
+      R.keys(matchers).some((mt: types.MatcherType) => {
+        const transform = this.getTransformer(R.toLower(mt) as types.MatcherType);
+        console.log(`+++ find matcher iteration .... m: ${mt}`);
+        const result = transform.call(this, rawValue, 'attribute');
 
         if (result.succeeded) {
           resultValue = result.value;
@@ -328,25 +328,25 @@ export class XpathConverter implements types.IConverter {
   // This really should be a static, but there is no way to add a class's methods to a static
   // binding.
   //
-  private makeMatchers () {
-    this.matchers = new Map<string, any>();
-    this.matchers.set('number', this.transformNumber);
-    this.matchers.set('boolean', this.transformBoolean);
-    this.matchers.set('primitives', this.transformPrimitives);
-    this.matchers.set('collection', this.transformCollection);
-    this.matchers.set('date', this.transformDate);
-    this.matchers.set('symbol', this.transformSymbol);
-    this.matchers.set('string', this.transformString);
+  private makeTransformers () {
+    this.transformers = new Map<string, any>();
+    this.transformers.set('number', this.transformNumber);
+    this.transformers.set('boolean', this.transformBoolean);
+    this.transformers.set('primitives', this.transformPrimitives);
+    this.transformers.set('collection', this.transformCollection);
+    this.transformers.set('date', this.transformDate);
+    this.transformers.set('symbol', this.transformSymbol);
+    this.transformers.set('string', this.transformString);
   }
 
-  private matchers: Map<string, any>;
+  private transformers: Map<string, any>;
 
-  private getMatcher (name: types.MatcherType) {
-    return this.matchers.get(name);
+  private getTransformer (name: types.MatcherType) {
+    return this.transformers.get(name);
   }
 
   private transformNumber (numberValue: number,
-    context: types.ContextType, spec: types.ISpec): ITransformResult<number> {
+    context: types.ContextType): ITransformResult<number> {
 
     console.log(`=== transformNumber, value: '${numberValue}'`);
     let result = Number(numberValue);
@@ -363,7 +363,7 @@ export class XpathConverter implements types.IConverter {
   } // transformNumber
 
   private transformBoolean (booleanValue: string | boolean,
-    context: types.ContextType, spec: types.ISpec): ITransformResult<boolean> {
+    context: types.ContextType): ITransformResult<boolean> {
 
     console.log(`=== transformBoolean, value: '${booleanValue}'`);
 
@@ -399,7 +399,7 @@ export class XpathConverter implements types.IConverter {
   } // transformBoolean
 
   private transformPrimitives (primitiveValue: types.PrimitiveType,
-    context: types.ContextType, spec: types.ISpec): ITransformResult<any> {
+    context: types.ContextType): ITransformResult<any> {
 
     console.log(`transformPrimitives --> primitiveValue: ${primitiveValue}`);
     const primitives = R.defaultTo(Specs.fullSpecWithDefaults.coercion!.attributes!.matchers!.primitives)(
@@ -413,10 +413,10 @@ export class XpathConverter implements types.IConverter {
     let coercedValue = null;
     let succeeded = false;
 
-    primitives.some((p: types.PrimitiveType) => {
-      const mfn = this.getMatcher(p);
+    primitives.some((val: types.PrimitiveType) => {
+      const transformer = this.getTransformer(val);
       console.log(`transformPrimitives --> primitiveValue: ${primitiveValue}, context:${context}`);
-      const coercedResult = mfn(primitiveValue, context, this.spec);
+      const coercedResult = transformer(primitiveValue, context, this.spec);
       succeeded = coercedResult.succeeded;
 
       if (succeeded) {
@@ -445,10 +445,10 @@ export class XpathConverter implements types.IConverter {
     }
 
     if (R.is(Array)(assocTypes)) {
-      assocTypes.some((t: any) => {
-        if (R.includes(t, ['number', 'boolean', 'symbol', 'string'])) {
-          const mfn = this.getMatcher(t);
-          const coercedResult = mfn(assocValue);
+      assocTypes.some((val: types.PrimitiveType) => {
+        if (R.includes(val, ['number', 'boolean', 'symbol', 'string'])) {
+          const transform = this.getTransformer(val);
+          const coercedResult = transform(assocValue);
 
           if (coercedResult.succeeded) {
             succeeded = coercedResult.succeeded;
@@ -457,7 +457,7 @@ export class XpathConverter implements types.IConverter {
 
           return coercedResult.succeeded;
         } else {
-          throw new Error(`Invalid value type for associative collection found: ${t}`);
+          throw new Error(`Invalid value type for associative collection found: ${val}`);
         }
       });
     } else {
@@ -607,7 +607,7 @@ export class XpathConverter implements types.IConverter {
           // map/transformPrimitive?
           //
           value = arrayElements.map((item: types.PrimitiveType) => {
-            const itemResult = this.transformPrimitives(item, context, this.spec);
+            const itemResult = this.transformPrimitives(item, context);
             return (itemResult.succeeded) ? itemResult.value : item;
           });
         } else {
@@ -874,11 +874,11 @@ export class XpathConverter implements types.IConverter {
     // so we take a path and build a lens from it.
     //
     const contextSegmentNo = 1;
-    const segments = R.split('/')(path);
-    const itemLens = R.lensPath(segments);
-    const leafSegment = R.last(segments);
+    const segments: string[] = R.split('/')(path);
+    const itemLens: R.Lens = R.lensPath(segments);
+    const leafSegment: string = R.last(segments);
     const context = segments[contextSegmentNo] as types.ContextType;
-    let defaultLens = itemLens;
+    let defaultLens: R.Lens = itemLens;
 
     if (context === 'textNodes') {
       if (R.includes(leafSegment, ['delim', 'open', 'close'])) {

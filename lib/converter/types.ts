@@ -40,7 +40,7 @@ export type ContextType = 'attributes' | 'textNodes';
 export type MatcherType = 'number' | 'boolean' | 'primitives' | 'collection' | 'date' | 'symbol' | 'string';
 export type PrimitiveType = 'number' | 'boolean' | 'date' | 'symbol' | 'string';
 
-interface IMatcher {
+interface IMatchers {
   primitives?: ReadonlyArray<PrimitiveType>;
   // collection
   date?: {
@@ -53,14 +53,14 @@ interface IMatcher {
   string?: boolean;
 }
 
-interface IAttributesMatcher extends IMatcher {
+interface IAttributesMatchers extends IMatchers {
   collection?: IAttributeNodeCollection;
 }
 
-interface ITextNodesMatcher extends IMatcher {
+interface ITextNodesMatchers extends IMatchers {
   collection?: ITextNodeCollection;
 }
-interface ICoercionEntity<T extends IMatcher> {
+interface ICoercionEntity<T extends IMatchers> {
   trim?: boolean;
   matchers?: T;
 }
@@ -72,8 +72,8 @@ export interface ISpec {
     text?: string;
   };
   coercion?: {
-    attributes?: ICoercionEntity<IAttributesMatcher>,
-    textNodes?: ICoercionEntity<ITextNodesMatcher>
+    attributes?: ICoercionEntity<IAttributesMatchers>,
+    textNodes?: ICoercionEntity<ITextNodesMatchers>
   };
 }
 
