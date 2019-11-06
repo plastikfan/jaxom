@@ -8,7 +8,7 @@ import 'xmldom-ts';
 const parser = new DOMParser();
 const { functify } = require('jinxed');
 import * as types from '../../lib/converter/types';
-import { Specs, CollectionTypePlaceHolder, CollectionTypeLabel } from '../../lib/converter/specs';
+// import { Specs, CollectionTypePlaceHolder, CollectionTypeLabel } from '../../lib/converter/specs';
 import * as Helpers from '../test-helpers';
 
 import { XpathConverter } from '../../lib/converter/xpath-converter.class';
@@ -52,16 +52,8 @@ describe('xpath-converter', () => {
         </Commands>
       </Cli>
     </Application>`;
-  const spec = {
-    name: 'default-spec',
-    labels: {
-      element: '_',
-      descendants: '_children',
-      text: '_text'
-    }
-  };
 
-  context('given: new object / command with no inheritance, using custom spec', () => {
+  context('given: new object / command with no inheritance, using default spec', () => {
     it('should: return a command object all local attributes', () => {
       const document: Document = parser.parseFromString(data, 'text/xml');
       const commandsNode = xp.select('/Application/Cli/Commands[1]', document, SelectSingle);
@@ -70,7 +62,7 @@ describe('xpath-converter', () => {
         let leafCommandNode: any = selectElementNodeById('Command', 'name', 'leaf', commandsNode);
 
         if (leafCommandNode) {
-          const converter = new XpathConverter(Specs.default);
+          const converter = new XpathConverter();
           let command = converter.buildElement(leafCommandNode, commandsNode, testParseInfo);
 
           let result = Helpers.logIfFailedStringify(R.where({
@@ -79,15 +71,8 @@ describe('xpath-converter', () => {
             'type': R.equals('native')
           })(command), command);
 
-          // const RES = {
-          //   'name': false,
-          //   'describe': false,
-          //   'type': false,
-          //   '_': 'Command'
-          // };
-
           console.log(`--> result: ${functify(command)}`);
-          // expect(result).to.be.true(functify(command));
+          expect(result).to.be.true(functify(command));
         }
       }
     });

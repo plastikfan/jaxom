@@ -6,6 +6,7 @@ import * as types from './types';
 import * as xpath from 'xpath-ts';
 import { XRegExp } from 'xregexp';
 import { Specs, CollectionTypePlaceHolder, CollectionTypeLabel } from './specs';
+import { oc } from 'ts-optchain';
 
 import { functify } from 'jinxed';
 
@@ -106,8 +107,9 @@ export class XpathConverter implements types.IConverter {
     console.log(`*** buildElementImpl --> elementName: ${elementNode.nodeName}`);
 
     let element: any = this.buildLocalAttributes(elementNode);
+    const elementLabel = R.defaultTo(Specs.fallBack.labels!.element,
+      oc(this.spec).labels.element()) as string;
 
-    const elementLabel = this.spec.labels!.element || '_';
     element[elementLabel] = elementNode.nodeName;
 
     const { recurse = '', discards = [] } = this.getElementInfo(elementNode.nodeName, parseInfo);
@@ -161,11 +163,11 @@ export class XpathConverter implements types.IConverter {
       console.log(`*** buildLocalAttributes --> spec: ${functify(this.spec)}`);
 
       let nameValuePropertyPair = R.props(['name', 'value']);
-      const coercePair = (n: any) => {
+      const coercePair = (node: any) => {
         // Build attributes as members.
         // Attribute nodes have name and value properties on them
         //
-        let attributePair = nameValuePropertyPair(n); // => [attrKey, attrValue]
+        let attributePair = nameValuePropertyPair(node); // => [attrKey, attrValue]
         const attributeName = R.head(attributePair) as string;
         const rawAttributeValue = R.last(attributePair);
 
@@ -405,7 +407,7 @@ export class XpathConverter implements types.IConverter {
 
     return {
       value: value,
-      succeeded: true
+      succeeded: succeeded
     };
   } // transformBoolean
 

@@ -73,6 +73,7 @@ interface ICoercionEntity<T extends IMatchers> {
 export interface ISpec {
   name: string;
   labels?: { // {DEF}
+    attributes?: string; // NOT DEFAULT-ABLE
     element?: string;
     descendants?: string;
     text?: string;
