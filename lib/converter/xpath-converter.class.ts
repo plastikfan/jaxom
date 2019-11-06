@@ -39,6 +39,17 @@ interface ITransformResult<T> {
  * @implements {types.IConverter}
  */
 export class XpathConverter implements types.IConverter {
+  /**
+   * Creates an instance of XpathConverter.
+   * @param {types.ISpec} [spec=Specs.default] The XpathConverter uses a spec to define
+   * the conversion behaviour. A user may wish to override some of these settings, in which
+   * case, they can pass in a partial spec (Partial here means that the custom spec does
+   * not have to repeat all of the default fields that it does not wish to override). If
+   * a setting is not found in the custom spec, that setting will be taken from the default
+   * except where that setting is not default-able; please see the ISpec interface.
+   *
+   * @memberof XpathConverter
+   */
   constructor (private spec: types.ISpec = Specs.default) {
     if (!spec) {
       throw new Error('null spec not permitted');
@@ -402,7 +413,7 @@ export class XpathConverter implements types.IConverter {
     context: types.ContextType): ITransformResult<any> {
 
     console.log(`transformPrimitives --> primitiveValue: ${primitiveValue}`);
-    const primitives = R.defaultTo(Specs.fullSpecWithDefaults.coercion!.attributes!.matchers!.primitives)(
+    const primitives = R.defaultTo(Specs.fallBack.coercion!.attributes!.matchers!.primitives)(
       R.view(R.lensPath(['coercion', context, 'matchers', 'primitives']))(this.spec)
     ) as [];
 
@@ -473,7 +484,7 @@ export class XpathConverter implements types.IConverter {
   private transformDate (dateValue: string,
     context: types.ContextType): ITransformResult<Date> {
 
-    const format = R.defaultTo(Specs.fullSpecWithDefaults.coercion!.attributes!.matchers!.date!.format)(
+    const format = R.defaultTo(Specs.fallBack.coercion!.attributes!.matchers!.date!.format)(
       R.view(R.lensPath(['coercion', context, 'matchers', 'date', 'format']))(this.spec)
     );
 
@@ -560,11 +571,11 @@ export class XpathConverter implements types.IConverter {
     let value; // = collectionValue;
 
     const delim = R.defaultTo(
-        Specs.fullSpecWithDefaults.coercion!.attributes!.matchers!.collection!.delim)(
+        Specs.fallBack.coercion!.attributes!.matchers!.collection!.delim)(
           R.view(R.lensPath(['coercion', context, 'matchers', 'collection', 'delim']))(this.spec)
     ) as string;
 
-    const open = R.defaultTo(Specs.fullSpecWithDefaults.coercion!.attributes!.matchers!.collection!.open)(
+    const open = R.defaultTo(Specs.fallBack.coercion!.attributes!.matchers!.collection!.open)(
       R.view(R.lensPath(['coercion', context, 'matchers', 'collection', 'open']))(this.spec)
     ) as string;
 
@@ -574,7 +585,7 @@ export class XpathConverter implements types.IConverter {
       const openExpression: string = open.replace(CollectionTypePlaceHolder, ('<' + collectionType + '>'));
       const openExpr: RegExp = new RegExp('^' + (escapeRegExp(openExpression)));
 
-      const close = R.defaultTo(Specs.fullSpecWithDefaults.coercion!.attributes!.matchers!.collection!.close)(
+      const close = R.defaultTo(Specs.fallBack.coercion!.attributes!.matchers!.collection!.close)(
         R.view(R.lensPath(['coercion', context, 'matchers', 'collection', 'close']))(this.spec)
       ) as string;
 
@@ -615,17 +626,17 @@ export class XpathConverter implements types.IConverter {
           //
           if (R.includes(R.toLower(collectionType), ['map', 'weakmap', 'object', '{}'])) {
             const assocDelim = R.defaultTo(
-              Specs.fullSpecWithDefaults.coercion!.attributes!.matchers!.collection!.assoc!.delim)(
+              Specs.fallBack.coercion!.attributes!.matchers!.collection!.assoc!.delim)(
                 R.view(R.lensPath(['coercion', context, 'matchers', 'collection', 'assoc', 'delim']))(this.spec)
             ) as string;
 
             const assocKeyType = R.defaultTo(
-              Specs.fullSpecWithDefaults.coercion!.attributes!.matchers!.collection!.assoc!.keyType)(
+              Specs.fallBack.coercion!.attributes!.matchers!.collection!.assoc!.keyType)(
                 R.view(R.lensPath(['coercion', context, 'matchers', 'collection', 'assoc', 'keyType']))(this.spec)
             ) as string;
 
             const assocValueType = R.defaultTo(
-              Specs.fullSpecWithDefaults.coercion!.attributes!.matchers!.collection!.assoc!.valueType)(
+              Specs.fallBack.coercion!.attributes!.matchers!.collection!.assoc!.valueType)(
                 R.view(R.lensPath(['coercion', context, 'matchers', 'collection', 'assoc', 'valueType']))(this.spec)
             ) as string;
 
@@ -685,12 +696,12 @@ export class XpathConverter implements types.IConverter {
    */
   transformSymbol (symbolValue: string, context: types.ContextType): ITransformResult<Symbol> {
     const prefix = R.defaultTo(
-      Specs.fullSpecWithDefaults.coercion!.attributes!.matchers!.symbol!.prefix)(
+      Specs.fallBack.coercion!.attributes!.matchers!.symbol!.prefix)(
         R.view(R.lensPath(['coercion', context, 'matchers', 'symbol', 'prefix']))(this.spec)
     ) as string;
 
     const global = R.defaultTo(
-      Specs.fullSpecWithDefaults.coercion!.attributes!.matchers!.symbol!.global)(
+      Specs.fallBack.coercion!.attributes!.matchers!.symbol!.global)(
         R.view(R.lensPath(['coercion', context, 'matchers', 'symbol', 'global']))(this.spec)
     );
 
@@ -718,7 +729,7 @@ export class XpathConverter implements types.IConverter {
    */
   transformString (stringValue: string, context: types.ContextType): ITransformResult<string> {
     const stringCoercionAcceptable = R.defaultTo(
-        Specs.fullSpecWithDefaults.coercion!.attributes!.matchers!.string)(
+        Specs.fallBack.coercion!.attributes!.matchers!.string)(
           R.view(R.lensPath(['coercion', context, 'matchers', 'string']))(this.spec)
     );
 
@@ -890,7 +901,7 @@ export class XpathConverter implements types.IConverter {
       defaultLens = R.lensPath(R.update(contextSegmentNo, 'attributes')(segments));
     }
 
-    return R.defaultTo(R.view(defaultLens, Specs.fullSpecWithDefaults))(R.view(itemLens)(this.spec));
+    return R.defaultTo(R.view(defaultLens, Specs.fallBack))(R.view(itemLens)(this.spec));
   } // fetchCoercionOption
 } // class XpathConverter
 
