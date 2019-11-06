@@ -6,8 +6,6 @@ import * as types from './types';
 import * as xpath from 'xpath-ts';
 import { XRegExp } from 'xregexp';
 import { Specs, CollectionTypePlaceHolder, CollectionTypeLabel } from './specs';
-import { oc } from 'ts-optchain';
-
 import { functify } from 'jinxed';
 
 // Typescript the safe navigation operator ( ?. ) or (!.) and null property paths
@@ -107,8 +105,7 @@ export class XpathConverter implements types.IConverter {
     console.log(`*** buildElementImpl --> elementName: ${elementNode.nodeName}`);
 
     let element: any = this.buildLocalAttributes(elementNode);
-    const elementLabel = R.defaultTo(Specs.fallBack.labels!.element,
-      oc(this.spec).labels.element()) as string;
+    const elementLabel = this.fetchSpecOption('labels/element') as string;
 
     element[elementLabel] = elementNode.nodeName;
 
@@ -208,7 +205,7 @@ export class XpathConverter implements types.IConverter {
       R.keys(matchers).some((mt: types.MatcherType) => {
         const transform = this.getTransformer(R.toLower(mt) as types.MatcherType);
         console.log(`+++ find matcher iteration .... m: ${mt}`);
-        const result = transform.call(this, rawValue, 'attribute');
+        const result = transform.call(this, rawValue, 'attributes');
 
         if (result.succeeded) {
           resultValue = result.value;
@@ -415,9 +412,7 @@ export class XpathConverter implements types.IConverter {
     context: types.ContextType): ITransformResult<any> {
 
     console.log(`transformPrimitives --> primitiveValue: ${primitiveValue}`);
-    const primitives = R.defaultTo(Specs.fallBack.coercion!.attributes!.matchers!.primitives)(
-      R.view(R.lensPath(['coercion', context, 'matchers', 'primitives']))(this.spec)
-    ) as [];
+    const primitives = this.fetchSpecOption(`coercion/${context}/matchers/primitives`) as [];
 
     if (R.includes(R.toLower(primitiveValue), ['primitives', 'collection'])) {
       throw new Error(`"primitives matcher cannot contain: ${primitiveValue}`);
@@ -427,9 +422,9 @@ export class XpathConverter implements types.IConverter {
     let succeeded = false;
 
     primitives.some((val: types.PrimitiveType) => {
-      const transformer = this.getTransformer(val);
+      const transform = this.getTransformer(val);
       console.log(`transformPrimitives --> primitiveValue: ${primitiveValue}, context:${context}`);
-      const coercedResult = transformer(primitiveValue, context, this.spec);
+      const coercedResult = transform(primitiveValue, context);
       succeeded = coercedResult.succeeded;
 
       if (succeeded) {
@@ -572,14 +567,10 @@ export class XpathConverter implements types.IConverter {
     let succeeded = true;
     let value; // = collectionValue;
 
-    const delim = R.defaultTo(
-        Specs.fallBack.coercion!.attributes!.matchers!.collection!.delim)(
-          R.view(R.lensPath(['coercion', context, 'matchers', 'collection', 'delim']))(this.spec)
-    ) as string;
+    // this.fetchSpecOption(`coercion/${context}/matchers/primitives`)
 
-    const open = R.defaultTo(Specs.fallBack.coercion!.attributes!.matchers!.collection!.open)(
-      R.view(R.lensPath(['coercion', context, 'matchers', 'collection', 'open']))(this.spec)
-    ) as string;
+    const delim = this.fetchSpecOption(`coercion/${context}/matchers/collection/delim`) as string;
+    const open = this.fetchSpecOption(`coercion/${context}/matchers/collection/open`) as string;
 
     const collectionType = this.extractTypeFromCollectionValue(collectionValue);
 
@@ -587,10 +578,7 @@ export class XpathConverter implements types.IConverter {
       const openExpression: string = open.replace(CollectionTypePlaceHolder, ('<' + collectionType + '>'));
       const openExpr: RegExp = new RegExp('^' + (escapeRegExp(openExpression)));
 
-      const close = R.defaultTo(Specs.fallBack.coercion!.attributes!.matchers!.collection!.close)(
-        R.view(R.lensPath(['coercion', context, 'matchers', 'collection', 'close']))(this.spec)
-      ) as string;
-
+      const close = this.fetchSpecOption(`coercion/${context}/matchers/collection/close`) as string;
       const closeExpr = new RegExp(escapeRegExp(close) + '$');
 
       if (openExpr.test(collectionValue) && closeExpr.test(collectionValue)) {
@@ -627,20 +615,15 @@ export class XpathConverter implements types.IConverter {
           // Check for associative types
           //
           if (R.includes(R.toLower(collectionType), ['map', 'weakmap', 'object', '{}'])) {
-            const assocDelim = R.defaultTo(
-              Specs.fallBack.coercion!.attributes!.matchers!.collection!.assoc!.delim)(
-                R.view(R.lensPath(['coercion', context, 'matchers', 'collection', 'assoc', 'delim']))(this.spec)
-            ) as string;
 
-            const assocKeyType = R.defaultTo(
-              Specs.fallBack.coercion!.attributes!.matchers!.collection!.assoc!.keyType)(
-                R.view(R.lensPath(['coercion', context, 'matchers', 'collection', 'assoc', 'keyType']))(this.spec)
-            ) as string;
+            const assocDelim = this.fetchSpecOption(
+              `coercion/${context}/matchers/collection/assoc/delim`) as string;
 
-            const assocValueType = R.defaultTo(
-              Specs.fallBack.coercion!.attributes!.matchers!.collection!.assoc!.valueType)(
-                R.view(R.lensPath(['coercion', context, 'matchers', 'collection', 'assoc', 'valueType']))(this.spec)
-            ) as string;
+            const assocKeyType = this.fetchSpecOption(
+              `coercion/${context}/matchers/collection/assoc/keyType`) as string;
+
+            const assocValueType = this.fetchSpecOption(
+              `coercion/${context}/matchers/collection/assoc/valueType`) as string;
 
             // Split out the values into an array of pairs
             //
@@ -697,15 +680,12 @@ export class XpathConverter implements types.IConverter {
    * @memberof XpathConverter
    */
   transformSymbol (symbolValue: string, context: types.ContextType): ITransformResult<Symbol> {
-    const prefix = R.defaultTo(
-      Specs.fallBack.coercion!.attributes!.matchers!.symbol!.prefix)(
-        R.view(R.lensPath(['coercion', context, 'matchers', 'symbol', 'prefix']))(this.spec)
-    ) as string;
 
-    const global = R.defaultTo(
-      Specs.fallBack.coercion!.attributes!.matchers!.symbol!.global)(
-        R.view(R.lensPath(['coercion', context, 'matchers', 'symbol', 'global']))(this.spec)
-    );
+    const prefix = this.fetchSpecOption(
+      `coercion/${context}/matchers/symbol/prefix`) as string;
+
+    const global = this.fetchSpecOption(
+      `coercion/${context}/matchers/symbol/global`) as string;
 
     let expr = new RegExp('^' + escapeRegExp(prefix));
 
@@ -730,10 +710,8 @@ export class XpathConverter implements types.IConverter {
    * @memberof XpathConverter
    */
   transformString (stringValue: string, context: types.ContextType): ITransformResult<string> {
-    const stringCoercionAcceptable = R.defaultTo(
-        Specs.fallBack.coercion!.attributes!.matchers!.string)(
-          R.view(R.lensPath(['coercion', context, 'matchers', 'string']))(this.spec)
-    );
+    const stringCoercionAcceptable = this.fetchSpecOption(
+      `coercion/${context}/matchers/string`) as boolean;
 
     if (!stringCoercionAcceptable) {
       throw new Error(`matching failed, terminated by string matcher.`);
@@ -759,7 +737,7 @@ export class XpathConverter implements types.IConverter {
   buildChildren (element: any, elementNode: any, parseInfo: types.IParseInfo, previouslySeen: string[]): any {
     let selectionResult: any = xpath.select('./*', elementNode);
 
-    const descendantsLabel = this.spec.labels!.descendants || '_children';
+    const descendantsLabel = this.fetchSpecOption(`labels/descendants`) as string;
 
     if (selectionResult && selectionResult.length > 0) {
       let getElementsFn: any = R.filter((child: any) => (child.nodeType === child.ELEMENT_NODE));
@@ -777,7 +755,7 @@ export class XpathConverter implements types.IConverter {
         element[descendantsLabel] = children;
       }
 
-      const elementLabel = this.spec.labels!.element || '_';
+      const elementLabel = this.fetchSpecOption(`labels/element`) as string;
       const elementInfo: types.IElementInfo = this.getElementInfo(
         element[elementLabel], parseInfo);
 
@@ -822,7 +800,7 @@ export class XpathConverter implements types.IConverter {
     let elementText: string = this.composeText(elementNode);
 
     if (elementText && elementText !== '') {
-      const textLabel = this.spec.labels!.text || '_text';
+      const textLabel = this.fetchSpecOption(`labels/text`) as string;
       element[textLabel] = elementText;
     }
 
@@ -905,6 +883,36 @@ export class XpathConverter implements types.IConverter {
 
     return R.defaultTo(R.view(defaultLens, Specs.fallBack))(R.view(itemLens)(this.spec));
   } // fetchCoercionOption
+
+  /**
+   * @method fetchSpecOption
+   * @description
+   *
+   * @private
+   * @param {string} path
+   * @param {boolean} [fallBack=true] The setting of this value depends from where it is
+   * being called as well as the item being requested. Eg, labels.attribute is an optional
+   * and its presence acts like a flag. For items with flag like behaviour, then it is
+   * ok to set fallBack to false, as we should return nothing in this scenario instead of
+   * looking into the fallBack spec. Also, if called from a transform function and a value
+   * is being retrieved from under ./coercion, then its ok allow fallBack = true, because
+   * all transform functions are activated as a result of coercion being active.
+   *
+   * @returns {*}
+   * @memberof XpathConverter
+   */
+  private fetchSpecOption (path: string, fallBack: boolean = true): any {
+    console.log(`fetchSpecOption --> path: ${path}`);
+    const segments: string[] = R.split('/')(path);
+    const itemLens: R.Lens = R.lensPath(segments);
+
+    const result = fallBack
+      ? R.defaultTo(R.view(itemLens)(Specs.fallBack), R.view(itemLens)(this.spec))
+      : R.view(itemLens)(this.spec);
+
+    console.log(`fetchSpecOption --> result: ${functify(result)}`);
+    return result;
+  }
 } // class XpathConverter
 
 XpathConverter.initialise();
