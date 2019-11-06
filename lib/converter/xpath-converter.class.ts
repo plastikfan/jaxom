@@ -38,7 +38,7 @@ interface ITransformResult<T> {
  * @class XpathConverter
  * @implements {types.IConverter}
  */
-export default class XpathConverter implements types.IConverter {
+export class XpathConverter implements types.IConverter {
   constructor (private spec: types.ISpec = Specs.default) {
     if (!spec) {
       throw new Error('null spec not permitted');
@@ -61,7 +61,7 @@ export default class XpathConverter implements types.IConverter {
    * @returns
    * @memberof XpathConverter
    */
-  buildElement (elementNode: any, parentNode: any, parseInfo: types.IParseInfo) {
+  buildElement (elementNode: any, parentNode: any, parseInfo: types.IParseInfo): any {
     return this.buildElementImpl(elementNode, parentNode, parseInfo);
   }
 
@@ -73,8 +73,8 @@ export default class XpathConverter implements types.IConverter {
    * @memberof XpathConverter
    */
   static initialise () {
-    let expression = `<(?${CollectionTypePlaceHolder}[\w\[\]]+)>`;
-    this.typeRegExp = XRegExp(expression).compile();
+    console.log('!!!! static INITIALISATION of XpathConverter');
+    this.typeRegExp = new RegExp(`<(?${CollectionTypePlaceHolder}[\w\[\]]+)>`);
   }
 
   /**
@@ -92,13 +92,12 @@ export default class XpathConverter implements types.IConverter {
   private buildElementImpl (elementNode: any, parentNode: any, parseInfo: types.IParseInfo,
     previouslySeen: string[] = []) {
 
+    console.log(`*** buildElementImpl --> elementName: ${elementNode.nodeName}`);
+
     let element: any = this.buildLocalAttributes(elementNode);
 
-    if (this.spec.labels!.element) {
-      element[this.spec.labels!.element] = elementNode.nodeName;
-    } else {
-      throw new Error('Invalid spec, can\'t access "spec.labels.element"');
-    }
+    const elementLabel = this.spec.labels!.element || '_';
+    element[elementLabel] = elementNode.nodeName;
 
     const { recurse = '', discards = [] } = this.getElementInfo(elementNode.nodeName, parseInfo);
 
@@ -148,14 +147,19 @@ export default class XpathConverter implements types.IConverter {
         return R.append(R.objOf(attrNode['name'], rawAttributeValue), acc);
       }, [])(attributeNodes);
     } else {
-      const coercePair = (n: any) => { // ?
+      console.log(`*** buildLocalAttributes --> spec: ${functify(this.spec)}`);
+
+      let nameValuePropertyPair = R.props(['name', 'value']);
+      const coercePair = (n: any) => {
         // Build attributes as members.
         // Attribute nodes have name and value properties on them
         //
-        let attributePair = R.props(['name', 'value'])(n); // => [attrKey, attrValue]
+        let attributePair = nameValuePropertyPair(n); // => [attrKey, attrValue]
         const attributeName = R.head(attributePair) as string;
         const rawAttributeValue = R.last(attributePair);
+
         const matchers = this.fetchCoercionOption('coercion/attributes/matchers');
+        console.log(`*** buildLocalAttributes --> attrName: ${attributeName}, attrValue: ${rawAttributeValue}`);
         const coercedValue = this.coerceAttributeValue(matchers, rawAttributeValue, attributeName);
         attributePair[1] = coercedValue;
         return attributePair;
@@ -179,8 +183,9 @@ export default class XpathConverter implements types.IConverter {
    * @returns
    * @memberof XpathConverter
    */
-  private coerceAttributeValue (matchers: any, rawValue: any, attributeName: string) {
+  private coerceAttributeValue (matchers: any, rawValue: any, attributeName: string): any {
     let resultValue = rawValue;
+    console.log(`*** coerceAttributeValue --> rawValue: ${rawValue}, attributeName: ${attributeName}`);
 
     if (R.is(Object)(matchers)) {
       // insertion order of keys is preserved, because key types of symbol
@@ -189,6 +194,7 @@ export default class XpathConverter implements types.IConverter {
       //
       R.keys(matchers).some((m: types.MatcherType) => {
         const matchFn = this.getMatcher(R.toLower(m) as types.MatcherType);
+        console.log(`+++ find matcher iteration .... m: ${m}`);
         const result = matchFn.call(this, rawValue, 'attribute', this.spec);
 
         if (result.succeeded) {
@@ -200,6 +206,9 @@ export default class XpathConverter implements types.IConverter {
       throw new Error(
         `coerceAttributeValue: Internal error, invalid matchers: ${functify(matchers)}, for attribute: ${attributeName} / raw value: ${rawValue}`);
     }
+
+    console.log(`^^^ coerceAttributeValue --> resultValue: ${resultValue}`);
+
     return resultValue;
   }
 
@@ -320,6 +329,7 @@ export default class XpathConverter implements types.IConverter {
   // binding.
   //
   private makeMatchers () {
+    this.matchers = new Map<string, any>();
     this.matchers.set('number', this.transformNumber);
     this.matchers.set('boolean', this.transformBoolean);
     this.matchers.set('primitives', this.transformPrimitives);
@@ -338,6 +348,7 @@ export default class XpathConverter implements types.IConverter {
   private transformNumber (numberValue: number,
     context: types.ContextType, spec: types.ISpec): ITransformResult<number> {
 
+    console.log(`=== transformNumber, value: '${numberValue}'`);
     let result = Number(numberValue);
 
     const succeeded = !(isNaN(result));
@@ -353,6 +364,8 @@ export default class XpathConverter implements types.IConverter {
 
   private transformBoolean (booleanValue: string | boolean,
     context: types.ContextType, spec: types.ISpec): ITransformResult<boolean> {
+
+    console.log(`=== transformBoolean, value: '${booleanValue}'`);
 
     let value;
     let succeeded = false;
@@ -370,10 +383,13 @@ export default class XpathConverter implements types.IConverter {
           value = false;
         }
       } else {
-        throw new Error(`(transformBoolean) Invalid type specified: ${booleanValue}`);
+        value = false;
       }
     } else {
-      throw new Error(`(transformBoolean) Invalid type specified: ${booleanValue}`);
+      // This value is not significant and should not be used, since the transform function
+      // has failed; however, we can't leave value to be unset.
+      //
+      value = false;
     }
 
     return {
@@ -383,8 +399,9 @@ export default class XpathConverter implements types.IConverter {
   } // transformBoolean
 
   private transformPrimitives (primitiveValue: types.PrimitiveType,
-    context: types.ContextType): ITransformResult<any> {
+    context: types.ContextType, spec: types.ISpec): ITransformResult<any> {
 
+    console.log(`transformPrimitives --> primitiveValue: ${primitiveValue}`);
     const primitives = R.defaultTo(Specs.fullSpecWithDefaults.coercion!.attributes!.matchers!.primitives)(
       R.view(R.lensPath(['coercion', context, 'matchers', 'primitives']))(this.spec)
     ) as [];
@@ -398,6 +415,7 @@ export default class XpathConverter implements types.IConverter {
 
     primitives.some((p: types.PrimitiveType) => {
       const mfn = this.getMatcher(p);
+      console.log(`transformPrimitives --> primitiveValue: ${primitiveValue}, context:${context}`);
       const coercedResult = mfn(primitiveValue, context, this.spec);
       succeeded = coercedResult.succeeded;
 
@@ -589,7 +607,7 @@ export default class XpathConverter implements types.IConverter {
           // map/transformPrimitive?
           //
           value = arrayElements.map((item: types.PrimitiveType) => {
-            const itemResult = this.transformPrimitives(item, context);
+            const itemResult = this.transformPrimitives(item, context, this.spec);
             return (itemResult.succeeded) ? itemResult.value : item;
           });
         } else {
@@ -771,7 +789,7 @@ export default class XpathConverter implements types.IConverter {
             element[descendantsLabel] = R.indexBy(R.prop(elementInfo.id),
               descendants);
           } else if (R.pathEq(['descendants', 'by'], 'group', elementInfo)) {
-            element[this.spec.labels!.descendants || ''] = R.groupBy(R.prop(elementInfo.id),
+            element[descendantsLabel] = R.groupBy(R.prop(elementInfo.id),
               descendants);
           }
         } else if (elementInfo.descendants!.throwIfMissing) {

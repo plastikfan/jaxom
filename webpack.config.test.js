@@ -3,7 +3,7 @@ const nodeExternals = require('webpack-node-externals');
 
 module.exports = {
   mode: 'development',
-  entry: './tests/all-tests-entry.js',
+  entry: ['./tests/all-tests-entry.js', './lib'],
   target: 'node',
   externals: [nodeExternals()],
   module: {
@@ -18,6 +18,9 @@ module.exports = {
   },
   resolve: {
     extensions: ['.ts', '.js', '.json']
+  },
+  watchOptions: {
+    ignored: /node_modules/
   },
   output: {
     filename: 'jaxom-test-bundle.js',

@@ -48,8 +48,7 @@ const defaultSpec: types.ISpec = Object.freeze({
     element: '_',
     descendants: '_children',
     text: '_text'
-  },
-  trim: true
+  }
 });
 
 const attributesAsArraySpec: types.ISpec = Object.freeze({
@@ -59,8 +58,7 @@ const attributesAsArraySpec: types.ISpec = Object.freeze({
     element: '_',
     descendants: '_children',
     text: '_text'
-  },
-  trim: true
+  }
 });
 
 const fullSpec: types.ISpec = Object.freeze({
