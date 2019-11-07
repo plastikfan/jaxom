@@ -1,4 +1,5 @@
 import { functify } from 'jinxed';
+import * as xp from 'xpath-ts';
 
 export function logIfFailed (result: boolean, widget: any) {
   if (!result) {
@@ -14,4 +15,8 @@ export function logIfFailedStringify (result: boolean, widget: any) {
   }
 
   return result;
+}
+
+export function selectElementNodeById (elementName: string, id: string, name: string, parentNode: any) {
+  return xp.select(`.//${elementName}[@${id}="${name}"]`, parentNode, true);
 }

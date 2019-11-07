@@ -11,17 +11,6 @@ import * as types from '../../lib/converter/types';
 import * as Helpers from '../test-helpers';
 import { XpathConverter as Jaxom } from '../../lib/converter/xpath-converter.class';
 
-function selectElementNodeById (elementName: string, id: string, name: string, parentNode: any) {
-  let elementResult: any = xp.select(`.//${elementName}[@${id}="${name}"]`, parentNode);
-  let elementNode: any = {};
-
-  if (elementResult && elementResult.length > 0) {
-    elementNode = elementResult[0];
-  }
-
-  return elementNode;
-}
-
 const testParseInfo: types.IParseInfo = {
   elements: new Map<string, types.IElementInfo>([
     ['Command', {
@@ -53,7 +42,7 @@ describe('xpath-converter.buildElement', () => {
       const commandsNode = xp.select('/Application/Cli/Commands', document, true);
 
       if (commandsNode) {
-        let leafCommandNode: any = selectElementNodeById('Command', 'name', 'leaf', commandsNode);
+        let leafCommandNode: any = Helpers.selectElementNodeById('Command', 'name', 'leaf', commandsNode);
 
         if (leafCommandNode) {
           const converter = new Jaxom();
@@ -89,7 +78,7 @@ describe('xpath-converter.buildElement', () => {
 
       if (commandsNode) {
         const converter = new Jaxom();
-        let leafCommandNode: any = selectElementNodeById('Command', 'name', 'leaf', commandsNode);
+        let leafCommandNode: any = Helpers.selectElementNodeById('Command', 'name', 'leaf', commandsNode);
         let command = converter.buildElement(leafCommandNode, commandsNode, testParseInfo);
 
         let result = Helpers.logIfFailedStringify(R.where({
@@ -121,7 +110,7 @@ describe('xpath-converter.buildElement', () => {
 
       if (commandsNode) {
         const converter = new Jaxom();
-        let invalidCommandNode = selectElementNodeById('Command', 'name', 'leaf', commandsNode) || {};
+        let invalidCommandNode = Helpers.selectElementNodeById('Command', 'name', 'leaf', commandsNode) || {};
 
         expect(() => {
           converter.buildElement(invalidCommandNode, commandsNode, testParseInfo);
@@ -148,7 +137,7 @@ describe('xpath-converter.buildElement', () => {
 
       if (expressionsNode) {
         const converter = new Jaxom();
-        let expressionNode = selectElementNodeById(
+        let expressionNode = Helpers.selectElementNodeById(
           'Expression', 'name', 'person\'s-name-expression', expressionsNode) || {};
 
         let element = converter.buildElement(expressionNode, expressionsNode, {
@@ -192,7 +181,7 @@ describe('xpath-converter.buildElement', () => {
 
       if (sourcesNode) {
         const converter = new Jaxom();
-        let expressionNode = selectElementNodeById(
+        let expressionNode = Helpers.selectElementNodeById(
           'Source', 'name', 'some-json-source', sourcesNode) || {};
 
         let source = converter.buildElement(expressionNode, sourcesNode, {
@@ -238,7 +227,7 @@ describe('xpath-converter.buildElement', () => {
 
       if (argumentsNode) {
         const converter = new Jaxom();
-        let argumentNode = selectElementNodeById(
+        let argumentNode = Helpers.selectElementNodeById(
           'Argument', 'name', 'filesys', argumentsNode) || {};
 
         let source = converter.buildElement(argumentNode, argumentsNode, {
@@ -285,7 +274,7 @@ describe('xpath-converter.buildElement', () => {
 
       if (treesNode) {
         const converter = new Jaxom();
-        let treeNode = selectElementNodeById(
+        let treeNode = Helpers.selectElementNodeById(
           'Tree', 'alias', 'skipa', treesNode) || {};
 
         let tree = converter.buildElement(treeNode, treesNode, {
@@ -332,7 +321,7 @@ describe('xpath-converter.buildElement', () => {
 
         if (commandsNode) {
           const converter = new Jaxom();
-          let leafCommandNode: any = selectElementNodeById('Command', 'name', 'leaf', commandsNode);
+          let leafCommandNode: any = Helpers.selectElementNodeById('Command', 'name', 'leaf', commandsNode);
           let command = converter.buildElement(leafCommandNode, commandsNode, testParseInfo);
 
           let result = Helpers.logIfFailedStringify(R.where({
@@ -366,7 +355,7 @@ describe('xpath-converter.buildElement', () => {
 
         if (commandsNode) {
           const converter = new Jaxom();
-          let leafCommandNode: any = selectElementNodeById('Command', 'name', 'leaf', commandsNode);
+          let leafCommandNode: any = Helpers.selectElementNodeById('Command', 'name', 'leaf', commandsNode);
           let command = converter.buildElement(leafCommandNode, commandsNode, testParseInfo);
 
           let result = Helpers.logIfFailedStringify(R.where({
@@ -400,7 +389,7 @@ describe('xpath-converter.buildElement', () => {
 
         if (commandsNode) {
           const converter = new Jaxom();
-          let leafCommandNode: any = selectElementNodeById('Command', 'name', 'leaf', commandsNode);
+          let leafCommandNode: any = Helpers.selectElementNodeById('Command', 'name', 'leaf', commandsNode);
           let command = converter.buildElement(leafCommandNode, commandsNode, testParseInfo);
 
           let result = Helpers.logIfFailedStringify(R.where({
@@ -436,7 +425,7 @@ describe('xpath-converter.buildElement', () => {
 
       if (commandsNode) {
         const converter = new Jaxom();
-        let leafCommandNode: any = selectElementNodeById('Command', 'name', 'leaf', commandsNode);
+        let leafCommandNode: any = Helpers.selectElementNodeById('Command', 'name', 'leaf', commandsNode);
         let command = converter.buildElement(leafCommandNode, commandsNode, testParseInfo);
 
         let result = Helpers.logIfFailedStringify(R.where({
@@ -473,7 +462,7 @@ describe('xpath-converter.buildElement', () => {
 
       if (commandsNode) {
         const converter = new Jaxom();
-        let leafCommandNode: any = selectElementNodeById('Command', 'name', 'leaf', commandsNode);
+        let leafCommandNode: any = Helpers.selectElementNodeById('Command', 'name', 'leaf', commandsNode);
         let command = converter.buildElement(leafCommandNode, commandsNode, testParseInfo);
 
         let result = Helpers.logIfFailedStringify(R.where({
@@ -510,7 +499,7 @@ describe('xpath-converter.buildElement', () => {
 
       if (commandsNode) {
         const converter = new Jaxom();
-        let leafCommandNode: any = selectElementNodeById('Command', 'name', 'leaf', commandsNode);
+        let leafCommandNode: any = Helpers.selectElementNodeById('Command', 'name', 'leaf', commandsNode);
         let command = converter.buildElement(leafCommandNode, commandsNode, testParseInfo);
 
         let result = Helpers.logIfFailedStringify(R.where({
@@ -546,7 +535,7 @@ describe('xpath-converter.buildElement', () => {
 
       if (commandsNode) {
         const converter = new Jaxom();
-        let leafCommandNode: any = selectElementNodeById('Command', 'name', 'leaf', commandsNode);
+        let leafCommandNode: any = Helpers.selectElementNodeById('Command', 'name', 'leaf', commandsNode);
         let command = converter.buildElement(leafCommandNode, commandsNode, testParseInfo);
 
         let result = Helpers.logIfFailedStringify(R.where({
@@ -585,7 +574,7 @@ describe('xpath-converter.buildElement', () => {
 
       if (commandsNode) {
         const converter = new Jaxom();
-        let leafCommandNode: any = selectElementNodeById('Command', 'name', 'leaf', commandsNode);
+        let leafCommandNode: any = Helpers.selectElementNodeById('Command', 'name', 'leaf', commandsNode);
         let command = converter.buildElement(leafCommandNode, commandsNode, testParseInfo);
 
         let result = Helpers.logIfFailedStringify(R.where({
@@ -623,7 +612,7 @@ describe('xpath-converter.buildElement', () => {
 
       if (commandsNode) {
         const converter = new Jaxom();
-        let leafCommandNode: any = selectElementNodeById('Command', 'name', 'leaf', commandsNode);
+        let leafCommandNode: any = Helpers.selectElementNodeById('Command', 'name', 'leaf', commandsNode);
         let command = converter.buildElement(leafCommandNode, commandsNode, testParseInfo);
 
         let result = Helpers.logIfFailedStringify(R.where({
@@ -659,7 +648,7 @@ describe('xpath-converter.buildElement', () => {
 
       if (commandsNode) {
         const converter = new Jaxom();
-        let leafCommandNode: any = selectElementNodeById('Command', 'name', 'leaf', commandsNode);
+        let leafCommandNode: any = Helpers.selectElementNodeById('Command', 'name', 'leaf', commandsNode);
 
         expect(() => {
           converter.buildElement(leafCommandNode, commandsNode, testParseInfo);
@@ -687,7 +676,7 @@ describe('xpath-converter.buildElement', () => {
 
       if (commandsNode) {
         const converter = new Jaxom();
-        let leafCommandNode: any = selectElementNodeById('Command', 'name', 'leaf', commandsNode);
+        let leafCommandNode: any = Helpers.selectElementNodeById('Command', 'name', 'leaf', commandsNode);
 
         expect(() => {
           converter.buildElement(leafCommandNode, commandsNode, testParseInfo);
@@ -738,7 +727,7 @@ describe('xpath-converter.buildElement', () => {
 
     if (commandsNode) {
       const converter = new Jaxom();
-      let testCommandNode = selectElementNodeById('Command', 'name', 'test', commandsNode) || {};
+      let testCommandNode = Helpers.selectElementNodeById('Command', 'name', 'test', commandsNode) || {};
 
       let command = converter.buildElement(testCommandNode, commandsNode, testParseInfo);
 
@@ -799,7 +788,7 @@ describe('xpath-converter.buildElement', () => {
 
     if (commandsNode) {
       const converter = new Jaxom();
-      let testCommandNode = selectElementNodeById('Command', 'name', 'test', commandsNode) || {};
+      let testCommandNode = Helpers.selectElementNodeById('Command', 'name', 'test', commandsNode) || {};
 
       let command = converter.buildElement(testCommandNode, commandsNode, testParseInfo);
 
@@ -860,7 +849,7 @@ describe('xpath-converter.buildElement', () => {
 
     if (commandsNode) {
       const converter = new Jaxom();
-      let testCommandNode = selectElementNodeById('Command', 'name', 'test', commandsNode) || {};
+      let testCommandNode = Helpers.selectElementNodeById('Command', 'name', 'test', commandsNode) || {};
 
       let command = converter.buildElement(testCommandNode, commandsNode, testParseInfo);
 
@@ -907,7 +896,7 @@ describe('xpath-converter.buildElement', () => {
 
       if (expressionsNode) {
         const converter = new Jaxom();
-        let expressionNode = selectElementNodeById(
+        let expressionNode = Helpers.selectElementNodeById(
           'Expression', 'name', 'meta-prefix-expression', expressionsNode) || {};
         let command = converter.buildElement(expressionNode, expressionsNode, testParseInfo);
 
