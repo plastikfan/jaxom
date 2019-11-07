@@ -89,3 +89,8 @@ export interface IConverter {
   //
   buildElement (elementNode: any, parentNode: any, parseInfo: IParseInfo): any;
 }
+
+export interface IConverterImpl {
+  buildElement (elementNode: any, parentNode: any, parseInfo: IParseInfo,
+    previouslySeen: string[]): any;
+}
