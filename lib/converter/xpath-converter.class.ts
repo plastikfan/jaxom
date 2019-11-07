@@ -84,7 +84,6 @@ export class XpathConverter implements types.IConverter {
    * @memberof XpathConverter
    */
   static initialise () {
-    console.log('!!!! static INITIALISATION of XpathConverter');
     this.typeRegExp = new RegExp(`<(?${CollectionTypePlaceHolder}[\w\[\]]+)>`);
   }
 
@@ -102,8 +101,6 @@ export class XpathConverter implements types.IConverter {
    */
   private buildElementImpl (elementNode: any, parentNode: any, parseInfo: types.IParseInfo,
     previouslySeen: string[] = []) {
-
-    console.log(`*** buildElementImpl --> elementName: ${elementNode.nodeName}`);
 
     let element: any = this.buildLocalAttributes(elementNode);
     const elementLabel = this.fetchSpecOption('labels/element') as string;
@@ -165,7 +162,6 @@ export class XpathConverter implements types.IConverter {
       }, [])(attributeNodes);
 
     } else {
-      console.log(`*** buildLocalAttributes --> spec: ${functify(this.spec)}`);
       // Build attributes as members.
       // Attribute nodes have name and value properties on them
       //
@@ -177,9 +173,8 @@ export class XpathConverter implements types.IConverter {
         let attributePair = nameValuePropertyPair(node); // => [attrKey, attrValue]
         const attributeName = R.head(attributePair) as string;
         const rawAttributeValue = R.last(attributePair);
-
-        console.log(`*** buildLocalAttributes --> attrName: ${attributeName}, attrValue: ${rawAttributeValue}`);
         const coercedValue = this.coerceAttributeValue(matchers, rawAttributeValue, attributeName);
+
         attributePair[1] = coercedValue;
         return attributePair;
       } : (node: any) => {
@@ -208,7 +203,6 @@ export class XpathConverter implements types.IConverter {
    */
   private coerceAttributeValue (matchers: any, rawValue: any, attributeName: string): any {
     let resultValue = rawValue;
-    console.log(`*** coerceAttributeValue --> rawValue: ${rawValue}, attributeName: ${attributeName}`);
 
     if (R.is(Object)(matchers)) {
       // insertion order of keys is preserved, because key types of symbol
@@ -217,7 +211,6 @@ export class XpathConverter implements types.IConverter {
       //
       R.keys(matchers).some((mt: types.MatcherType) => {
         const transform = this.getTransformer(R.toLower(mt) as types.MatcherType);
-        console.log(`+++ find matcher iteration .... m: ${mt}`);
         const result = transform.call(this, rawValue, 'attributes');
 
         if (result.succeeded) {
@@ -229,8 +222,6 @@ export class XpathConverter implements types.IConverter {
       throw new Error(
         `coerceAttributeValue: Internal error, invalid matchers: ${functify(matchers)}, for attribute: ${attributeName} / raw value: ${rawValue}`);
     }
-
-    console.log(`^^^ coerceAttributeValue --> resultValue: ${resultValue}`);
 
     return resultValue;
   }
@@ -371,7 +362,6 @@ export class XpathConverter implements types.IConverter {
   private transformNumber (numberValue: number,
     context: types.ContextType): ITransformResult<number> {
 
-    console.log(`=== transformNumber, value: '${numberValue}'`);
     let result = Number(numberValue);
 
     const succeeded = !(isNaN(result));
@@ -387,8 +377,6 @@ export class XpathConverter implements types.IConverter {
 
   private transformBoolean (booleanValue: string | boolean,
     context: types.ContextType): ITransformResult<boolean> {
-
-    console.log(`=== transformBoolean, value: '${booleanValue}'`);
 
     let value;
     let succeeded = false;
@@ -424,7 +412,6 @@ export class XpathConverter implements types.IConverter {
   private transformPrimitives (primitiveValue: types.PrimitiveType,
     context: types.ContextType): ITransformResult<any> {
 
-    console.log(`transformPrimitives --> primitiveValue: ${primitiveValue}`);
     const primitives = this.fetchSpecOption(`coercion/${context}/matchers/primitives`) as [];
 
     if (R.includes(R.toLower(primitiveValue), ['primitives', 'collection'])) {
@@ -436,7 +423,6 @@ export class XpathConverter implements types.IConverter {
 
     primitives.some((val: types.PrimitiveType) => {
       const transform = this.getTransformer(val);
-      console.log(`transformPrimitives --> primitiveValue: ${primitiveValue}, context:${context}`);
       const coercedResult = transform(primitiveValue, context);
       succeeded = coercedResult.succeeded;
 
@@ -828,7 +814,7 @@ export class XpathConverter implements types.IConverter {
    * @memberof XpathConverter
    */
   private getElementInfo (elementName: string, parseInfo: types.IParseInfo): types.IElementInfo {
-    return parseInfo.elements.get(elementName) || parseInfo.default || types.EmptyElementInfo;
+    return parseInfo.elements.get(elementName) || parseInfo.def || types.EmptyElementInfo;
   }
 
   /**
@@ -889,7 +875,6 @@ export class XpathConverter implements types.IConverter {
       ? R.defaultTo(R.view(itemLens)(Specs.fallBack), R.view(itemLens)(this.spec))
       : R.view(itemLens)(this.spec);
 
-    console.log(`fetchSpecOption --> result: ${functify(result)}`);
     return result;
   }
 } // class XpathConverter

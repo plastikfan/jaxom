@@ -18,7 +18,7 @@ export const EmptyElementInfo: IElementInfo = { id: 'name' };
 
 export interface IParseInfo {
   readonly elements: ReadonlyMap<string, IElementInfo>;
-  readonly default?: IElementInfo;
+  readonly def?: IElementInfo;
 }
 
 // Spec
