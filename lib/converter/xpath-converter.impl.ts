@@ -796,7 +796,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
    * @returns {String} The text collected from the immediate children of the elementNode being
    *    built.
    */
-  private composeText (elementNode: any): string {
+  public composeText (elementNode: any): string {
     let text = '';
     let currentChild = elementNode.firstChild;
     const doTrim = this.fetchSpecOption('coercion/textNodes/trim') as boolean;
