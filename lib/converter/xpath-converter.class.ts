@@ -146,10 +146,10 @@ export class XpathConverter implements types.IConverter {
     //
     const attributeNodes: any = xpath.select('@*', localNode) || [];
     let element: any = {};
-    const attributesPath = ['labels', 'attributes'];
 
-    if (R.hasPath(attributesPath)(this.spec)) {
-      const attributesLabel = R.view(R.lensPath(attributesPath))(this.spec) as string;
+    const attributesLabel = this.fetchSpecOption('labels/attributes', false) as string;
+
+    if (attributesLabel && attributesLabel !== '') {
       // Build attributes as an array identified by labels.attributes
       //
       element[attributesLabel] = R.reduce((acc: any, attrNode: any) => {
@@ -168,7 +168,7 @@ export class XpathConverter implements types.IConverter {
         const attributeName = R.head(attributePair) as string;
         const rawAttributeValue = R.last(attributePair);
 
-        const matchers = this.fetchCoercionOption('coercion/attributes/matchers');
+        const matchers = this.fetchSpecOption('coercion/attributes/matchers');
         console.log(`*** buildLocalAttributes --> attrName: ${attributeName}, attrValue: ${rawAttributeValue}`);
         const coercedValue = this.coerceAttributeValue(matchers, rawAttributeValue, attributeName);
         attributePair[1] = coercedValue;
@@ -278,7 +278,7 @@ export class XpathConverter implements types.IConverter {
           let doMergeElements = (a: any, b: any) => {
             let merged;
 
-            const descendantsLabel = this.spec.labels!.descendants || '_children';
+            const descendantsLabel = this.fetchSpecOption('labels/descendants');
 
             if (R.includes(descendantsLabel, R.keys(a) as string[])
               && R.includes(descendantsLabel, R.keys(b) as string[])) {
@@ -837,7 +837,7 @@ export class XpathConverter implements types.IConverter {
   private composeText (elementNode: any): string {
     let text = '';
     let currentChild = elementNode.firstChild;
-    const doTrim = this.fetchCoercionOption('coercion/textNodes/trim');
+    const doTrim = this.fetchSpecOption('coercion/textNodes/trim') as boolean;
 
     while (currentChild !== null) {
       if (currentChild.data && currentChild.data !== null) {
@@ -850,46 +850,15 @@ export class XpathConverter implements types.IConverter {
   } // composeText
 
   /**
-   * @method: fetchCoercionOption
-   * @description: Fetches the option denoted by the path. If the option requested does
-   *    not appear in spec the provided, the option will be fetched from the default
-   *    spec. The path specified must be treated as absolute and relates to the base
-   *    spec.
-   *
-   * @param path: delimited string containing the segments used to build a lens
-   *    for inspecting the spec.
-   */
-  private fetchCoercionOption (path: string) {
-    // we need to take "path" as a string because the path's segments are not retrievable
-    // from a lens. We need access to a segment(the last one) after lens is created,
-    // so we take a path and build a lens from it.
-    //
-    const contextSegmentNo = 1;
-    const segments: string[] = R.split('/')(path);
-    const itemLens: R.Lens = R.lensPath(segments);
-    const leafSegment: string = R.last(segments);
-    const context = segments[contextSegmentNo] as types.ContextType;
-    let defaultLens: R.Lens = itemLens;
-
-    if (context === 'textNodes') {
-      if (R.includes(leafSegment, ['delim', 'open', 'close'])) {
-        throw new Error(`Internal error, leaf property(last), should not be defined under "textNodes": (${path})`);
-      }
-
-      // The default lens points to attributes
-      //
-      defaultLens = R.lensPath(R.update(contextSegmentNo, 'attributes')(segments));
-    }
-
-    return R.defaultTo(R.view(defaultLens, Specs.fallBack))(R.view(itemLens)(this.spec));
-  } // fetchCoercionOption
-
-  /**
    * @method fetchSpecOption
-   * @description
+   * @description Fetches the option denoted by the path. If the option requested does
+   * not appear in spec the provided, the option will be fetched from the fallBack
+   * spec (with caveats see fallBack parameter). The path specified must be treated
+   * as absolute and relates to the base spec.
    *
    * @private
-   * @param {string} path
+   * @param {string} path delimited string containing the segments used to build a lens
+   * for inspecting the spec.
    * @param {boolean} [fallBack=true] The setting of this value depends from where it is
    * being called as well as the item being requested. Eg, labels.attribute is an optional
    * and its presence acts like a flag. For items with flag like behaviour, then it is
@@ -902,7 +871,6 @@ export class XpathConverter implements types.IConverter {
    * @memberof XpathConverter
    */
   private fetchSpecOption (path: string, fallBack: boolean = true): any {
-    console.log(`fetchSpecOption --> path: ${path}`);
     const segments: string[] = R.split('/')(path);
     const itemLens: R.Lens = R.lensPath(segments);
 
