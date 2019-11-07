@@ -7,6 +7,7 @@ import * as xpath from 'xpath-ts';
 import { XRegExp } from 'xregexp';
 import { Specs, CollectionTypePlaceHolder, CollectionTypeLabel } from './specs';
 import { functify } from 'jinxed';
+import { oc } from 'ts-optchain';
 
 // Typescript the safe navigation operator ( ?. ) or (!.) and null property paths
 // https://stackoverflow.com/questions/40238144/typescript-the-safe-navigation-operator-or-and-null-property-paths
@@ -776,7 +777,7 @@ export class XpathConverter implements types.IConverter {
 
         if (R.all(R.has(elementInfo.id))(children)) {
           if (R.pathEq(['descendants', 'by'], 'index', elementInfo)) {
-            if (elementInfo.descendants!.throwIfCollision) {
+            if (oc(elementInfo).descendants.throwIfMissing()) {
               // We need a new version of ramda's indexBy function that can take an extra
               // parameter being a function which is invoked to handle duplicate keys. In
               // its absence, we can find duplicates via a reduce ...
@@ -795,16 +796,14 @@ export class XpathConverter implements types.IConverter {
             element[descendantsLabel] = R.groupBy(R.prop(elementInfo.id),
               descendants);
           }
-        } else if (elementInfo.descendants!.throwIfMissing) {
-          // TODO: fix this up
+        } else if (oc(elementInfo).descendants.throwIfMissing()) {
+          // TODO: check this (not replaced by complement)
           //
-          // const missing: any = R.find(
-          //   R.not(
-          //     R.has(elementInfo.id)
-          //   )
-          // )(children) || {};
-          // throw new Error(
-          //   `Element is missing key attribute "${elementInfo.id}": (${functify(missing)})`);
+          const missing: any = R.find(
+            R.complement(R.has(elementInfo.id))
+          )(children) || {};
+          throw new Error(
+            `Element is missing key attribute "${elementInfo.id}": (${functify(missing)})`);
         }
       }
     }
