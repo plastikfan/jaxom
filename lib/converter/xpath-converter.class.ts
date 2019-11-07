@@ -148,31 +148,43 @@ export class XpathConverter implements types.IConverter {
     let element: any = {};
 
     const attributesLabel = this.fetchSpecOption('labels/attributes', false) as string;
+    const doCoercion: boolean = R.is(Object)(this.fetchSpecOption('coercion', false));
+    const matchers = this.fetchSpecOption('coercion/attributes/matchers');
 
     if (attributesLabel && attributesLabel !== '') {
       // Build attributes as an array identified by labels.attributes
       //
+
       element[attributesLabel] = R.reduce((acc: any, attrNode: any) => {
-        const rawAttributeValue = attrNode['value'];
-        return R.append(R.objOf(attrNode['name'], rawAttributeValue), acc);
+        const attributeName = attrNode['name'];
+        const attributeValue = doCoercion ? this.coerceAttributeValue(
+          matchers, attrNode['value'], attributeName) : attrNode['value'];
+
+        return R.append(R.objOf(attributeName, attributeValue), acc);
       }, [])(attributeNodes);
+
     } else {
       console.log(`*** buildLocalAttributes --> spec: ${functify(this.spec)}`);
+      // Build attributes as members.
+      // Attribute nodes have name and value properties on them
+      //
 
       let nameValuePropertyPair = R.props(['name', 'value']);
-      const coercePair = (node: any) => {
-        // Build attributes as members.
-        // Attribute nodes have name and value properties on them
+      const coercePair = doCoercion ? (node: any) => {
+        // coercion is active
         //
         let attributePair = nameValuePropertyPair(node); // => [attrKey, attrValue]
         const attributeName = R.head(attributePair) as string;
         const rawAttributeValue = R.last(attributePair);
 
-        const matchers = this.fetchSpecOption('coercion/attributes/matchers');
         console.log(`*** buildLocalAttributes --> attrName: ${attributeName}, attrValue: ${rawAttributeValue}`);
         const coercedValue = this.coerceAttributeValue(matchers, rawAttributeValue, attributeName);
         attributePair[1] = coercedValue;
         return attributePair;
+      } : (node: any) => {
+        // proceed without coercion
+        //
+        return nameValuePropertyPair(node);
       };
 
       element = R.fromPairs(
