@@ -155,8 +155,9 @@ export class XpathConverter implements types.IConverter {
 
       element[attributesLabel] = R.reduce((acc: any, attrNode: any) => {
         const attributeName = attrNode['name'];
-        const attributeValue = doCoercion ? this.coerceAttributeValue(
-          matchers, attrNode['value'], attributeName) : attrNode['value'];
+        const attributeValue = doCoercion
+          ? this.coerceAttributeValue(matchers, attrNode['value'], attributeName)
+          : attrNode['value'];
 
         return R.append(R.objOf(attributeName, attributeValue), acc);
       }, [])(attributeNodes);
@@ -165,26 +166,27 @@ export class XpathConverter implements types.IConverter {
       // Build attributes as members.
       // Attribute nodes have name and value properties on them
       //
-
-      let nameValuePropertyPair = R.props(['name', 'value']);
-      const coercePair = doCoercion ? (node: any) => {
+      const coerce = (node: any) => {
         // coercion is active
         //
-        let attributePair = nameValuePropertyPair(node); // => [attrKey, attrValue]
+        let attributePair = R.props(['name', 'value'])(node); // => [attrKey, attrValue]
         const attributeName = R.head(attributePair) as string;
         const rawAttributeValue = R.last(attributePair);
         const coercedValue = this.coerceAttributeValue(matchers, rawAttributeValue, attributeName);
 
         attributePair[1] = coercedValue;
         return attributePair;
-      } : (node: any) => {
+      };
+      const verbatim = (node: any) => {
         // proceed without coercion
         //
-        return nameValuePropertyPair(node);
+        return R.props(['name', 'value'])(node);
       };
 
+      const extractPair = doCoercion ? coerce : verbatim;
+
       element = R.fromPairs(
-        R.map(coercePair, attributeNodes) as []
+        R.map(extractPair, attributeNodes) as []
       );
     }
 
@@ -503,7 +505,7 @@ export class XpathConverter implements types.IConverter {
 
   // TODO: reconsider redesigning this ... (collectionElements depends on 't')
   //
-  createTypedCollection (t: string, collectionElements: any, context: types.ContextType): any {
+  createTypedCollection (t: string, collectionElements: any): any {
     let collection: any;
 
     switch (t) {
@@ -649,7 +651,7 @@ export class XpathConverter implements types.IConverter {
             try {
               // Now do the collection transformation
               //
-              value = this.createTypedCollection(R.toLower(collectionType), arrayElements, context);
+              value = this.createTypedCollection(R.toLower(collectionType), arrayElements);
             } catch (err) {
               value = arrayElements;
               succeeded = false;
