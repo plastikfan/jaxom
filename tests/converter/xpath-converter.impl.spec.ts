@@ -169,7 +169,7 @@ describe('XpathConverterImpl.composeText', () => {
 
 describe('converter.impl.buildLocalAttributes', () => {
   context('given: a spec with "attributes" label set', () => {
-    it.only('should: populate attributes into array', () => {
+    it('should: populate attributes into array', () => {
       const data = `<?xml version="1.0"?>
           <Application name="pez">
             <Directory name="archive"

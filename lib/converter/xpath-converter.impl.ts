@@ -320,7 +320,10 @@ export class XpathConverterImpl implements types.IConverterImpl {
 
   private transformers: Map<string, any>;
 
-  private getTransformer (name: types.MatcherType) {
+  // The return type of getTransformer needs to be changed from any to a templated function
+  // which returns ITransformResult<>. This is required so that call can be invoked on it.
+  //
+  public getTransformer (name: types.MatcherType): (v: any, c: types.ContextType) => ITransformResult<any> {
     return this.transformers.get(name);
   }
 
@@ -420,7 +423,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
       assocTypes.some((val: types.PrimitiveType) => {
         if (R.includes(val, ['number', 'boolean', 'symbol', 'string'])) {
           const transform = this.getTransformer(val);
-          const coercedResult = transform(assocValue);
+          const coercedResult = transform(assocValue, context);
 
           if (coercedResult.succeeded) {
             succeeded = coercedResult.succeeded;
@@ -445,9 +448,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
   private transformDate (dateValue: string,
     context: types.ContextType): ITransformResult<Date> {
 
-    const format = R.defaultTo(Specs.fallBack.coercion!.attributes!.matchers!.date!.format)(
-      R.view(R.lensPath(['coercion', context, 'matchers', 'date', 'format']))(this.spec)
-    );
+    const format = this.fetchSpecOption(`coercion/${context}/matchers/date/format`) as string;
 
     let momentDate;
     let succeeded;
