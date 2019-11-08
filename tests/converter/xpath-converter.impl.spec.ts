@@ -11,7 +11,7 @@ import * as types from '../../lib/converter/types';
 import * as Helpers from '../test-helpers';
 import { Specs } from '../../lib/converter/specs';
 
-import { XpathConverterImpl as Impl } from '../../lib/converter/xpath-converter.impl';
+import { XpathConverterImpl as Impl, ITransformFunction } from '../../lib/converter/xpath-converter.impl';
 
 const testParseInfo: types.IParseInfo = {
   elements: new Map<string, types.IElementInfo>([
@@ -27,6 +27,62 @@ const testParseInfo: types.IParseInfo = {
     }]
   ])
 };
+
+const testSpec: types.ISpec = Object.freeze({
+  name: 'test-spec-with-attributes',
+  labels: {
+    element: '_',
+    descendants: '_children',
+    text: '_text'
+  },
+  coercion: {
+    attributes: {
+      trim: true,
+      matchers: {
+        primitives: ['number', 'boolean'],
+        collection: {
+          delim: ',',
+          open: '!<type>[',
+          close: ']',
+          assoc: {
+            delim: '=',
+            keyType: 'string',
+            valueType: 'string'
+          }
+        },
+        date: {
+          format: 'YYYY-MM-DD'
+        },
+        symbol: {
+          prefix: '$',
+          global: true
+        },
+        string: true
+      }
+    },
+    textNodes: {
+      trim: true,
+      matchers: {
+        primitives: ['number', 'boolean'],
+        collection: {
+          assoc: {
+            delim: '=',
+            keyType: 'string',
+            valueType: 'string'
+          }
+        },
+        date: {
+          format: 'YYYY-MM-DD'
+        },
+        symbol: {
+          prefix: '$',
+          global: true
+        },
+        string: true
+      }
+    }
+  }
+});
 
 describe('XpathConverterImpl.composeText', () => {
   context('given: a Pattern element with a single text child', () => {
@@ -144,7 +200,7 @@ describe('XpathConverterImpl.composeText', () => {
             <Expressions name="content-expressions">
               <Expression name="meta-prefix-expression">
                 <Pattern eg="TEXT"><![CDATA[ .SOME-CDATA-TEXT ]]>
-                  </Dummy>
+                  <Dummy/>
                 </Pattern>
               </Expression>
             </Expressions>
@@ -205,3 +261,162 @@ describe('converter.impl.buildLocalAttributes', () => {
     });
   });
 });
+
+describe('XpathConverterImpl for "attributes" context [transforms]', () => {
+  const tests = [
+    // ['number]
+    {
+      given: 'spec with "attributes/matchers/primitives" = number',
+      context: 'attributes',
+      spec: () => {
+        return R.set(R.lensPath(['coercion', 'attributes', 'matchers', 'primitives']),
+          ['number'])(testSpec);
+      },
+      valueType: 'number',
+      raw: 42,
+      expected: 42
+    },
+    // ['boolean']
+    {
+      given: 'spec with "attributes/matchers/primitives" = boolean, value=true',
+      context: 'attributes',
+      spec: () => {
+        return R.set(R.lensPath(['coercion', 'attributes', 'matchers', 'primitives']),
+          ['boolean'])(testSpec);
+      },
+      valueType: 'boolean',
+      raw: true,
+      expected: true
+    },
+    {
+      given: 'spec with "attributes/matchers/primitives" = boolean, value=false',
+      context: 'attributes',
+      spec: () => {
+        return R.set(R.lensPath(['coercion', 'attributes', 'matchers', 'primitives']),
+          ['boolean'])(testSpec);
+      },
+      valueType: 'boolean',
+      raw: false,
+      expected: false
+    },
+    {
+      given: 'spec with "attributes/matchers/primitives" = boolean, value(string)="true"',
+      context: 'attributes',
+      spec: () => {
+        return R.set(R.lensPath(['coercion', 'attributes', 'matchers', 'primitives']),
+          ['boolean'])(testSpec);
+      },
+      valueType: 'boolean',
+      raw: 'true',
+      expected: true
+    },
+    {
+      given: 'spec with "attributes/matchers/primitives" = boolean, value(string)="false"',
+      context: 'attributes',
+      spec: () => {
+        return R.set(R.lensPath(['coercion', 'attributes', 'matchers', 'primitives']),
+          ['boolean'])(testSpec);
+      },
+      valueType: 'boolean',
+      raw: 'false',
+      expected: false
+    },
+    // ['string']
+    {
+      given: 'spec with "attributes/matchers" = string(true)',
+      context: 'attributes',
+      spec: () => {
+        return R.set(R.lensPath(['coercion', 'attributes', 'matchers']), {
+          string: true
+        })(testSpec);
+      },
+      valueType: 'string',
+      raw: 'foo',
+      expected: 'foo'
+    },
+    {
+      given: 'spec without a final string matcher and unhandled string value',
+      context: 'attributes',
+      spec: () => {
+        return R.set(R.lensPath(['coercion', 'attributes', 'matchers']), {
+          primitives: ['number', 'boolean'],
+          date: {
+            format: 'YYYY-MM-DD'
+          }
+        })(testSpec);
+      },
+      valueType: 'string',
+      raw: 'foo',
+      expected: 'foo'
+    }
+  ];
+
+  tests.forEach((t) => {
+    context(`given: ${t.given}`, () => {
+      it(`should: coerce "${t.valueType}" value ok`, () => {
+        try {
+          const converter = new Impl(t.spec());
+          const transform: ITransformFunction<any> = converter.getTransformer(t.valueType as types.MatcherType);
+          const result = transform.call(converter, t.raw, t.context as types.ContextType);
+
+          expect(result.succeeded).to.be.true(`succeeded RESULT: ${result.succeeded}`);
+          expect(result.value).to.equal(t.expected);
+        } catch (error) {
+          assert.fail(`transform function for type: "${t.valueType}" failed. (${error})`);
+        }
+      });
+    });
+  });
+
+  context('given: spec with "attributes/matchers/primitives" = date', () => {
+    it('should: coerce "date" value ok:', () => {
+      try {
+        const converter = new Impl(testSpec);
+        const transform: ITransformFunction<any> = converter.getTransformer('date');
+        const dateValue = '2016-06-23';
+        const result = transform.call(converter, dateValue, 'attributes');
+
+        expect(result.succeeded).to.be.true(`succeeded RESULT: ${result.succeeded}`);
+        expect(result.value.format('YYYY-MM-DD')).to.equal('2016-06-23');
+      } catch (error) {
+        assert.fail(`transform function for type: "date" failed. (${error})`);
+      }
+    });
+  });
+
+  context('given: spec with "attributes/matchers/primitives" = symbol', () => {
+    it('should coerce "symbol" value ok:', () => {
+      try {
+        const converter = new Impl(testSpec);
+        const transform: ITransformFunction<any> = converter.getTransformer('symbol');
+        const symbolValue = '$excalibur';
+        const symbolExpected = Symbol(symbolValue);
+        const result = transform.call(converter, symbolValue, 'attributes');
+
+        expect(result.succeeded).to.be.true(`succeeded RESULT: ${result.succeeded}`);
+        expect(R.is(Symbol)(result.value)).to.be.true();
+        expect(result.value.toString()).to.equal(symbolExpected.toString());
+      } catch (error) {
+        assert.fail(`transform function for type: "symbol" failed. (${error})`);
+      }
+    });
+  });
+
+  context('given: spec with "attributes/matchers" = string(false)', () => {
+    it('should: throw', () => {
+      try {
+        const spec = R.set(R.lensPath(['coercion', 'attributes', 'matchers']), {
+          string: false
+        })(testSpec);
+        const converter = new Impl(spec);
+
+        expect(() => {
+          const transform: ITransformFunction<any> = converter.getTransformer('string');
+          transform.call(converter, 'foo', 'attributes');
+        }).to.throw();
+      } catch (error) {
+        assert.fail(`transform function for type: "string" failed. (${error})`);
+      }
+    });
+  });
+}); // convert.impl [transforms]

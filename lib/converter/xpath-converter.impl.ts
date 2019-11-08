@@ -9,9 +9,13 @@ import { Specs, CollectionTypePlaceHolder, CollectionTypeLabel } from './specs';
 import { functify } from 'jinxed';
 import { oc } from 'ts-optchain';
 
-interface ITransformResult<T> {
+export interface ITransformResult<T> {
   value: T;
   succeeded: boolean;
+}
+
+export interface ITransformFunction<T> {
+  (v: any, c: types.ContextType): ITransformResult<T>;
 }
 
 /**
@@ -308,7 +312,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
   // binding.
   //
   private makeTransformers () {
-    this.transformers = new Map<string, any>();
+    this.transformers = new Map<string, ITransformFunction<any>>();
     this.transformers.set('number', this.transformNumber);
     this.transformers.set('boolean', this.transformBoolean);
     this.transformers.set('primitives', this.transformPrimitives);
@@ -318,13 +322,18 @@ export class XpathConverterImpl implements types.IConverterImpl {
     this.transformers.set('string', this.transformString);
   }
 
-  private transformers: Map<string, any>;
+  private transformers: Map<string, ITransformFunction<any>>;
 
   // The return type of getTransformer needs to be changed from any to a templated function
   // which returns ITransformResult<>. This is required so that call can be invoked on it.
   //
-  public getTransformer (name: types.MatcherType): (v: any, c: types.ContextType) => ITransformResult<any> {
-    return this.transformers.get(name);
+  public getTransformer (name: types.MatcherType): ITransformFunction<any> {
+    const result = this.transformers.get(name);
+
+    if (!result) {
+      throw new Error(`Couldn't get transformer for matcher: ${name}`);
+    }
+    return result;
   }
 
   private transformNumber (numberValue: number,
