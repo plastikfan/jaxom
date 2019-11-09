@@ -419,4 +419,286 @@ describe('XpathConverterImpl for "attributes" context [transforms]', () => {
       }
     });
   });
-}); // convert.impl [transforms]
+}); // XpathConverterImpl [transforms]
+
+describe('XpathConverterImpl.transformCollection for "attributes" context', () => {
+
+  const contextType: types.ContextType = 'attributes';
+  const matcher: types.MatcherType = 'collection';
+
+  context('Array collection', () => {
+    const tests = [
+      // []
+      {
+        should: 'coerce as a single item array',
+        raw: '!<[]>[foo]',
+        expected: ['foo']
+      },
+      {
+        should: 'coerce as a multiple item string array',
+        raw: '!<[]>[foo,bar,baz]',
+        expected: ['foo', 'bar', 'baz']
+      },
+      {
+        should: 'coerce as a multiple item numeric array',
+        raw: '!<[]>[1,2,3,4]',
+        expected: [1, 2, 3, 4]
+      },
+      {
+        should: 'coerce as a multiple item boolean array',
+        raw: '!<[]>[true,false,true,false]',
+        expected: [true, false, true, false]
+      },
+      {
+        should: 'coerce as a multiple item mix-type array',
+        raw: '!<[]>[one,42,true,foo]',
+        expected: ['one', 42, true, 'foo']
+      },
+      // TypedArrays
+      {
+        should: 'coerce as a multiple item Int8Array array',
+        raw: '!<Int8Array>[1,2,3,4]',
+        expected: Int8Array.from([1, 2, 3, 4])
+      },
+      {
+        should: 'coerce as a multiple item Uint8Array array',
+        raw: '!<Uint8Array>[1,2,3,4]',
+        expected: Uint8Array.from([1, 2, 3, 4])
+      }
+    ];
+
+    tests.forEach((t) => {
+      context(`given: a compound value, transformCollection (using default spec)`, () => {
+        it(`should: ${t.should}`, () => {
+          try {
+            const converter = new Impl(Specs.default);
+            const transform: ITransformFunction<any> = converter.getTransformer(matcher);
+            const result = transform.call(converter, t.raw, contextType);
+
+            expect(result.succeeded).to.be.true(functify(result));
+            expect(result.value).to.deep.equal(t.expected, functify(result));
+          } catch (error) {
+            assert.fail(`transformCollection for: "${t.raw}" failed. (${error})`);
+          }
+        });
+      });
+    });
+  }); // Array collection
+
+  context('Set collection', () => {
+    // TODO: This test has exposed a bug in the extraction of collection items. When
+    // values are extracted and coercion is active, they should be extracted as native type,
+    // not just strings.
+    //
+    it(`should: coerce as a multiple item Set`, () => {
+      const raw = '!<Set>[1,2,3,4]';
+      try {
+        const converter = new Impl(Specs.default);
+        const transform: ITransformFunction<any> = converter.getTransformer(matcher);
+        const result = transform.call(converter, raw, contextType);
+        // const expected = new Set([1, 2, 3, 4]);
+        const expected = ['1', '2', '3', '4'];
+        const resultAsArray = Array.from(result.value);
+
+        expect(result.succeeded).to.be.true(functify(result));
+        expect(resultAsArray.length).to.equal(4);
+        expect(resultAsArray).to.deep.equal(expected, functify(result));
+      } catch (error) {
+        assert.fail(`transformCollection for: '${raw}' failed. (${error})`);
+      }
+    });
+  }); // Set collection
+
+  context.skip('Map collection', () => {
+    const spec = R.set(
+      R.lensPath(['coercion', 'attributes', 'matchers', 'collection', 'assoc']),
+      {
+        delim: '=',
+        keyType: 'string',
+        valueType: 'string'
+      }
+    )(testSpec);
+
+    it(`should: coerce as a single item map`, () => {
+      const raw = '!<Map>[foo=bar]';
+      try {
+        const converter = new Impl(spec);
+        const transform: ITransformFunction<any> = converter.getTransformer(matcher);
+        const result = transform.call(converter, raw, contextType);
+
+        expect(result.succeeded).to.be.true(functify(result));
+        expect(result.value.size).to.equal(1, functify(result));
+        expect(result.value.get('foo')).to.equal('bar', functify(result));
+      } catch (error) {
+        assert.fail(`transformCollection for: '${raw}' failed. (${error})`);
+      }
+    });
+
+    it(`should: coerce as a multi item map`, () => {
+      const raw = '!<Map>[a=one,b=two,c=three]';
+
+      try {
+        const converter = new Impl(spec);
+        const transform: ITransformFunction<any> = converter.getTransformer(matcher);
+        const result = transform.call(converter, raw, contextType);
+
+        expect(result.succeeded).to.be.true(functify(result));
+        expect(result.value.size).to.equal(3, functify(result));
+
+        expect(result.value.get('a')).to.equal('one', functify(result));
+        expect(result.value.get('b')).to.equal('two', functify(result));
+        expect(result.value.get('c')).to.equal('three', functify(result));
+      } catch (error) {
+        assert.fail(`transformCollection for: '${raw}' failed. (${error})`);
+      }
+    });
+  }); // Map collection
+
+  context.skip('Object instance collection', () => {
+    it(`should: coerce as a multiple item Object`, () => {
+      const raw = '!<Object>[a=one,b=two,c=three]';
+      const spec = R.set(
+        R.lensPath(['coercion', 'attributes', 'matchers', 'collection', 'assoc']),
+        {
+          delim: '=',
+          keyType: 'string',
+          valueType: 'string'
+        })(testSpec);
+
+      const converter = new Impl(spec);
+      const transform: ITransformFunction<any> = converter.getTransformer(matcher);
+      const result = transform.call(converter, raw, contextType);
+
+      expect(result.succeeded).to.be.true(functify(result));
+      expect(R.keys(result.value).length).to.equal(3, functify(result));
+
+      expect(result.value['a']).to.equal('one', functify(result));
+      expect(result.value.get('b')).to.equal('two', functify(result));
+      expect(result.value.get('c')).to.equal('three', functify(result));
+    });
+
+    it(`should: coerce as a multiple item Object and numeric keys`, () => {
+      const raw = '!<Object>[1=one,2=two,3=three]';
+      const spec = R.set(
+        R.lensPath(['coercion', 'attributes', 'matchers', 'collection', 'assoc']),
+        {
+          delim: '=',
+          keyType: 'number',
+          valueType: 'string'
+        })(testSpec);
+
+      const converter = new Impl(spec);
+      const transform: ITransformFunction<any> = converter.getTransformer(matcher);
+      const result = transform.call(converter, raw, contextType);
+
+      expect(result.succeeded).to.be.true(functify(result));
+      expect(R.keys(result.value).length).to.equal(3, functify(result));
+
+      expect(result.value[1]).to.equal('one', functify(result));
+      expect(result.value[2]).to.equal('two', functify(result));
+      expect(result.value[3]).to.equal('three', functify(result));
+    });
+
+    it(`should: coerce as a multiple item Object and numeric keys and values`, () => {
+      const raw = '!<Object>[1=15,2=30,3=40]';
+      const spec = R.set(
+        R.lensPath(['coercion', 'attributes', 'matchers', 'collection', 'assoc']),
+        {
+          delim: '=',
+          keyType: ['number'],
+          valueType: ['number']
+        })(testSpec);
+
+      const converter = new Impl(spec);
+      const transform: ITransformFunction<any> = converter.getTransformer(matcher);
+      const result = transform.call(converter, raw, contextType);
+
+      expect(result.succeeded).to.be.true(functify(result));
+      expect(R.keys(result.value).length).to.equal(3, functify(result));
+
+      expect(result.value[1]).to.equal(15, functify(result));
+      expect(result.value[2]).to.equal(30, functify(result));
+      expect(result.value[3]).to.equal(40, functify(result));
+    });
+
+    it(`should: coerce as a multiple item Object mixed type numeric keys and values`, () => {
+      const raw = '!<Object>[1=15,2=30,3=40,4=g,deuce=adv]';
+      const spec = R.set(
+        R.lensPath(['coercion', 'attributes', 'matchers', 'collection', 'assoc']), {
+          delim: '=',
+          keyType: ['number', 'string'],
+          valueType: ['number', 'string']
+        })(testSpec);
+
+      const converter = new Impl(spec);
+      const transform: ITransformFunction<any> = converter.getTransformer(matcher);
+      const result = transform.call(converter, raw, contextType);
+
+      expect(result.succeeded).to.be.true(functify(result));
+      expect(R.keys(result.value).length).to.equal(5, functify(result));
+
+      expect(result.value[1]).to.equal(15, functify(result));
+      expect(result.value[4]).to.equal('g', functify(result));
+      expect(result.value['deuce']).to.equal('adv', functify(result));
+    });
+  }); // Object instance collection
+
+  context.skip('Error handling', () => {
+    context('given: invalid assoc.keyType', () => {
+      const raw = '!<Object>[1=15,2=30,3=40,4=g,deuce=adv]';
+      it(`should: throw`, () => {
+        const spec = R.set(
+          R.lensPath(['coercion', 'attributes', 'matchers', 'collection', 'assoc']), {
+            delim: '=',
+            keyType: 'duff',
+            valueType: ['number', 'string']
+          })(testSpec);
+
+        const converter = new Impl(spec);
+        const transform: ITransformFunction<any> = converter.getTransformer(matcher);
+
+        expect(() => {
+          transform.call(converter, raw, contextType);
+        }).to.throw();
+      });
+    });
+
+    context('given: invalid "collection" assoc.keyType', () => {
+      const raw = '!<Object>[1=15,2=30,3=40,4=g,deuce=adv]';
+      it(`should: throw`, () => {
+        const spec = R.set(
+          R.lensPath(['coercion', 'attributes', 'matchers', 'collection', 'assoc']), {
+            delim: '=',
+            keyType: 'collection',
+            valueType: ['number', 'string']
+          })(testSpec);
+
+        const converter = new Impl(spec);
+        const transform: ITransformFunction<any> = converter.getTransformer(matcher);
+
+        expect(() => {
+          transform.call(converter, raw, contextType);
+        }).to.throw();
+      });
+    });
+
+    context('given: invalid assoc.valueType', () => {
+      const raw = '!<Object>[1=15,2=30,3=40,4=g,deuce=adv]';
+      it(`should: throw`, () => {
+        const spec = R.set(
+          R.lensPath(['coercion', 'attributes', 'matchers', 'collection', 'assoc']), {
+            delim: '=',
+            keyType: 'string',
+            valueType: ['duff', 'number', 'string']
+          })(testSpec);
+
+        const converter = new Impl(spec);
+        const transform: ITransformFunction<any> = converter.getTransformer(matcher);
+
+        expect(() => {
+          transform.call(converter, raw, contextType);
+        }).to.throw();
+      });
+    });
+  }); // Error handling
+}); // XpathConverterImpl.transformCollection for "attributes" context

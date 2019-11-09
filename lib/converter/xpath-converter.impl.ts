@@ -4,7 +4,6 @@ let moment = require('moment'); // why doesn't normal TS import work?
 
 import * as types from './types';
 import * as xpath from 'xpath-ts';
-import { XRegExp } from 'xregexp';
 import { Specs, CollectionTypePlaceHolder, CollectionTypeLabel } from './specs';
 import { functify } from 'jinxed';
 import { oc } from 'ts-optchain';
@@ -51,7 +50,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
    * @memberof XpathConverterImpl
    */
   static initialise () {
-    this.typeRegExp = new RegExp(`<(?${CollectionTypePlaceHolder}[\w\[\]]+)>`);
+    this.typeExpr = /\<(?<type>[\w\[\]]+)\>/;
   }
 
   /**
@@ -512,7 +511,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
     return collectionValue;
   } // extractCoreCollectionValue
 
-  private static typeRegExp: RegExp;
+  private static typeExpr: RegExp;
 
   private extractTypeFromCollectionValue (open: string): string {
     // XML source can contain something like: !<Int8Array>[1,2,3,4]
@@ -525,9 +524,10 @@ export class XpathConverterImpl implements types.IConverterImpl {
 
     let result = '';
 
-    if (XpathConverterImpl.typeRegExp.test(open)) {
-      let match = XRegExp.exec(open, XpathConverterImpl.typeRegExp);
-      const collectionType = R.view(R.lensPath(['groups', CollectionTypeLabel]))(match);
+    if (XpathConverterImpl.typeExpr.test(open)) {
+
+      let match = XpathConverterImpl.typeExpr.exec(open);
+      let collectionType = R.view(R.lensPath(['groups', CollectionTypeLabel]))(match);
 
       if (collectionType) {
         result = collectionType as string;
@@ -540,8 +540,6 @@ export class XpathConverterImpl implements types.IConverterImpl {
   private transformCollection (collectionValue: string, context: types.ContextType): ITransformResult<any[]> {
     let succeeded = true;
     let value; // = collectionValue;
-
-    // this.fetchSpecOption(`coercion/${context}/matchers/primitives`)
 
     const delim = this.fetchSpecOption(`coercion/${context}/matchers/collection/delim`) as string;
     const open = this.fetchSpecOption(`coercion/${context}/matchers/collection/open`) as string;
@@ -578,7 +576,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
         const coreValue: string = this.extractCoreCollectionValue(capturedOpen, capturedClose, collectionValue);
         let arrayElements: any = coreValue.split(delim);
 
-        if (collectionType === '[]') {
+        if ((collectionType === '[]') || R.toLower(collectionType) === 'array') {
           // map/transformPrimitive?
           //
           value = arrayElements.map((item: types.PrimitiveType) => {

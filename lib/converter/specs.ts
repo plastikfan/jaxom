@@ -2,7 +2,7 @@
 import * as types from './types';
 
 export const CollectionTypeLabel = 'type';
-export const CollectionTypePlaceHolder = `<${CollectionTypeLabel}>`;
+export const CollectionTypePlaceHolder = `<type>`;
 
 // This is the spec used by the converter when the user does not supply a custom or
 // specify a predefined one. By default, we don't want to use symbol and date matchers
