@@ -12,7 +12,7 @@
     "build:p": "webpack -p --env.mode production",
     "build:t": "webpack --config webpack.config.test.js",
     "exec": "node ./dist/jaxom-bundle.js",
-    "lint": "npx semistandard --verbose | npx snazzy",
+    "lint": "(npx semistandard --verbose | npx snazzy) && npx tslint -c tslint.json --project tsconfig.json --exclude './lib/**/*.d.ts' './lib/**/*.ts'",
     "fix": "npx semistandard --fix",
     "watch": "webpack --watch --env.mode development",
     "watch:t": "webpack --watch --env.mode development --config webpack.config.test.js",
@@ -40,9 +40,23 @@
     "url": "https://github.com/plastikfan/jaxom/issues"
   },
   "homepage": "https://github.com/plastikfan/jaxom#readme",
+  "dependencies": {
+    "@types/ramda": "^0.26.19",
+    "@types/xregexp": "^3.0.30",
+    "jinxed": "0.0.2",
+    "moment": "^2.24.0",
+    "ramda": "^0.26.1",
+    "ts-optchain": "^0.1.8",
+    "xmldom-ts": "^0.3.1",
+    "xpath-ts": "^1.3.13",
+    "xregexp": "^4.2.4"
+  },
   "devDependencies": {
     "@commitlint/cli": "^8.1.0",
     "@commitlint/config-conventional": "^8.1.0",
+    "@types/chai": "^4.2.4",
+    "@types/dirty-chai": "^2.0.2",
+    "@types/mocha": "^5.2.7",
     "chai": "^4.2.0",
     "commitizen": "^4.0.3",
     "cz-conventional-changelog": "^3.0.2",

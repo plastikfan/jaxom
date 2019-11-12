@@ -37,6 +37,9 @@ module.exports = env => {
     resolve: {
       extensions: ['.ts', '.js', '.json']
     },
+    watchOptions: {
+      ignored: /node_modules/
+    },
     output: {
       libraryTarget: 'commonjs',
       path: path.join(__dirname, 'dist'),

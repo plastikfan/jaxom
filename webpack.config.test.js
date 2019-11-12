@@ -2,8 +2,9 @@ const path = require('path');
 const nodeExternals = require('webpack-node-externals');
 
 module.exports = {
+  devtool: 'source-map',
   mode: 'development',
-  entry: './tests/all-tests-entry.js',
+  entry: ['./tests/all-tests-entry.js', './lib'],
   target: 'node',
   externals: [nodeExternals()],
   module: {
@@ -19,8 +20,12 @@ module.exports = {
   resolve: {
     extensions: ['.ts', '.js', '.json']
   },
+  watchOptions: {
+    ignored: /node_modules/
+  },
   output: {
     filename: 'jaxom-test-bundle.js',
+    sourceMapFilename: 'jaxom-test-bundle.js.map',
     path: path.resolve(__dirname, 'dist'),
     libraryTarget: 'commonjs'
   }
