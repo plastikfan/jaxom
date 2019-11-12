@@ -49,7 +49,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
    * @static
    * @memberof XpathConverterImpl
    */
-  static initialise () {
+  static initialise (): void {
     this.typeExpr = /\<(?<type>[\w\[\]]+)\>/;
   }
 
@@ -65,8 +65,8 @@ export class XpathConverterImpl implements types.IConverterImpl {
    * @returns
    * @memberof XpathConverterImpl
    */
-  buildElement (elementNode: any, parentNode: any, parseInfo: types.IParseInfo,
-    previouslySeen: string[] = []) {
+  buildElement (elementNode: Node, parentNode: types.NullableNode, parseInfo: types.IParseInfo,
+    previouslySeen: string[] = []): any {
 
     let element: any = this.buildLocalAttributes(elementNode);
     const elementLabel = this.fetchSpecOption('labels/element') as string;
@@ -75,7 +75,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
 
     const { recurse = '', discards = [] } = this.getElementInfo(elementNode.nodeName, parseInfo);
 
-    if (recurse !== '') {
+    if ((recurse !== '') && (elementNode instanceof Element)) {
       element = this.recurseThroughAttribute(element, elementNode, parentNode,
         parseInfo, previouslySeen);
     }
@@ -101,59 +101,61 @@ export class XpathConverterImpl implements types.IConverterImpl {
    * @returns
    * @memberof XpathConverterImpl
    */
-  private buildLocalAttributes (localNode: any) {
+  private buildLocalAttributes (localNode: Node): {} {
     // First collect all the attributes (@*) -> create attribute nodes
     // node.nodeType = 2 (ATTRIBUTE_NODE). By implication of the xpath query
     // (ie, we're selecting all attributes) all the nodeTypes of the nodes
     // returned should all be = 2; we could check with a ramda call, but is this
     // necessary?
     //
-    const attributeNodes: any = xpath.select('@*', localNode) || [];
+    const attributeNodes: types.SelectResult = xpath.select('@*', localNode);
     let element: any = {};
 
-    const attributesLabel = this.fetchSpecOption('labels/attributes', false) as string;
-    const doCoercion: boolean = R.is(Object)(this.fetchSpecOption('coercion', false));
-    const matchers = this.fetchSpecOption('coercion/attributes/matchers');
+    if (attributeNodes && attributeNodes instanceof Array) {
+      const attributesLabel = this.fetchSpecOption('labels/attributes', false) as string;
+      const doCoercion: boolean = R.is(Object)(this.fetchSpecOption('coercion', false));
+      const matchers = this.fetchSpecOption('coercion/attributes/matchers');
 
-    if (attributesLabel && attributesLabel !== '') {
-      // Build attributes as an array identified by labels.attributes
-      //
-
-      element[attributesLabel] = R.reduce((acc: any, attrNode: any) => {
-        const attributeName = attrNode['name'];
-        const attributeValue = doCoercion
-          ? this.coerceAttributeValue(matchers, attrNode['value'], attributeName)
-          : attrNode['value'];
-
-        return R.append(R.objOf(attributeName, attributeValue), acc);
-      }, [])(attributeNodes);
-
-    } else {
-      // Build attributes as members.
-      // Attribute nodes have name and value properties on them
-      //
-      const coerce = (node: any) => {
-        // coercion is active
+      if (attributesLabel && attributesLabel !== '') {
+        // Build attributes as an array identified by labels.attributes
         //
-        let attributePair = R.props(['name', 'value'])(node); // => [attrKey, attrValue]
-        const attributeName = R.head(attributePair) as string;
-        const rawAttributeValue = R.last(attributePair);
-        const coercedValue = this.coerceAttributeValue(matchers, rawAttributeValue, attributeName);
 
-        attributePair[1] = coercedValue;
-        return attributePair;
-      };
-      const verbatim = (node: any) => {
-        // proceed without coercion
+        element[attributesLabel] = R.reduce((acc: any, attrNode: any) => {
+          const attributeName = attrNode['name'];
+          const attributeValue = doCoercion
+            ? this.coerceAttributeValue(matchers, attrNode['value'], attributeName)
+            : attrNode['value'];
+
+          return R.append(R.objOf(attributeName, attributeValue), acc);
+        }, [])(attributeNodes);
+
+      } else {
+        // Build attributes as members.
+        // Attribute nodes have name and value properties on them
         //
-        return R.props(['name', 'value'])(node);
-      };
+        const coerce = (node: any) => {
+          // coercion is active
+          //
+          let attributePair = R.props(['name', 'value'])(node); // => [attrKey, attrValue]
+          const attributeName = R.head(attributePair) as string;
+          const rawAttributeValue = R.last(attributePair);
+          const coercedValue = this.coerceAttributeValue(matchers, rawAttributeValue, attributeName);
 
-      const extractPair = doCoercion ? coerce : verbatim;
+          attributePair[1] = coercedValue;
+          return attributePair;
+        };
+        const verbatim = (node: any) => {
+          // proceed without coercion
+          //
+          return R.props(['name', 'value'])(node);
+        };
 
-      element = R.fromPairs(
-        R.map(extractPair, attributeNodes) as []
-      );
+        const extractPair = doCoercion ? coerce : verbatim;
+
+        element = R.fromPairs(
+          R.map(extractPair, attributeNodes) as []
+        );
+      }
     }
 
     return element;
@@ -169,7 +171,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
    * @returns
    * @memberof XpathConverterImpl
    */
-  private coerceAttributeValue (matchers: any, rawValue: any, attributeName: string): any {
+  private coerceAttributeValue (matchers: any, rawValue: any, attributeName: string): {} {
     let resultValue = rawValue;
 
     if (R.is(Object)(matchers)) {
@@ -194,8 +196,8 @@ export class XpathConverterImpl implements types.IConverterImpl {
     return resultValue;
   }
 
-  private recurseThroughAttribute (element: any, elementNode: any, parentNode: any,
-    parseInfo: types.IParseInfo, previouslySeen: string[]) {
+  private recurseThroughAttribute (element: any, elementNode: Element, parentNode: types.NullableNode,
+    parseInfo: types.IParseInfo, previouslySeen: string[]): {} {
 
     const { id, recurse = '' } = this.getElementInfo(elementNode.nodeName, parseInfo);
     const identifier = element[id] || '';
@@ -235,7 +237,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
           let inheritedElements = R.map(at => {
             // select element bode by id
             //
-            let inheritedElementNode = selectElementNodeById(nodeName, id, at, parentNode);
+            let inheritedElementNode: Node = selectElementNodeById(nodeName, id, at, parentNode) as Node;
 
             // Horizontal recursion/merging eg: (at => base-command|domain-command|uni-command)
             //
@@ -288,7 +290,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
           // Now build the singular inherited element
           //
           const inheritedElementName = recurseAttributes[0];
-          const inheritedElementNode = selectElementNodeById(nodeName, id, inheritedElementName, parentNode);
+          const inheritedElementNode = selectElementNodeById(nodeName, id, inheritedElementName, parentNode) as Node;
 
           // Vertical recursion/merging to the base element
           //
@@ -310,7 +312,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
   // This really should be a static, but there is no way to add a class's methods to a static
   // binding.
   //
-  private makeTransformers () {
+  private makeTransformers (): void {
     this.transformers = new Map<string, ITransformFunction<any>>();
     this.transformers.set('number', this.transformNumber);
     this.transformers.set('boolean', this.transformBoolean);
@@ -428,10 +430,11 @@ export class XpathConverterImpl implements types.IConverterImpl {
     }
 
     if (R.is(Array)(assocTypes)) {
+      let self = this;
       assocTypes.some((val: types.PrimitiveType) => {
         if (R.includes(val, ['number', 'boolean', 'symbol', 'string'])) {
-          const transform = this.getTransformer(val);
-          const coercedResult = transform(assocValue, context);
+          const transform = self.getTransformer(val);
+          const coercedResult = transform.call(self, assocValue, context);
 
           if (coercedResult.succeeded) {
             succeeded = coercedResult.succeeded;
@@ -548,7 +551,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
 
     if (collectionType) {
       const openExpression: string = open.replace(CollectionTypePlaceHolder, ('<' + collectionType + '>'));
-      const openExpr: RegExp = new RegExp('^' + (escapeRegExp(openExpression)));
+      const openExpr = new RegExp('^' + (escapeRegExp(openExpression)));
 
       const close = this.fetchSpecOption(`coercion/${context}/matchers/collection/close`) as string;
       const closeExpr = new RegExp(escapeRegExp(close) + '$');
@@ -577,6 +580,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
         let arrayElements: any = coreValue.split(delim);
 
         if ((collectionType === '[]') || R.toLower(collectionType) === 'array') {
+
           // map/transformPrimitive?
           //
           value = arrayElements.map((item: types.PrimitiveType) => {
@@ -706,7 +710,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
    *
    * @memberof XpathConverterImpl
    */
-  buildChildren (element: any, elementNode: any, parseInfo: types.IParseInfo, previouslySeen: string[]): any {
+  buildChildren (element: any, elementNode: Node, parseInfo: types.IParseInfo, previouslySeen: string[]): {} {
     let selectionResult: any = xpath.select('./*', elementNode);
 
     const descendantsLabel = this.fetchSpecOption(`labels/descendants`) as string;
@@ -715,7 +719,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
       let getElementsFn: any = R.filter((child: any) => (child.nodeType === child.ELEMENT_NODE));
       let elements: any = getElementsFn(selectionResult);
 
-      let children: any = R.reduce((acc, childElement): any => {
+      let children: any = R.reduce((acc, childElement: Element): any => {
         let child = this.buildElement(childElement, elementNode, parseInfo, previouslySeen);
         return R.append(child, acc);
       }, [])(elements);
@@ -840,7 +844,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
    * @returns {*}
    * @memberof XpathConverterImpl
    */
-  private fetchSpecOption (path: string, fallBack: boolean = true): any {
+  public fetchSpecOption (path: string, fallBack: boolean = true): any {
     const segments: string[] = R.split('/')(path);
     const itemLens: R.Lens = R.lensPath(segments);
 
@@ -861,17 +865,26 @@ XpathConverterImpl.initialise();
  * @param {String} inputString: input to escape.
  * @returns: escaped String.
  */
-function escapeRegExp (inputString: string) {
+function escapeRegExp (inputString: string): string {
   return inputString.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 
-function selectElementNodeById (elementName: string, id: string, name: string, parentNode: any) {
-  let elementResult: any = xpath.select(`.//${elementName}[@${id}="${name}"]`, parentNode); //  || {};
-  let elementNode = {};
-
-  if (elementResult && elementResult.length > 0) {
-    elementNode = elementResult[0];
-  }
-
-  return elementNode;
+function selectElementNodeById (elementName: string, id: string, name: string, parentNode: any): types.NullableNode {
+  // Typescript warning:
+  //
+  // WARN: This function makes the assumption that if you're selecting an element by an identifier,
+  // then that identifier is unique and so is the element which also means that it should only
+  // ever return a single item or nothing. If the following select statement is missing the true
+  // flag to indicate that only a single item should be returned, then the select will return the
+  // single item inside an array, which is compatible with it's declared return signature:
+  // xpath/api.d.ts:
+  // * declare function select(e: string, doc?: Node, single?: boolean): string | number | boolean | Node | Node[];
+  //
+  // The problem however is this: 'selectElementNodeById' has declared it's return type to be
+  // Node | null (types.NullableNode). There is no scope for a Node[], so how does this get pass the
+  // TS type-checker? How is Node[] assignable to Node or null? Given all the other problems I have
+  // found when declaring the correct types, how is it that this particular example is not flagged as
+  // an error?
+  //
+  return xpath.select(`.//${elementName}[@${id}="${name}"]`, parentNode, true) as types.NullableNode;
 }

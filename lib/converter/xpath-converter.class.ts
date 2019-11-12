@@ -44,7 +44,9 @@ export class XpathConverter implements types.IConverter {
    * @returns
    * @memberof XpathConverter
    */
-  buildElement (elementNode: any, parentNode: any, parseInfo: types.IParseInfo): any {
+  buildElement (elementNode: Node, parentNode: types.NullableNode, parseInfo: types.IParseInfo): any {
     return this.impl.buildElement(elementNode, parentNode, parseInfo, []);
   }
 } // class XpathConverter
+
+// See https://developer.mozilla.org/en-US/docs/Web/API/Node

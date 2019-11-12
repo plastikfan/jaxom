@@ -84,13 +84,16 @@ export interface ISpec {
   };
 }
 
+export type SelectResult = string | number | boolean | Node | Node[];
+export type SelectNodeResult = Node | Node[];
+export type NullableNode = Node | null;
 export interface IConverter {
   // Need to figure out the correct Node type
   //
-  buildElement (elementNode: any, parentNode: any, parseInfo: IParseInfo): any;
+  buildElement (elementNode: Node, parentNode: NullableNode, parseInfo: IParseInfo): any;
 }
 
 export interface IConverterImpl {
-  buildElement (elementNode: any, parentNode: any, parseInfo: IParseInfo,
+  buildElement (elementNode: Node, parentNode: NullableNode, parseInfo: IParseInfo,
     previouslySeen: string[]): any;
 }

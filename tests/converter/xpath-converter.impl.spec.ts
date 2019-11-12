@@ -4,6 +4,7 @@ import dirtyChai from 'dirty-chai';
 use(dirtyChai);
 import * as R from 'ramda';
 import * as xp from 'xpath-ts';
+import { oc } from 'ts-optchain';
 import 'xmldom-ts';
 const parser = new DOMParser();
 const { functify } = require('jinxed');
@@ -11,7 +12,8 @@ import * as types from '../../lib/converter/types';
 import * as Helpers from '../test-helpers';
 import { Specs } from '../../lib/converter/specs';
 
-import { XpathConverterImpl as Impl, ITransformFunction } from '../../lib/converter/xpath-converter.impl';
+import { XpathConverterImpl as Impl, ITransformFunction, ITransformResult }
+  from '../../lib/converter/xpath-converter.impl';
 
 const testParseInfo: types.IParseInfo = {
   elements: new Map<string, types.IElementInfo>([
@@ -238,23 +240,29 @@ describe('converter.impl.buildLocalAttributes', () => {
           </Application>`;
 
       const document: Document = parser.parseFromString(data, 'text/xml');
-      const applicationNode = xp.select('/Application', document, true);
+      const applicationNode: types.SelectResult = xp.select('/Application', document, true);
 
-      if (applicationNode) {
+      if (applicationNode && applicationNode instanceof Node) {
         const converter = new Impl(Specs.attributesAsArray);
-        const directoryNode = Helpers.selectElementNodeById(
-          'Directory', 'name', 'archive', applicationNode) || {};
-        const directory = converter.buildElement(directoryNode, applicationNode,
-          testParseInfo);
+        const directoryNode: types.NullableNode = Helpers.selectElementNodeById(
+          'Directory', 'name', 'archive', applicationNode);
 
-        expect(R.has('_attributes')(directory));
-        const attributes: string[] = R.prop('_attributes')(directory);
-        const attributeKeys: string[] = R.reduce((acc: [], val: string): any => {
-          return R.concat(acc, R.keys(val));
-        }, [])(attributes);
+        if (directoryNode) {
+          const directory = converter.buildElement(directoryNode, applicationNode,
+            testParseInfo);
 
-        expect(R.all(at => R.includes(at, attributeKeys))(
-          ['name', 'field', 'date-modified', 'tags', 'category', 'format'])).to.be.true();
+          expect(R.has('_attributes')(directory));
+          const attributes: string[] = R.prop('_attributes')(directory);
+          const attributeKeys: string[] = R.reduce((acc: [], val: string): any => {
+            return R.concat(acc, R.keys(val));
+          }, [])(attributes);
+
+          expect(R.all(at => R.includes(at, attributeKeys))(
+            ['name', 'field', 'date-modified', 'tags', 'category', 'format'])).to.be.true();
+
+        } else {
+          assert.fail('Couldn\'t get Application node.');
+        }
       } else {
         assert.fail('Couldn\'t get Application node.');
       }
@@ -509,7 +517,7 @@ describe('XpathConverterImpl.transformCollection for "attributes" context', () =
     });
   }); // Set collection
 
-  context.skip('Map collection', () => {
+  context('Map collection', () => {
     const spec = R.set(
       R.lensPath(['coercion', 'attributes', 'matchers', 'collection', 'assoc']),
       {
@@ -524,7 +532,7 @@ describe('XpathConverterImpl.transformCollection for "attributes" context', () =
       try {
         const converter = new Impl(spec);
         const transform: ITransformFunction<any> = converter.getTransformer(matcher);
-        const result = transform.call(converter, raw, contextType);
+        const result: any = transform.call(converter, raw, contextType); // types.ITransformResult<any[]>
 
         expect(result.succeeded).to.be.true(functify(result));
         expect(result.value.size).to.equal(1, functify(result));
@@ -554,7 +562,7 @@ describe('XpathConverterImpl.transformCollection for "attributes" context', () =
     });
   }); // Map collection
 
-  context.skip('Object instance collection', () => {
+  context('Object instance collection', () => {
     it(`should: coerce as a multiple item Object`, () => {
       const raw = '!<Object>[a=one,b=two,c=three]';
       const spec = R.set(
@@ -573,8 +581,8 @@ describe('XpathConverterImpl.transformCollection for "attributes" context', () =
       expect(R.keys(result.value).length).to.equal(3, functify(result));
 
       expect(result.value['a']).to.equal('one', functify(result));
-      expect(result.value.get('b')).to.equal('two', functify(result));
-      expect(result.value.get('c')).to.equal('three', functify(result));
+      expect(result.value['b']).to.equal('two', functify(result));
+      expect(result.value['c']).to.equal('three', functify(result));
     });
 
     it(`should: coerce as a multiple item Object and numeric keys`, () => {
@@ -643,7 +651,7 @@ describe('XpathConverterImpl.transformCollection for "attributes" context', () =
     });
   }); // Object instance collection
 
-  context.skip('Error handling', () => {
+  context('Error handling', () => {
     context('given: invalid assoc.keyType', () => {
       const raw = '!<Object>[1=15,2=30,3=40,4=g,deuce=adv]';
       it(`should: throw`, () => {
@@ -702,3 +710,125 @@ describe('XpathConverterImpl.transformCollection for "attributes" context', () =
     });
   }); // Error handling
 }); // XpathConverterImpl.transformCollection for "attributes" context
+
+describe('XpathConverterImpl.fetchSpecOption', () => {
+  const localSpec = R.set(R.lensProp('name'), 'local-test-spec')(testSpec);
+  const tests = [
+    {
+      given: 'fallback is true, "attributes" item missing from user spec',
+      should: 'fetch option from default spec',
+      path: 'coercion/attributes/matchers/collection/assoc/delim',
+      fallback: true,
+      spec: () => R.set(R.lensPath(['coercion', 'attributes', 'matchers', 'collection', 'assoc']), {
+          // no delim here!
+        keyType: 'string',
+        valueType: 'string'
+      })(localSpec),
+      verify: (res: any) => {
+        expect(res).to.equal(oc(Specs).fallBack.coercion.attributes.matchers.collection.assoc.delim());
+        // expect(res).to.equal(Specs.fallBack.coercion.attributes.matchers.collection.assoc.delim);
+      }
+    },
+    {
+      given: 'fallback is true, "attributes" item exists in user spec',
+      should: 'fetch option from  user spec',
+      path: 'coercion/attributes/matchers/collection/assoc/delim',
+      fallback: true,
+      spec: () => R.set(R.lensPath(['coercion', 'attributes', 'matchers', 'collection', 'assoc', 'delim']),
+        '|')(localSpec),
+      verify: (res: any) => {
+        expect(res).to.equal('|');
+      }
+    },
+    {
+      given: 'fallback is true, "textNodes" item missing from user spec',
+      should: 'fetch option from default spec',
+      path: 'coercion/textNodes/matchers/collection/assoc/delim',
+      fallback: true,
+      spec: () => R.set(R.lensPath(['coercion', 'textNodes', 'matchers', 'collection', 'assoc']), {
+          // no delim here!
+        keyType: 'string',
+        valueType: 'string'
+      })(localSpec),
+      verify: (res: any) => {
+        expect(res).to.equal(oc(Specs).fallBack.coercion.textNodes.matchers.collection.assoc.delim());
+        // expect(res).to.equal(Specs.fallBack.coercion.textNodes.matchers.collection.assoc.delim);
+      }
+    },
+    {
+      given: 'fallback is true, "textNodes" item exists in user spec',
+      should: 'fetch option from  user spec',
+      path: 'coercion/textNodes/matchers/collection/assoc/delim',
+      fallback: true,
+      spec: () => R.set(R.lensPath(['coercion', 'textNodes', 'matchers', 'collection', 'assoc', 'delim']),
+        '|')(localSpec),
+      verify: (res: any) => {
+        expect(res).to.equal('|');
+      }
+    },
+    {
+      given: 'fallback is true, "labels/element" item missing from user spec',
+      should: 'fetch option from default spec',
+      path: 'labels/element',
+      fallback: true,
+      spec: () => R.set(R.lensProp('labels'), {
+        // no element here!
+        descendants: '_children',
+        text: '_text'
+      })(localSpec),
+      verify: (res: any) => {
+        expect(res).to.equal(oc(Specs).fallBack.labels.element());
+        // expect(res).to.equal(Specs.fallBack.labels.element);
+      }
+    },
+    {
+      given: 'fallback is true, "labels/element" item exists in user spec',
+      should: 'fetch option from  user spec',
+      path: 'labels/element',
+      fallback: true,
+      spec: () => R.set(R.lensPath(['labels', 'element']), '%')(localSpec),
+      verify: (res: any) => {
+        expect(res).to.equal('%');
+      }
+    },
+    {
+      given: 'fallback is false, "attributes" item missing from user spec',
+      should: 'return nothing',
+      path: 'coercion/attributes/matchers/collection/assoc/delim',
+      fallback: false,
+      spec: () => R.set(R.lensPath(['coercion', 'attributes', 'matchers', 'collection', 'assoc']), {
+        // no delim here!
+        keyType: 'string',
+        valueType: 'string'
+      })(localSpec),
+      verify: (res: any) => {
+        expect(res).to.be.undefined();
+      }
+    },
+    {
+      given: 'fallback is false, "textNodes" item missing from user spec',
+      should: 'fetch option from default spec',
+      path: 'coercion/textNodes/matchers/collection/assoc/delim',
+      fallback: false,
+      spec: () => R.set(R.lensPath(['coercion', 'textNodes', 'matchers', 'collection', 'assoc']), {
+        // no delim here!
+        keyType: 'string',
+        valueType: 'string'
+      })(localSpec),
+      verify: (res: any) => {
+        expect(res).to.be.undefined();
+      }
+    }
+  ];
+
+  tests.forEach((t: any) => {
+    context(`given: ${t.given}`, () => {
+      it(`should: ${t.should}`, () => {
+        const converter = new Impl(t.spec());
+        const result = converter.fetchSpecOption(t.path, t.fallback);
+
+        t.verify(result);
+      });
+    });
+  });
+}); // XpathConverterImpl.fetchSpecOption

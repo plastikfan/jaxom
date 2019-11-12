@@ -11,6 +11,11 @@ export const CollectionTypePlaceHolder = `<type>`;
 //
 const defaultSpec: types.ISpec = Object.freeze({
   name: 'default-spec',
+  labels: {
+    element: '_',
+    descendants: '_children',
+    text: '_text'
+  },
   // 'coercion' is NOT default-able, if missing then coercion is disabled and everything is a
   // string. If the user wants coercion but is happy with all the defaults, then they can provide a
   // spec with an empty coercion property: coercion: {} (assuming of course that other non-coercion
