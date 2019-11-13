@@ -248,8 +248,7 @@ describe('converter.impl.buildLocalAttributes', () => {
           'Directory', 'name', 'archive', applicationNode);
 
         if (directoryNode) {
-          const directory = converter.buildElement(directoryNode, applicationNode,
-            testParseInfo);
+          const directory = converter.buildElement(directoryNode, testParseInfo);
 
           expect(R.has('_attributes')(directory));
           const attributes: string[] = R.prop('_attributes')(directory);

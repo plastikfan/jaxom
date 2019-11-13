@@ -90,10 +90,9 @@ export type NullableNode = Node | null;
 export interface IConverter {
   // Need to figure out the correct Node type
   //
-  buildElement (elementNode: Node, parentNode: NullableNode, parseInfo: IParseInfo): any;
+  buildElement (elementNode: Node, parseInfo: IParseInfo): any;
 }
 
 export interface IConverterImpl {
-  buildElement (elementNode: Node, parentNode: NullableNode, parseInfo: IParseInfo,
-    previouslySeen: string[]): any;
+  buildElement (elementNode: Node, parseInfo: IParseInfo, previouslySeen: string[]): any;
 }

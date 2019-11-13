@@ -65,7 +65,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
    * @returns
    * @memberof XpathConverterImpl
    */
-  buildElement (elementNode: Node, parentNode: types.NullableNode, parseInfo: types.IParseInfo,
+  buildElement (elementNode: Node, parseInfo: types.IParseInfo,
     previouslySeen: string[] = []): any {
 
     let element: any = this.buildLocalAttributes(elementNode);
@@ -76,7 +76,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
     const { recurse = '', discards = [] } = this.getElementInfo(elementNode.nodeName, parseInfo);
 
     if ((recurse !== '') && (elementNode instanceof Element)) {
-      element = this.recurseThroughAttribute(element, elementNode, parentNode,
+      element = this.recurseThroughAttribute(element, elementNode, elementNode.parentNode,
         parseInfo, previouslySeen);
     }
 
@@ -237,12 +237,16 @@ export class XpathConverterImpl implements types.IConverterImpl {
           let inheritedElements = R.map(at => {
             // select element bode by id
             //
-            let inheritedElementNode: Node = selectElementNodeById(nodeName, id, at, parentNode) as Node;
+            let inheritedElementNode: Node = selectElementNodeById(
+              nodeName, id, at, elementNode.parentNode) as Node;
+
+            if (!inheritedElementNode) {
+              throw new Error(`Could not find element of type: '${nodeName}', id: '${id}'='${at}'`);
+            }
 
             // Horizontal recursion/merging eg: (at => base-command|domain-command|uni-command)
             //
-            return this.buildElement(inheritedElementNode, parentNode, parseInfo,
-              previouslySeen);
+            return this.buildElement(inheritedElementNode, parseInfo, previouslySeen);
           }, recurseAttributes);
 
           // Now merge one by one. On the first iteration a={} and b=first-element. This means
@@ -290,12 +294,16 @@ export class XpathConverterImpl implements types.IConverterImpl {
           // Now build the singular inherited element
           //
           const inheritedElementName = recurseAttributes[0];
-          const inheritedElementNode = selectElementNodeById(nodeName, id, inheritedElementName, parentNode) as Node;
+          const inheritedElementNode = selectElementNodeById(
+            nodeName, id, inheritedElementName, elementNode.parentNode) as Node;
+
+          if (!inheritedElementNode) {
+            throw new Error(`Could not find element of type: '${nodeName}', id: '${id}'='${inheritedElementName}'`);
+          }
 
           // Vertical recursion/merging to the base element
           //
-          let inheritedElement = this.buildElement(inheritedElementNode, parentNode, parseInfo,
-            previouslySeen);
+          let inheritedElement = this.buildElement(inheritedElementNode, parseInfo, previouslySeen);
 
           // Now we need to perform a merge of this element with the inherited element
           // ensuring that any properties in this element take precedence.
@@ -720,7 +728,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
       let elements: any = getElementsFn(selectionResult);
 
       let children: any = R.reduce((acc, childElement: Element): any => {
-        let child = this.buildElement(childElement, elementNode, parseInfo, previouslySeen);
+        let child = this.buildElement(childElement, parseInfo, previouslySeen);
         return R.append(child, acc);
       }, [])(elements);
 
@@ -869,7 +877,8 @@ function escapeRegExp (inputString: string): string {
   return inputString.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 
-function selectElementNodeById (elementName: string, id: string, name: string, parentNode: any): types.NullableNode {
+function selectElementNodeById (elementName: string, id: string, name: string,
+  rootNode: (Node & ParentNode) | null): types.NullableNode {
   // Typescript warning:
   //
   // WARN: This function makes the assumption that if you're selecting an element by an identifier,
@@ -886,5 +895,11 @@ function selectElementNodeById (elementName: string, id: string, name: string, p
   // found when declaring the correct types, how is it that this particular example is not flagged as
   // an error?
   //
-  return xpath.select(`.//${elementName}[@${id}="${name}"]`, parentNode, true) as types.NullableNode;
+
+  if (rootNode && rootNode instanceof Node) {
+    let result: types.SelectResult = xpath.select(`.//${elementName}[@${id}="${name}"]`, rootNode, true);
+
+    return result instanceof Node ? result : null;
+  }
+  return null;
 }

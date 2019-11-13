@@ -39,13 +39,12 @@ export class XpathConverter implements types.IConverter {
    * and pass in another one. Predefined specs are available as members on the exported specs
    * object, or users can define their own.
    * @param {*} elementNode
-   * @param {*} parentNode
    * @param {types.IParseInfo} parseInfo
    * @returns
    * @memberof XpathConverter
    */
-  buildElement (elementNode: Node, parentNode: types.NullableNode, parseInfo: types.IParseInfo): any {
-    return this.impl.buildElement(elementNode, parentNode, parseInfo, []);
+  buildElement (elementNode: Node, parseInfo: types.IParseInfo): any {
+    return this.impl.buildElement(elementNode, parseInfo, []);
   }
 } // class XpathConverter
 

@@ -19,12 +19,11 @@ export function logIfFailedStringify (result: boolean, widget: any) {
 }
 
 export function selectElementNodeById (
-  elementName: string, id: string, name: string, parentNode: any): types.NullableNode {
-  let result: types.SelectResult = xp.select(`.//${elementName}[@${id}="${name}"]`, parentNode, true);
+  elementName: string, id: string, name: string, rootNode: any): types.NullableNode {
+  if (rootNode && rootNode instanceof Node) {
+    let result: types.SelectResult = xp.select(`.//${elementName}[@${id}="${name}"]`, rootNode, true);
 
-  if (!(result instanceof Node)) {
-    throw new Error('selected a non Node item');
+    return result instanceof Node ? result : null;
   }
-
-  return result;
+  return null;
 }
