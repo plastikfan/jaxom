@@ -6,7 +6,6 @@ import * as types from './types';
 import * as xpath from 'xpath-ts';
 import { Specs, CollectionTypePlaceHolder, CollectionTypeLabel } from './specs';
 import { functify } from 'jinxed';
-import { oc } from 'ts-optchain';
 
 export interface ITransformResult<T> {
   value: T;
@@ -200,7 +199,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
     parseInfo: types.IParseInfo, previouslySeen: string[]): {} {
 
     const { id, recurse = '' } = this.getElementInfo(elementNode.nodeName, parseInfo);
-    const identifier = element[id] || '';
+    const identifier = element[id] ?? '';
 
     if (identifier === '') {
       return element;
@@ -216,7 +215,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
 
       // First get the recurse element(s), which is a csv inside @inherits.
       //
-      const recurseAttr = elementNode.getAttribute(recurse) || '';
+      const recurseAttr = elementNode.getAttribute(recurse) ?? '';
 
       // No attempt needs to be made to correctly merge inheritance chains, because the
       // inheritance chain is stripped off at the end anyway, since the concrete element
@@ -748,7 +747,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
 
         if (R.all(R.has(elementInfo.id))(children)) {
           if (R.pathEq(['descendants', 'by'], 'index', elementInfo)) {
-            if (oc(elementInfo).descendants.throwIfMissing()) {
+            if (elementInfo?.descendants?.throwIfMissing) {
               // We need a new version of ramda's indexBy function that can take an extra
               // parameter being a function which is invoked to handle duplicate keys. In
               // its absence, we can find duplicates via a reduce ...
@@ -767,12 +766,12 @@ export class XpathConverterImpl implements types.IConverterImpl {
             element[descendantsLabel] = R.groupBy(R.prop(elementInfo.id),
               descendants);
           }
-        } else if (oc(elementInfo).descendants.throwIfMissing()) {
+        } else if (elementInfo?.descendants?.throwIfMissing) {
           // TODO: check this (not replaced by complement)
           //
           const missing: any = R.find(
             R.complement(R.has(elementInfo.id))
-          )(children) || {};
+          )(children) ?? {};
           throw new Error(
             `Element is missing key attribute "${elementInfo.id}": (${functify(missing)})`);
         }
@@ -799,7 +798,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
    * @memberof XpathConverterImpl
    */
   private getElementInfo (elementName: string, parseInfo: types.IParseInfo): types.IElementInfo {
-    return parseInfo.elements.get(elementName) || parseInfo.def || types.EmptyElementInfo;
+    return parseInfo.elements.get(elementName) ?? parseInfo.def ?? types.EmptyElementInfo;
   }
 
   /**

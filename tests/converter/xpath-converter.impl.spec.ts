@@ -4,7 +4,6 @@ import dirtyChai from 'dirty-chai';
 use(dirtyChai);
 import * as R from 'ramda';
 import * as xp from 'xpath-ts';
-import { oc } from 'ts-optchain';
 import 'xmldom-ts';
 const parser = new DOMParser();
 const { functify } = require('jinxed');
@@ -724,8 +723,8 @@ describe('XpathConverterImpl.fetchSpecOption', () => {
         valueType: 'string'
       })(localSpec),
       verify: (res: any) => {
-        expect(res).to.equal(oc(Specs).fallBack.coercion.attributes.matchers.collection.assoc.delim());
-        // expect(res).to.equal(Specs.fallBack.coercion.attributes.matchers.collection.assoc.delim);
+        // expect(res).to.equal(oc(Specs).fallBack.coercion.attributes.matchers.collection.assoc.delim());
+        expect(res).to.equal(Specs.fallBack?.coercion?.attributes?.matchers?.collection?.assoc?.delim);
       }
     },
     {
@@ -750,8 +749,8 @@ describe('XpathConverterImpl.fetchSpecOption', () => {
         valueType: 'string'
       })(localSpec),
       verify: (res: any) => {
-        expect(res).to.equal(oc(Specs).fallBack.coercion.textNodes.matchers.collection.assoc.delim());
-        // expect(res).to.equal(Specs.fallBack.coercion.textNodes.matchers.collection.assoc.delim);
+        // expect(res).to.equal(oc(Specs).fallBack.coercion.textNodes.matchers.collection.assoc.delim());
+        expect(res).to.equal(Specs.fallBack?.coercion?.textNodes?.matchers?.collection?.assoc?.delim);
       }
     },
     {
@@ -776,8 +775,8 @@ describe('XpathConverterImpl.fetchSpecOption', () => {
         text: '_text'
       })(localSpec),
       verify: (res: any) => {
-        expect(res).to.equal(oc(Specs).fallBack.labels.element());
-        // expect(res).to.equal(Specs.fallBack.labels.element);
+        // expect(res).to.equal(oc(Specs).fallBack.labels.element());
+        expect(res).to.equal(Specs.fallBack?.labels?.element);
       }
     },
     {
