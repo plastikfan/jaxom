@@ -11,7 +11,7 @@ import * as types from '../../lib/converter/types';
 import * as Helpers from '../test-helpers';
 import { Specs } from '../../lib/converter/specs';
 
-import { XpathConverterImpl as Impl, ITransformFunction }
+import { XpathConverterImpl as Impl, ITransformFunction, composeElementPath }
   from '../../lib/converter/xpath-converter.impl';
 
 const testParseInfo: types.IParseInfo = {
@@ -831,3 +831,62 @@ describe('XpathConverterImpl.fetchSpecOption', () => {
     });
   });
 }); // XpathConverterImpl.fetchSpecOption
+
+describe('composeElementPath', () => {
+  const data = `<?xml version="1.0"?>
+    <Application name="pez">
+      <Expressions name="content-expressions">
+        <Expression name="meta-prefix-expression">
+          <Pattern eg="_"><![CDATA[SOME-TEXT]]></Pattern>
+          <Pattern eg="cover" csv="meta-csv"/>
+          <Pattern eg=".">MORE-TEXT-NO-CDATA</Pattern>
+          <Pattern eg="media."><![CDATA[(media.)?]]></Pattern>
+        </Expression>
+      </Expressions>
+    </Application>`;
+
+  const tests = [
+    {
+      given: 'An intermediate element node',
+      path: '/Application/Expressions[@name="content-expressions"]',
+      expected: '/Application/Expressions'
+    },
+    {
+      given: 'A leaf element node',
+      path: '/Application/Expressions/Expression/Pattern[@eg="_"]',
+      expected: '/Application/Expressions/Expression/Pattern'
+    }
+  ];
+
+  tests.forEach((t: any) => {
+    context(`given: ${t.given}`, () => {
+      it(`should: return full path`, () => {
+        const document: Document = parser.parseFromString(data, 'text/xml');
+        const node: types.SelectResult = xp.select(t.path, document, true);
+
+        if (node && node instanceof Node) {
+          const result = composeElementPath(node);
+
+          expect(result).to.equal(t.expected);
+        } else {
+          assert.fail('Invalid node type.');
+        }
+      });
+    });
+  });
+
+  context('given: the Document node', () => {
+    it('should: return empty string', () => {
+      const document: Document = parser.parseFromString(data, 'text/xml');
+      const result = composeElementPath(document);
+      expect(result).to.equal('');
+    });
+  });
+
+  context('given: a null node', () => {
+    it('should: return root path', () => {
+      const result = composeElementPath(null);
+      expect(result).to.equal('/');
+    });
+  });
+}); // composeElementPath

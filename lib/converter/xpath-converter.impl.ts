@@ -1,9 +1,10 @@
 
 import * as R from 'ramda';
 let moment = require('moment'); // why doesn't normal TS import work?
+import * as xpath from 'xpath-ts';
 
 import * as types from './types';
-import * as xpath from 'xpath-ts';
+import * as e from './exceptions';
 import { Specs, CollectionTypePlaceHolder, CollectionTypeLabel } from './specs';
 import { functify } from 'jinxed';
 
@@ -206,8 +207,9 @@ export class XpathConverterImpl implements types.IConverterImpl {
         return result.succeeded;
       });
     } else {
-      throw new Error(
-        `coerceAttributeValue: Internal error, invalid matchers: ${functify(matchers)}, for attribute: ${attributeName} / raw value: ${rawValue}`);
+      throw new e.JaxInternalError(
+        `invalid matchers: ${functify(matchers)}, for attribute: ${attributeName} / raw value: ${rawValue}`,
+        'coerceAttributeValue');
     }
 
     return resultValue;
@@ -225,7 +227,8 @@ export class XpathConverterImpl implements types.IConverterImpl {
 
     if (recurse !== '') {
       if (R.includes(identifier, previouslySeen)) {
-        throw new Error(`Circular reference detected, element '${identifier}', has already been encountered.`);
+        throw new e.JaxConfigError(`Circular reference detected, element '${identifier}', has already been encountered.`,
+          composeElementPath(elementNode));
       } else {
         previouslySeen = R.append(identifier, previouslySeen);
       }
@@ -258,7 +261,8 @@ export class XpathConverterImpl implements types.IConverterImpl {
               nodeName, id, at, elementNode.parentNode) as Node;
 
             if (!inheritedElementNode) {
-              throw new Error(`Could not find element of type: '${nodeName}', id: '${id}'='${at}'`);
+              throw new e.JaxConfigError(`Could not find element of type: '${nodeName}', id: '${id}'='${at}'`,
+                composeElementPath(elementNode));
             }
 
             // Horizontal recursion/merging eg: (at => base-command|domain-command|uni-command)
@@ -315,7 +319,8 @@ export class XpathConverterImpl implements types.IConverterImpl {
             nodeName, id, inheritedElementName, elementNode.parentNode) as Node;
 
           if (!inheritedElementNode) {
-            throw new Error(`Could not find element of type: '${nodeName}', id: '${id}'='${inheritedElementName}'`);
+            throw new e.JaxConfigError(`Could not find element of type: '${nodeName}', id: '${id}'='${inheritedElementName}'`,
+              composeElementPath(elementNode));
           }
 
           // Vertical recursion/merging to the base element
@@ -357,7 +362,8 @@ export class XpathConverterImpl implements types.IConverterImpl {
     const result = this.transformers.get(name);
 
     if (!result) {
-      throw new Error(`Couldn't get transformer for matcher: ${name}`);
+      throw new e.JaxInternalError(`Couldn't get transformer for matcher: ${name}`,
+      'getTransformer');
     }
     return result;
   }
@@ -418,7 +424,8 @@ export class XpathConverterImpl implements types.IConverterImpl {
     const primitives = this.fetchSpecOption(`coercion/${context}/matchers/primitives`) as [];
 
     if (R.includes(R.toLower(primitiveValue), ['primitives', 'collection'])) {
-      throw new Error(`"primitives matcher cannot contain: ${primitiveValue}`);
+      throw new e.JaxConfigError(`primitives matcher cannot contain: ${primitiveValue}`,
+      composeElementPath(null));
     }
 
     let coercedValue = null;
@@ -468,11 +475,13 @@ export class XpathConverterImpl implements types.IConverterImpl {
 
           return coercedResult.succeeded;
         } else {
-          throw new Error(`Invalid value type for associative collection found: ${val}`);
+          throw new e.JaxConfigError(`Invalid value type for associative collection found: ${val}`,
+            composeElementPath(null));
         }
       });
     } else {
-      throw new Error(`Invalid associative value type: ${functify(assocTypes)}`);
+      throw new e.JaxConfigError(`Invalid associative value type: ${functify(assocTypes)}`,
+        composeElementPath(null));
     }
 
     return {
@@ -588,13 +597,15 @@ export class XpathConverterImpl implements types.IConverterImpl {
         let temp = openExpr.exec(collectionValue);
         const capturedOpen: string = (temp) ? temp[0] : '';
         if (capturedOpen === '') {
-          throw new Error('THIS CANT HAPPEN');
+          throw new e.JaxParseError(`open expression fails match for value '${collectionValue}'`,
+          composeElementPath(null));
         }
 
         temp = closeExpr.exec(collectionValue);
         const capturedClose: string = (temp) ? temp[0] : '';
         if (capturedClose === '') {
-          throw new Error('THIS CANT HAPPEN');
+          throw new e.JaxParseError(`close expression fails match for value '${collectionValue}'`,
+            composeElementPath(null));
         }
 
         // Now look for the collection type which should be captured as '<type>'
@@ -655,7 +666,8 @@ export class XpathConverterImpl implements types.IConverterImpl {
           return R.append([coercedKeyResult.value, coercedValueResult.value])(acc);
         }
       } else {
-        throw new Error(`Malformed map entry: ${collectionPair}`);
+        throw new e.JaxParseError(`Malformed map entry: ${collectionPair}`,
+          composeElementPath(null));
       }
 
       return acc;
@@ -721,7 +733,8 @@ export class XpathConverterImpl implements types.IConverterImpl {
       `coercion/${context}/matchers/string`) as boolean;
 
     if (!stringCoercionAcceptable) {
-      throw new Error(`matching failed, terminated by string matcher.`);
+      throw new e.JaxSolicitedError(`matching failed, terminated by string matcher.`,
+        composeElementPath(null));
     }
 
     return {
@@ -778,7 +791,8 @@ export class XpathConverterImpl implements types.IConverterImpl {
               //
               R.reduce((acc: any, val: any) => {
                 if (R.includes(val[elementInfo.id], acc)) { // TODO: contains -> includes; please check
-                  throw new Error(`Element collision found: ${functify(val)}`);
+                  throw new e.JaxSolicitedError(`Element collision found: ${functify(val)}`,
+                  composeElementPath(null));
                 }
                 return R.append(val[elementInfo.id], acc);
               }, [])(descendants);
@@ -796,8 +810,9 @@ export class XpathConverterImpl implements types.IConverterImpl {
           const missing: any = R.find(
             R.complement(R.has(elementInfo.id))
           )(children) ?? {};
-          throw new Error(
-            `Element is missing key attribute "${elementInfo.id}": (${functify(missing)})`);
+          throw new e.JaxSolicitedError(
+            `Element is missing key attribute "${elementInfo.id}": (${functify(missing)})`,
+            composeElementPath(null));
         }
       }
     }
@@ -930,4 +945,14 @@ function selectElementNodeById (elementName: string, id: string, name: string,
 function isUnaryCollection (definedType: string): boolean {
   return R.includes(R.toLower(definedType), ['[]', 'int8array', 'uint8array', 'uint8clampedarray', 'int16array',
     'int16array', 'int32array', 'uint32array', 'float32array', 'float64array', 'set']);
+}
+
+export function composeElementPath (node: types.NullableNode): string {
+  if (!node) {
+    return '/';
+  } else if (node instanceof Document) {
+    return '';
+  } else {
+    return `${composeElementPath(node.parentNode)}/${node.nodeName}`;
+  }
 }
