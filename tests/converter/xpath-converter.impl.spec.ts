@@ -11,7 +11,7 @@ import * as types from '../../lib/converter/types';
 import * as Helpers from '../test-helpers';
 import { Specs } from '../../lib/converter/specs';
 
-import { XpathConverterImpl as Impl, ITransformFunction, ITransformResult }
+import { XpathConverterImpl as Impl, ITransformFunction }
   from '../../lib/converter/xpath-converter.impl';
 
 const testParseInfo: types.IParseInfo = {
@@ -464,12 +464,12 @@ describe('XpathConverterImpl.transformCollection for "attributes" context', () =
       {
         should: 'coerce as a multiple item Int8Array array',
         raw: '!<Int8Array>[1,2,3,4]',
-        expected: Int8Array.from([1, 2, 3, 4])
+        expected: [1, 2, 3, 4]
       },
       {
         should: 'coerce as a multiple item Uint8Array array',
         raw: '!<Uint8Array>[1,2,3,4]',
-        expected: Uint8Array.from([1, 2, 3, 4])
+        expected: [1, 2, 3, 4]
       }
     ];
 
@@ -503,7 +503,8 @@ describe('XpathConverterImpl.transformCollection for "attributes" context', () =
         const transform: ITransformFunction<any> = converter.getTransformer(matcher);
         const result = transform.call(converter, raw, contextType);
         // const expected = new Set([1, 2, 3, 4]);
-        const expected = ['1', '2', '3', '4'];
+        // const expected = ['1', '2', '3', '4'];
+        const expected = [1, 2, 3, 4];
         const resultAsArray = Array.from(result.value);
 
         expect(result.succeeded).to.be.true(functify(result));
@@ -514,6 +515,9 @@ describe('XpathConverterImpl.transformCollection for "attributes" context', () =
       }
     });
   }); // Set collection
+
+  // Need the same test as above, but change the assoc.valueType to 'number'
+  // and the resulting set should contain numbers
 
   context('Map collection', () => {
     const spec = R.set(
@@ -723,7 +727,6 @@ describe('XpathConverterImpl.fetchSpecOption', () => {
         valueType: 'string'
       })(localSpec),
       verify: (res: any) => {
-        // expect(res).to.equal(oc(Specs).fallBack.coercion.attributes.matchers.collection.assoc.delim());
         expect(res).to.equal(Specs.fallBack?.coercion?.attributes?.matchers?.collection?.assoc?.delim);
       }
     },
@@ -749,7 +752,6 @@ describe('XpathConverterImpl.fetchSpecOption', () => {
         valueType: 'string'
       })(localSpec),
       verify: (res: any) => {
-        // expect(res).to.equal(oc(Specs).fallBack.coercion.textNodes.matchers.collection.assoc.delim());
         expect(res).to.equal(Specs.fallBack?.coercion?.textNodes?.matchers?.collection?.assoc?.delim);
       }
     },
@@ -775,7 +777,6 @@ describe('XpathConverterImpl.fetchSpecOption', () => {
         text: '_text'
       })(localSpec),
       verify: (res: any) => {
-        // expect(res).to.equal(oc(Specs).fallBack.labels.element());
         expect(res).to.equal(Specs.fallBack?.labels?.element);
       }
     },

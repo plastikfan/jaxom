@@ -7,6 +7,24 @@ import * as xpath from 'xpath-ts';
 import { Specs, CollectionTypePlaceHolder, CollectionTypeLabel } from './specs';
 import { functify } from 'jinxed';
 
+/**
+ * @description Internal implementation interface which is required due to the fact that
+ * transform operations are chained together (a bit like chain of responsibility). That
+ * is to say, that for a particular value being parsed from the xml (either from a text
+ * node or attribute value), each transform function may succeed or fail. When a fail occurs
+ * by a particular transform function, that doesn't mean a real error. All it means is that
+ * that transform function is not applicable to that value, so we should just try the next
+ * transform in the chain. This is why we can't throw an exception from a transform function
+ * and instead need a boolean flag (@value) as well as the transformed result (@succeeded).
+ * The only time we can throw an exception is if the user has defined the string transform
+ * (via the string boolean flag) to be false. All values in xml source are clearly a string
+ * therefore but if the user has defined various other transforms one of which must succeed,
+ * we can prevent a raw string representation being returned if that's required.
+ *
+ * @export
+ * @interface ITransformResult
+ * @template T
+ */
 export interface ITransformResult<T> {
   value: T;
   succeeded: boolean;
@@ -548,8 +566,8 @@ export class XpathConverterImpl implements types.IConverterImpl {
   } // extractTypeFromCollectionValue
 
   private transformCollection (collectionValue: string, context: types.ContextType): ITransformResult<any[]> {
-    let succeeded = true;
-    let value; // = collectionValue;
+    let succeeded = false;
+    let value: any = null;
 
     const delim = this.fetchSpecOption(`coercion/${context}/matchers/collection/delim`) as string;
     const open = this.fetchSpecOption(`coercion/${context}/matchers/collection/open`) as string;
@@ -563,7 +581,10 @@ export class XpathConverterImpl implements types.IConverterImpl {
       const close = this.fetchSpecOption(`coercion/${context}/matchers/collection/close`) as string;
       const closeExpr = new RegExp(escapeRegExp(close) + '$');
 
-      if (openExpr.test(collectionValue) && closeExpr.test(collectionValue)) {
+      const openIsMatch = openExpr.test(collectionValue);
+      const closeIsMatch = closeExpr.test(collectionValue);
+
+      if (openIsMatch && closeIsMatch) {
         let temp = openExpr.exec(collectionValue);
         const capturedOpen: string = (temp) ? temp[0] : '';
         if (capturedOpen === '') {
@@ -584,67 +605,12 @@ export class XpathConverterImpl implements types.IConverterImpl {
         // "!<[Int8Array]>[1,2,3,4]" => [1,2,3,4]
         //
         const coreValue: string = this.extractCoreCollectionValue(capturedOpen, capturedClose, collectionValue);
-        let arrayElements: any = coreValue.split(delim);
+        let arrayElements: any[] = coreValue.split(delim);
 
-        if ((collectionType === '[]') || R.toLower(collectionType) === 'array') {
-
-          // map/transformPrimitive?
-          //
-          value = arrayElements.map((item: types.PrimitiveType) => {
-            const itemResult = this.transformPrimitives(item, context);
-            return (itemResult.succeeded) ? itemResult.value : item;
-          });
-        } else {
-          // Check for associative types
-          //
-          if (R.includes(R.toLower(collectionType), ['map', 'weakmap', 'object', '{}'])) {
-
-            const assocDelim = this.fetchSpecOption(
-              `coercion/${context}/matchers/collection/assoc/delim`) as string;
-
-            const assocKeyType = this.fetchSpecOption(
-              `coercion/${context}/matchers/collection/assoc/keyType`) as string;
-
-            const assocValueType = this.fetchSpecOption(
-              `coercion/${context}/matchers/collection/assoc/valueType`) as string;
-
-            // Split out the values into an array of pairs
-            //
-            arrayElements = R.reduce((acc: [], collectionPair: string) => {
-              let elements: string[] = R.split(assocDelim)(collectionPair);
-              if (elements.length === 2) {
-                const coercedKeyResult = this.transformAssoc(assocKeyType, context, elements[0]);
-                const coercedValueResult = this.transformAssoc(assocValueType, context, elements[1]);
-
-                if (coercedKeyResult.succeeded && coercedValueResult.succeeded) {
-                  return R.append([coercedKeyResult.value, coercedValueResult.value])(acc);
-                }
-              } else {
-                throw new Error(`Malformed map entry: ${collectionPair}`);
-              }
-
-              return acc;
-            }, [])(arrayElements);
-          }
-
-          if (R.includes(R.toLower(collectionType), ['object', '{}'])) {
-            value = R.fromPairs(arrayElements);
-          } else {
-            try {
-              // Now do the collection transformation
-              //
-              value = this.createTypedCollection(R.toLower(collectionType), arrayElements);
-            } catch (err) {
-              value = arrayElements;
-              succeeded = false;
-            }
-          }
-        }
-      } else {
-        succeeded = false;
+        return isUnaryCollection(collectionType)
+          ? this.transformUnaryCollection(context, arrayElements)
+          : this.transformAssociativeCollection(context, collectionType, arrayElements);
       }
-    } else {
-      succeeded = false;
     }
 
     return {
@@ -652,6 +618,64 @@ export class XpathConverterImpl implements types.IConverterImpl {
       succeeded: succeeded
     };
   } // transformCollection
+
+  private transformUnaryCollection (context: types.ContextType, sourceCollection: any[]): ITransformResult<any[]> {
+    const value: any[] = R.map((item: types.PrimitiveType) => {
+      const itemResult = this.transformPrimitives(item, context);
+      return (itemResult.succeeded) ? itemResult.value : item;
+    })(sourceCollection);
+
+    return {
+      value: value,
+      succeeded: true
+    };
+  } // transformUnaryCollection
+
+  private transformAssociativeCollection (context: types.ContextType, collectionType: string,
+    sourceCollection: any[]): ITransformResult<any[]> {
+
+    const assocDelim = this.fetchSpecOption(
+      `coercion/${context}/matchers/collection/assoc/delim`) as string;
+
+    const assocKeyType = this.fetchSpecOption(
+      `coercion/${context}/matchers/collection/assoc/keyType`) as string;
+
+    const assocValueType = this.fetchSpecOption(
+      `coercion/${context}/matchers/collection/assoc/valueType`) as string;
+
+    // Split out the values into an array of pairs
+    //
+    let transformValue: any[] = R.reduce((acc: any[], collectionPair: string) => {
+      let elements: string[] = R.split(assocDelim)(collectionPair);
+      if (elements.length === 2) {
+        const coercedKeyResult = this.transformAssoc(assocKeyType, context, elements[0]);
+        const coercedValueResult = this.transformAssoc(assocValueType, context, elements[1]);
+
+        if (coercedKeyResult.succeeded && coercedValueResult.succeeded) {
+          return R.append([coercedKeyResult.value, coercedValueResult.value])(acc);
+        }
+      } else {
+        throw new Error(`Malformed map entry: ${collectionPair}`);
+      }
+
+      return acc;
+    }, [])(sourceCollection);
+
+    let succeeded = true;
+    let result: any;
+
+    // Create the collection wrapper. We need to apply the coercion to individual
+    // values here; transformAssoc ...
+    //
+    result = R.includes(R.toLower(collectionType), ['object', '{}'])
+      ? R.fromPairs(transformValue)
+      : this.createTypedCollection(R.toLower(collectionType), transformValue);
+
+    return {
+      value: result,
+      succeeded: succeeded
+    };
+  } // transformAssociativeCollection
 
   /**
    * @method transformSymbol
@@ -901,4 +925,9 @@ function selectElementNodeById (elementName: string, id: string, name: string,
     return result instanceof Node ? result : null;
   }
   return null;
+}
+
+function isUnaryCollection (definedType: string): boolean {
+  return R.includes(R.toLower(definedType), ['[]', 'int8array', 'uint8array', 'uint8clampedarray', 'int16array',
+    'int16array', 'int32array', 'uint32array', 'float32array', 'float64array', 'set']);
 }

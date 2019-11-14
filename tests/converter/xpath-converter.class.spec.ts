@@ -842,26 +842,24 @@ describe('xpath-converter.buildElement', () => {
         'Command', 'name', 'test', commandsNode);
 
       if (testCommandNode) {
-        const command: any = converter.buildElement(testCommandNode, testParseInfo);
+        it('should: return a command object with all children attached', () => {
+          const command: any = converter.buildElement(testCommandNode, testParseInfo);
+          let result = Helpers.logIfFailedStringify(R.where({
+            'name': R.equals('test'),
+            'describe': R.equals('Test regular expression definitions'),
+            '_': R.equals('Command'),
+            '_children': R.is(Array)
+          })(command), command);
 
-        if (command) {
-          it('should: return a command object with all children attached', () => {
-            let result = Helpers.logIfFailedStringify(R.where({
-              'name': R.equals('test'),
-              'describe': R.equals('Test regular expression definitions'),
-              '_': R.equals('Command'),
-              '_children': R.is(Array)
-            })(command), command);
+          expect(result).to.be.true(functify(command));
+        });
 
-            expect(result).to.be.true(functify(command));
-          });
+        it('should: return a command object where no of children is 4', () => {
+          const command: any = converter.buildElement(testCommandNode, testParseInfo);
+          let children = command['_children'];
 
-          it('should: return a command object where no of children is 4', () => {
-            let children = command['_children'];
-
-            expect(children.length).to.equal(4);
-          });
-        }
+          expect(children.length).to.equal(4);
+        });
       } else {
         assert.fail('Couldn\'t get Command node.');
       }
