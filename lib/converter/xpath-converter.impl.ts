@@ -31,6 +31,13 @@ export interface ITransformResult<T> {
   succeeded: boolean;
 }
 
+/**
+ * @description Defines the signature of transform functions.
+ *
+ * @export
+ * @interface ITransformFunction
+ * @template T The type of the transform result payload.
+ */
 export interface ITransformFunction<T> {
   (s: string, v: any, c: types.ContextType): ITransformResult<T>;
 }
@@ -76,7 +83,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
    * @description builds the native object representing an element, and recurses in 2 dimensions;
    * by the "recurse" attribute (usually "inherits") and via the element's direct descendants.
    * @private
-   * @param {*} elementNode
+   * @param {Node} elementNode
    * @param {types.IParseInfo} parseInfo
    * @param {string[]} [previouslySeen=[]]
    * @returns
@@ -94,7 +101,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
     const { recurse = '', discards = [] } = this.getElementInfo(elementNode.nodeName, parseInfo);
 
     if ((recurse !== '') && (elementNode instanceof Element)) {
-      element = this.recurseThroughAttribute(subject, element, elementNode, elementNode.parentNode,
+      element = this.recurseThroughAttribute(subject, element, elementNode,
         parseInfo, previouslySeen);
     }
 
@@ -114,9 +121,10 @@ export class XpathConverterImpl implements types.IConverterImpl {
   /**
    * @method buildLocalAttributes
    * @description Selects all the attributes from the "localNode"
+   *
    * @private
    * @param {string} subject: Identifies the current xml entity
-   * @param {*} localNode
+   * @param {Node} localNode
    * @returns
    * @memberof XpathConverterImpl
    */
@@ -158,7 +166,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
           let attributePair = R.props(['name', 'value'])(node); // => [attrKey, attrValue]
           const attributeName = R.head(attributePair) as string;
           const attributeSubject = `${subject}/[@${attributeName}]`;
-          const rawAttributeValue = R.last(attributePair);
+          const rawAttributeValue = R.last(attributePair) as string;
           const coercedValue = this.coerceAttributeValue(attributeSubject, matchers,
             rawAttributeValue, attributeName);
 
@@ -185,8 +193,9 @@ export class XpathConverterImpl implements types.IConverterImpl {
   /**
    * @method coerceAttributeValue
    * @description Top level function that implements value type coercion.
+   *
    * @private
-   * @param {string} subject: Identifies the current xml entity
+   * @param {string} subject: Identifies the current xml entity: Identifies the current xml entity
    * @param {*} matchers
    * @param {*} rawValue
    * @param {string} attributeName
@@ -219,8 +228,21 @@ export class XpathConverterImpl implements types.IConverterImpl {
     return resultValue;
   }
 
+  /**
+   * @method recurseThroughAttribute
+   * @description Implements element inheritance via the id attribute
+   *
+   * @private
+   * @param {string} subject: Identifies the current xml entity
+   * @param {*} element
+   * @param {Element} elementNode
+   * @param {types.IParseInfo} parseInfo
+   * @param {string[]} previouslySeen
+   * @returns {{}}
+   * @memberof XpathConverterImpl
+   */
   private recurseThroughAttribute (subject: string, element: any, elementNode: Element,
-    parentNode: types.NullableNode, parseInfo: types.IParseInfo, previouslySeen: string[]): {} {
+    parseInfo: types.IParseInfo, previouslySeen: string[]): {} {
 
     const { id, recurse = '' } = this.getElementInfo(elementNode.nodeName, parseInfo);
     const identifier = element[id] ?? '';
@@ -318,7 +340,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
         } else {
           // Now build the singular inherited element
           //
-          const inheritedElementName = recurseAttributes[0];
+          const inheritedElementName: string = recurseAttributes[0];
           const inheritedElementNode = selectElementNodeById(
             nodeName, id, inheritedElementName, elementNode.parentNode) as Node;
 
@@ -359,9 +381,16 @@ export class XpathConverterImpl implements types.IConverterImpl {
 
   private transformers: Map<string, ITransformFunction<any>>;
 
-  // The return type of getTransformer needs to be changed from any to a templated function
-  // which returns ITransformResult<>. This is required so that call can be invoked on it.
-  //
+  /**
+   * @method getTransformer
+   * @description Dynamically retrieves the method for the matcher type specified.
+   * (Remember when invoking the resultant method, the this reference may not be correct
+   * depending on the invocation). function.call may be required.
+   *
+   * @param {types.MatcherType} name
+   * @returns {ITransformFunction<any>}
+   * @memberof XpathConverterImpl
+   */
   public getTransformer (name: types.MatcherType): ITransformFunction<any> {
     const result = this.transformers.get(name);
 
@@ -372,6 +401,17 @@ export class XpathConverterImpl implements types.IConverterImpl {
     return result;
   }
 
+  /**
+   * @method transformNumber
+   * @description Attempts to coerce value to number
+   *
+   * @private
+   * @param {string} subject: Identifies the current xml entity
+   * @param {number} numberValue
+   * @param {types.ContextType} context
+   * @returns {ITransformResult<number>}
+   * @memberof XpathConverterImpl
+   */
   private transformNumber (subject: string, numberValue: number,
     context: types.ContextType): ITransformResult<number> {
 
@@ -388,6 +428,17 @@ export class XpathConverterImpl implements types.IConverterImpl {
     };
   } // transformNumber
 
+  /**
+   * @method transformBoolean
+   * @description Attempts to coerce value to boolean
+   *
+   * @private
+   * @param {string} subject: Identifies the current xml entity
+   * @param {(string | boolean)} booleanValue
+   * @param {types.ContextType} context
+   * @returns {ITransformResult<boolean>}
+   * @memberof XpathConverterImpl
+   */
   private transformBoolean(subject: string, booleanValue: string | boolean,
     context: types.ContextType): ITransformResult<boolean> {
 
@@ -422,6 +473,17 @@ export class XpathConverterImpl implements types.IConverterImpl {
     };
   } // transformBoolean
 
+  /**
+   * @method transformPrimitives
+   * @description Attempts to coerce value according to the primitives defined in the spec
+   *
+   * @private
+   * @param {string} subject: Identifies the current xml entity
+   * @param {types.PrimitiveType} primitiveValue
+   * @param {types.ContextType} context
+   * @returns {ITransformResult<any>}
+   * @memberof XpathConverterImpl
+   */
   private transformPrimitives (subject: string, primitiveValue: types.PrimitiveType,
     context: types.ContextType): ITransformResult<any> {
 
@@ -453,6 +515,18 @@ export class XpathConverterImpl implements types.IConverterImpl {
     };
   } // transformPrimitives
 
+  /**
+   * @method transformAssoc
+   * @description Attempts to coerce a value from an associative collection
+   *
+   * @private
+   * @param {string} subject: Identifies the current xml entity
+   * @param {*} assocType
+   * @param {types.ContextType} context
+   * @param {string} assocValue
+   * @returns {ITransformResult<any>}
+   * @memberof XpathConverterImpl
+   */
   private transformAssoc (subject: string, assocType: any,
     context: types.ContextType, assocValue: string): ITransformResult<any> {
 
@@ -494,6 +568,17 @@ export class XpathConverterImpl implements types.IConverterImpl {
     };
   } // transformAssoc
 
+  /**
+   * @method transformDate
+   * @description Attempts to coerce a value to a date
+   *
+   * @private
+   * @param {string} subject: Identifies the current xml entity
+   * @param {string} dateValue
+   * @param {types.ContextType} context
+   * @returns {ITransformResult<Date>}
+   * @memberof XpathConverterImpl
+   */
   private transformDate (subject: string, dateValue: string,
     context: types.ContextType): ITransformResult<Date> {
 
@@ -516,8 +601,14 @@ export class XpathConverterImpl implements types.IConverterImpl {
     };
   } // transformDate
 
-  // TODO: reconsider redesigning this ... (collectionElements depends on 't')
-  //
+  /**
+   * @function createTypedCollection
+   *
+   * @param {string} t
+   * @param {*} collectionElements: the source to create the typed collection from
+   * @returns {*}
+   * @memberof XpathConverterImpl
+   */
   createTypedCollection (t: string, collectionElements: any): any {
     let collection: any;
 
@@ -543,6 +634,20 @@ export class XpathConverterImpl implements types.IConverterImpl {
     return collection;
   } // createTypedCollection
 
+  /**
+   * @function extractCoreCollectionValue
+   * @description The raw value in the xml that represents a collection value for example:
+   * '!<int8array>[1, 2, 3, 4]'. This function extracts the payload value stripping out
+   * the meta data that identifies this as a collection value; so in this case, '1, 2, 3, 4'
+   * would be returned.
+   *
+   * @private
+   * @param {string} open
+   * @param {string} close
+   * @param {string} collectionValue
+   * @returns {string}
+   * @memberof XpathConverterImpl
+   */
   private extractCoreCollectionValue (open: string, close: string, collectionValue: string): string {
     if (collectionValue.startsWith(open) && collectionValue.endsWith(close)) {
       const coreValue = collectionValue.replace(open, '');
@@ -554,15 +659,21 @@ export class XpathConverterImpl implements types.IConverterImpl {
 
   private static typeExpr: RegExp;
 
+  /**
+   * @method extractTypeFromCollectionValue
+   * @description XML source can contain something like: !<Int8Array>[1,2,3,4]
+   * to recognise sequences like "!<[]>[" or "!<Int8Array>[" which should
+   * return "[]" and "Int8Array" respectively.
+   *
+   * NB: typeRegExp should be a member on the class, but only used by this method.
+   * ideally, this would be a private internal static member of this method.
+   *
+   * @private
+   * @param {string} open
+   * @returns {string}
+   * @memberof XpathConverterImpl
+   */
   private extractTypeFromCollectionValue (open: string): string {
-    // XML source can contain something like: !<Int8Array>[1,2,3,4]
-    // to recognise sequences like "!<[]>[" or "!<Int8Array>[" which should
-    // return "[]" and "Int8Array" respectively.
-    //
-    // NB: typeRegExp should be a member on the class, but only used by this method.
-    // ideally, this would be a private internal static member of this method.
-    //
-
     let result = '';
 
     if (XpathConverterImpl.typeExpr.test(open)) {
@@ -578,6 +689,17 @@ export class XpathConverterImpl implements types.IConverterImpl {
     return result;
   } // extractTypeFromCollectionValue
 
+  /**
+   * @method transformCollection
+   * @description Coerces a value representing a collection into the implied native collection.
+   *
+   * @private
+   * @param {string} subject: Identifies the current xml entity
+   * @param {string} collectionValue
+   * @param {types.ContextType} context
+   * @returns {ITransformResult<any[]>}
+   * @memberof XpathConverterImpl
+   */
   private transformCollection (subject: string, collectionValue: string,
     context: types.ContextType): ITransformResult<any[]> {
     let succeeded = false;
@@ -635,6 +757,21 @@ export class XpathConverterImpl implements types.IConverterImpl {
     };
   } // transformCollection
 
+  /**
+   * @method transformUnaryCollection
+   * @description A unary collection is one where each item is created by a single
+   * value; ie its the opposite of an associative collection where each entry in the
+   * collection requires 2 values: the key and the value. Each item in the collection
+   * is treated as a primitive and are transformed according to the primitives
+   * directive in the spec.
+   *
+   * @private
+   * @param {string} subject: Identifies the current xml entity
+   * @param {types.ContextType} context
+   * @param {any[]} sourceCollection
+   * @returns {ITransformResult<any[]>}
+   * @memberof XpathConverterImpl
+   */
   private transformUnaryCollection (subject: string, context: types.ContextType,
     sourceCollection: any[]): ITransformResult<any[]> {
     const value: any[] = R.map((item: types.PrimitiveType) => {
@@ -648,6 +785,19 @@ export class XpathConverterImpl implements types.IConverterImpl {
     };
   } // transformUnaryCollection
 
+  /**
+   * @method transformAssociativeCollection
+   * @description Coerces the items in the associative collection passed in according
+   * to the assoc.keyType and assoc.valueType defined in the spec.
+   *
+   * @private
+   * @param {string} subject: Identifies the current xml entity
+   * @param {types.ContextType} context
+   * @param {string} collectionType
+   * @param {any[]} sourceCollection
+   * @returns {ITransformResult<any[]>}
+   * @memberof XpathConverterImpl
+   */
   private transformAssociativeCollection (subject: string, context: types.ContextType,
     collectionType: string, sourceCollection: any[]): ITransformResult<any[]> {
 
@@ -699,6 +849,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
    * @method transformSymbol
    * @description: coerces string to a symbol.
    *
+   * @param {string} subject: Identifies the current xml entity
    * @param {Symbol} symbolValue
    * @param {contextType} context
    * @returns
@@ -730,6 +881,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
    *    transforms also fail. To achieve this, just define the "string" matcher in the
    *    spec with a value of false.
    *
+   * @param {string} subject: Identifies the current xml entity
    * @param {string} stringValue
    * @param {contextType} context
    * @returns: { value: the transformed string, succeeded: flag to indicate transform result }
@@ -754,8 +906,9 @@ export class XpathConverterImpl implements types.IConverterImpl {
   /**
    * @method buildChildren
    *
+   * @param {string} subject: Identifies the current xml entity
    * @param {*} element: The native object being built that represents "elementNode"
-   * @param {*} elementNode: The XML node being built into JSON
+   * @param {Node} elementNode: The XML node being built into JSON
    * @param {types.IParseInfo} parseInfo: Element parsing info
    * @param {string[]} previouslySeen: Used internally to guard against circular references.
    * @returns {*}: The JSON representing the elementNode
@@ -799,7 +952,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
               // its absence, we can find duplicates via a reduce ...
               //
               R.reduce((acc: any, val: any) => {
-                if (R.includes(val[elementInfo.id], acc)) { // TODO: contains -> includes; please check
+                if (R.includes(val[elementInfo.id], acc)) {
                   throw new e.JaxSolicitedError(`Element collision found: ${functify(val)}`,
                   subject);
                 }
@@ -814,8 +967,6 @@ export class XpathConverterImpl implements types.IConverterImpl {
               descendants);
           }
         } else if (elementInfo?.descendants?.throwIfMissing) {
-          // TODO: check this (not replaced by complement)
-          //
           const missing: any = R.find(
             R.complement(R.has(elementInfo.id))
           )(children) ?? {};
@@ -838,6 +989,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
 
   /**
    * @method getElementInfo
+   * @description Retrieves the elementInfo for the name specified.
    *
    * @private
    * @param {string} elementName
@@ -915,7 +1067,7 @@ XpathConverterImpl.initialise();
 
 /**
  * @function: escapeRegExp
- * @description:
+ *
  * @see: https: //developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
  * @param {String} inputString: input to escape.
  * @returns: escaped String.
@@ -924,6 +1076,17 @@ function escapeRegExp (inputString: string): string {
   return inputString.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 
+/**
+ * @function selectElementNodeById
+ * @description performs Xpath query to retrieve an element with an attribute of the
+ * name and value specified.
+ *
+ * @param {string} elementName
+ * @param {string} id
+ * @param {string} name
+ * @param {((Node & ParentNode) | null)} rootNode
+ * @returns {types.NullableNode}
+ */
 function selectElementNodeById (elementName: string, id: string, name: string,
   rootNode: (Node & ParentNode) | null): types.NullableNode {
   // Typescript warning:
@@ -951,11 +1114,26 @@ function selectElementNodeById (elementName: string, id: string, name: string,
   return null;
 }
 
+/**
+ * @function isUnaryCollection
+ *
+ * @param {string} definedType
+ * @returns {boolean}
+ */
 function isUnaryCollection (definedType: string): boolean {
   return R.includes(R.toLower(definedType), ['[]', 'int8array', 'uint8array', 'uint8clampedarray', 'int16array',
     'int16array', 'int32array', 'uint32array', 'float32array', 'float64array', 'set']);
 }
 
+/**
+ * @function composeElementPath
+ * @description Creates a string representing the full path of the element within the
+ * document.
+ *
+ * @export
+ * @param {types.NullableNode} node
+ * @returns {string}
+ */
 export function composeElementPath (node: types.NullableNode): string {
   if (!node) {
     return '/';
