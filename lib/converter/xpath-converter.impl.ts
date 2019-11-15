@@ -32,7 +32,7 @@ export interface ITransformResult<T> {
 }
 
 export interface ITransformFunction<T> {
-  (v: any, c: types.ContextType): ITransformResult<T>;
+  (s: string, v: any, c: types.ContextType): ITransformResult<T>;
 }
 
 /**
@@ -77,7 +77,6 @@ export class XpathConverterImpl implements types.IConverterImpl {
    * by the "recurse" attribute (usually "inherits") and via the element's direct descendants.
    * @private
    * @param {*} elementNode
-   * @param {*} parentNode
    * @param {types.IParseInfo} parseInfo
    * @param {string[]} [previouslySeen=[]]
    * @returns
@@ -86,7 +85,8 @@ export class XpathConverterImpl implements types.IConverterImpl {
   buildElement (elementNode: Node, parseInfo: types.IParseInfo,
     previouslySeen: string[] = []): any {
 
-    let element: any = this.buildLocalAttributes(elementNode);
+    const subject = composeElementPath(elementNode);
+    let element: any = this.buildLocalAttributes(subject, elementNode);
     const elementLabel = this.fetchSpecOption('labels/element') as string;
 
     element[elementLabel] = elementNode.nodeName;
@@ -94,7 +94,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
     const { recurse = '', discards = [] } = this.getElementInfo(elementNode.nodeName, parseInfo);
 
     if ((recurse !== '') && (elementNode instanceof Element)) {
-      element = this.recurseThroughAttribute(element, elementNode, elementNode.parentNode,
+      element = this.recurseThroughAttribute(subject, element, elementNode, elementNode.parentNode,
         parseInfo, previouslySeen);
     }
 
@@ -105,7 +105,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
     }, discards);
 
     if (elementNode.hasChildNodes()) {
-      element = this.buildChildren(element, elementNode, parseInfo, previouslySeen);
+      element = this.buildChildren(subject, element, elementNode, parseInfo, previouslySeen);
     }
 
     return element;
@@ -115,11 +115,12 @@ export class XpathConverterImpl implements types.IConverterImpl {
    * @method buildLocalAttributes
    * @description Selects all the attributes from the "localNode"
    * @private
+   * @param {string} subject: Identifies the current xml entity
    * @param {*} localNode
    * @returns
    * @memberof XpathConverterImpl
    */
-  private buildLocalAttributes (localNode: Node): {} {
+  private buildLocalAttributes (subject: string, localNode: Node): {} {
     // First collect all the attributes (@*) -> create attribute nodes
     // node.nodeType = 2 (ATTRIBUTE_NODE). By implication of the xpath query
     // (ie, we're selecting all attributes) all the nodeTypes of the nodes
@@ -137,11 +138,11 @@ export class XpathConverterImpl implements types.IConverterImpl {
       if (attributesLabel && attributesLabel !== '') {
         // Build attributes as an array identified by labels.attributes
         //
-
         element[attributesLabel] = R.reduce((acc: any, attrNode: any) => {
           const attributeName = attrNode['name'];
+          const attributeSubject = `${subject}/[@${attributeName}]`;
           const attributeValue = doCoercion
-            ? this.coerceAttributeValue(matchers, attrNode['value'], attributeName)
+            ? this.coerceAttributeValue(attributeSubject, matchers, attrNode['value'], attributeName)
             : attrNode['value'];
 
           return R.append(R.objOf(attributeName, attributeValue), acc);
@@ -156,8 +157,10 @@ export class XpathConverterImpl implements types.IConverterImpl {
           //
           let attributePair = R.props(['name', 'value'])(node); // => [attrKey, attrValue]
           const attributeName = R.head(attributePair) as string;
+          const attributeSubject = `${subject}/[@${attributeName}]`;
           const rawAttributeValue = R.last(attributePair);
-          const coercedValue = this.coerceAttributeValue(matchers, rawAttributeValue, attributeName);
+          const coercedValue = this.coerceAttributeValue(attributeSubject, matchers,
+            rawAttributeValue, attributeName);
 
           attributePair[1] = coercedValue;
           return attributePair;
@@ -183,13 +186,14 @@ export class XpathConverterImpl implements types.IConverterImpl {
    * @method coerceAttributeValue
    * @description Top level function that implements value type coercion.
    * @private
+   * @param {string} subject: Identifies the current xml entity
    * @param {*} matchers
    * @param {*} rawValue
    * @param {string} attributeName
    * @returns
    * @memberof XpathConverterImpl
    */
-  private coerceAttributeValue (matchers: any, rawValue: any, attributeName: string): {} {
+  private coerceAttributeValue (subject: string, matchers: any, rawValue: any, attributeName: string): {} {
     let resultValue = rawValue;
 
     if (R.is(Object)(matchers)) {
@@ -199,7 +203,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
       //
       R.keys(matchers).some((mt: types.MatcherType) => {
         const transform = this.getTransformer(R.toLower(mt) as types.MatcherType);
-        const result = transform.call(this, rawValue, 'attributes');
+        const result = transform.call(this, subject, rawValue, 'attributes');
 
         if (result.succeeded) {
           resultValue = result.value;
@@ -215,8 +219,8 @@ export class XpathConverterImpl implements types.IConverterImpl {
     return resultValue;
   }
 
-  private recurseThroughAttribute (element: any, elementNode: Element, parentNode: types.NullableNode,
-    parseInfo: types.IParseInfo, previouslySeen: string[]): {} {
+  private recurseThroughAttribute (subject: string, element: any, elementNode: Element,
+    parentNode: types.NullableNode, parseInfo: types.IParseInfo, previouslySeen: string[]): {} {
 
     const { id, recurse = '' } = this.getElementInfo(elementNode.nodeName, parseInfo);
     const identifier = element[id] ?? '';
@@ -228,7 +232,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
     if (recurse !== '') {
       if (R.includes(identifier, previouslySeen)) {
         throw new e.JaxConfigError(`Circular reference detected, element '${identifier}', has already been encountered.`,
-          composeElementPath(elementNode));
+          subject);
       } else {
         previouslySeen = R.append(identifier, previouslySeen);
       }
@@ -262,7 +266,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
 
             if (!inheritedElementNode) {
               throw new e.JaxConfigError(`Could not find element of type: '${nodeName}', id: '${id}'='${at}'`,
-                composeElementPath(elementNode));
+                subject);
             }
 
             // Horizontal recursion/merging eg: (at => base-command|domain-command|uni-command)
@@ -319,8 +323,9 @@ export class XpathConverterImpl implements types.IConverterImpl {
             nodeName, id, inheritedElementName, elementNode.parentNode) as Node;
 
           if (!inheritedElementNode) {
-            throw new e.JaxConfigError(`Could not find element of type: '${nodeName}', id: '${id}'='${inheritedElementName}'`,
-              composeElementPath(elementNode));
+            throw new e.JaxConfigError(
+              `Could not find element of type: '${nodeName}', id: '${id}'='${inheritedElementName}'`,
+                subject);
           }
 
           // Vertical recursion/merging to the base element
@@ -368,7 +373,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
     return result;
   }
 
-  private transformNumber (numberValue: number,
+  private transformNumber (subject: string, numberValue: number,
     context: types.ContextType): ITransformResult<number> {
 
     let result = Number(numberValue);
@@ -384,7 +389,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
     };
   } // transformNumber
 
-  private transformBoolean (booleanValue: string | boolean,
+  private transformBoolean(subject: string, booleanValue: string | boolean,
     context: types.ContextType): ITransformResult<boolean> {
 
     let value;
@@ -418,14 +423,14 @@ export class XpathConverterImpl implements types.IConverterImpl {
     };
   } // transformBoolean
 
-  private transformPrimitives (primitiveValue: types.PrimitiveType,
+  private transformPrimitives (subject: string, primitiveValue: types.PrimitiveType,
     context: types.ContextType): ITransformResult<any> {
 
     const primitives = this.fetchSpecOption(`coercion/${context}/matchers/primitives`) as [];
 
     if (R.includes(R.toLower(primitiveValue), ['primitives', 'collection'])) {
       throw new e.JaxConfigError(`primitives matcher cannot contain: ${primitiveValue}`,
-      composeElementPath(null));
+      subject);
     }
 
     let coercedValue = null;
@@ -433,7 +438,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
 
     primitives.some((val: types.PrimitiveType) => {
       const transform = this.getTransformer(val);
-      const coercedResult = transform(primitiveValue, context);
+      const coercedResult = transform(subject, primitiveValue, context);
       succeeded = coercedResult.succeeded;
 
       if (succeeded) {
@@ -449,7 +454,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
     };
   } // transformPrimitives
 
-  private transformAssoc (assocType: any,
+  private transformAssoc (subject: string, assocType: any,
     context: types.ContextType, assocValue: string): ITransformResult<any> {
 
     let coercedValue = null;
@@ -466,7 +471,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
       assocTypes.some((val: types.PrimitiveType) => {
         if (R.includes(val, ['number', 'boolean', 'symbol', 'string'])) {
           const transform = self.getTransformer(val);
-          const coercedResult = transform.call(self, assocValue, context);
+          const coercedResult = transform.call(self, subject, assocValue, context);
 
           if (coercedResult.succeeded) {
             succeeded = coercedResult.succeeded;
@@ -476,12 +481,12 @@ export class XpathConverterImpl implements types.IConverterImpl {
           return coercedResult.succeeded;
         } else {
           throw new e.JaxConfigError(`Invalid value type for associative collection found: ${val}`,
-            composeElementPath(null));
+            subject);
         }
       });
     } else {
       throw new e.JaxConfigError(`Invalid associative value type: ${functify(assocTypes)}`,
-        composeElementPath(null));
+        subject);
     }
 
     return {
@@ -490,7 +495,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
     };
   } // transformAssoc
 
-  private transformDate (dateValue: string,
+  private transformDate (subject: string, dateValue: string,
     context: types.ContextType): ITransformResult<Date> {
 
     const format = this.fetchSpecOption(`coercion/${context}/matchers/date/format`) as string;
@@ -574,7 +579,8 @@ export class XpathConverterImpl implements types.IConverterImpl {
     return result;
   } // extractTypeFromCollectionValue
 
-  private transformCollection (collectionValue: string, context: types.ContextType): ITransformResult<any[]> {
+  private transformCollection (subject: string, collectionValue: string,
+    context: types.ContextType): ITransformResult<any[]> {
     let succeeded = false;
     let value: any = null;
 
@@ -598,14 +604,14 @@ export class XpathConverterImpl implements types.IConverterImpl {
         const capturedOpen: string = (temp) ? temp[0] : '';
         if (capturedOpen === '') {
           throw new e.JaxParseError(`open expression fails match for value '${collectionValue}'`,
-          composeElementPath(null));
+            subject);
         }
 
         temp = closeExpr.exec(collectionValue);
         const capturedClose: string = (temp) ? temp[0] : '';
         if (capturedClose === '') {
           throw new e.JaxParseError(`close expression fails match for value '${collectionValue}'`,
-            composeElementPath(null));
+            subject);
         }
 
         // Now look for the collection type which should be captured as '<type>'
@@ -619,8 +625,8 @@ export class XpathConverterImpl implements types.IConverterImpl {
         let arrayElements: any[] = coreValue.split(delim);
 
         return isUnaryCollection(collectionType)
-          ? this.transformUnaryCollection(context, arrayElements)
-          : this.transformAssociativeCollection(context, collectionType, arrayElements);
+          ? this.transformUnaryCollection(subject, context, arrayElements)
+          : this.transformAssociativeCollection(subject, context, collectionType, arrayElements);
       }
     }
 
@@ -630,9 +636,10 @@ export class XpathConverterImpl implements types.IConverterImpl {
     };
   } // transformCollection
 
-  private transformUnaryCollection (context: types.ContextType, sourceCollection: any[]): ITransformResult<any[]> {
+  private transformUnaryCollection (subject: string, context: types.ContextType,
+    sourceCollection: any[]): ITransformResult<any[]> {
     const value: any[] = R.map((item: types.PrimitiveType) => {
-      const itemResult = this.transformPrimitives(item, context);
+      const itemResult = this.transformPrimitives(subject, item, context);
       return (itemResult.succeeded) ? itemResult.value : item;
     })(sourceCollection);
 
@@ -642,8 +649,8 @@ export class XpathConverterImpl implements types.IConverterImpl {
     };
   } // transformUnaryCollection
 
-  private transformAssociativeCollection (context: types.ContextType, collectionType: string,
-    sourceCollection: any[]): ITransformResult<any[]> {
+  private transformAssociativeCollection (subject: string, context: types.ContextType,
+    collectionType: string, sourceCollection: any[]): ITransformResult<any[]> {
 
     const assocDelim = this.fetchSpecOption(
       `coercion/${context}/matchers/collection/assoc/delim`) as string;
@@ -659,15 +666,15 @@ export class XpathConverterImpl implements types.IConverterImpl {
     let transformValue: any[] = R.reduce((acc: any[], collectionPair: string) => {
       let elements: string[] = R.split(assocDelim)(collectionPair);
       if (elements.length === 2) {
-        const coercedKeyResult = this.transformAssoc(assocKeyType, context, elements[0]);
-        const coercedValueResult = this.transformAssoc(assocValueType, context, elements[1]);
+        const coercedKeyResult = this.transformAssoc(subject, assocKeyType, context, elements[0]);
+        const coercedValueResult = this.transformAssoc(subject, assocValueType, context, elements[1]);
 
         if (coercedKeyResult.succeeded && coercedValueResult.succeeded) {
           return R.append([coercedKeyResult.value, coercedValueResult.value])(acc);
         }
       } else {
         throw new e.JaxParseError(`Malformed map entry: ${collectionPair}`,
-          composeElementPath(null));
+          subject);
       }
 
       return acc;
@@ -698,7 +705,8 @@ export class XpathConverterImpl implements types.IConverterImpl {
    * @returns
    * @memberof XpathConverterImpl
    */
-  transformSymbol (symbolValue: string, context: types.ContextType): ITransformResult<Symbol> {
+  transformSymbol (subject: string, symbolValue: string,
+    context: types.ContextType): ITransformResult<Symbol> {
 
     const prefix = this.fetchSpecOption(
       `coercion/${context}/matchers/symbol/prefix`) as string;
@@ -728,13 +736,14 @@ export class XpathConverterImpl implements types.IConverterImpl {
    * @returns: { value: the transformed string, succeeded: flag to indicate transform result }
    * @memberof XpathConverterImpl
    */
-  transformString (stringValue: string, context: types.ContextType): ITransformResult<string> {
+  transformString (subject: string, stringValue: string, context: types.ContextType)
+    : ITransformResult<string> {
     const stringCoercionAcceptable = this.fetchSpecOption(
       `coercion/${context}/matchers/string`) as boolean;
 
     if (!stringCoercionAcceptable) {
       throw new e.JaxSolicitedError(`matching failed, terminated by string matcher.`,
-        composeElementPath(null));
+        subject);
     }
 
     return {
@@ -754,7 +763,8 @@ export class XpathConverterImpl implements types.IConverterImpl {
    *
    * @memberof XpathConverterImpl
    */
-  buildChildren (element: any, elementNode: Node, parseInfo: types.IParseInfo, previouslySeen: string[]): {} {
+  buildChildren (subject: string, element: any, elementNode: Node, parseInfo: types.IParseInfo,
+    previouslySeen: string[]): {} {
     let selectionResult: any = xpath.select('./*', elementNode);
 
     const descendantsLabel = this.fetchSpecOption(`labels/descendants`) as string;
@@ -792,7 +802,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
               R.reduce((acc: any, val: any) => {
                 if (R.includes(val[elementInfo.id], acc)) { // TODO: contains -> includes; please check
                   throw new e.JaxSolicitedError(`Element collision found: ${functify(val)}`,
-                  composeElementPath(null));
+                  subject);
                 }
                 return R.append(val[elementInfo.id], acc);
               }, [])(descendants);
@@ -812,7 +822,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
           )(children) ?? {};
           throw new e.JaxSolicitedError(
             `Element is missing key attribute "${elementInfo.id}": (${functify(missing)})`,
-            composeElementPath(null));
+              subject);
         }
       }
     }

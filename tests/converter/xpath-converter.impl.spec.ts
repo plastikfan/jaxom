@@ -363,7 +363,8 @@ describe('XpathConverterImpl for "attributes" context [transforms]', () => {
         try {
           const converter = new Impl(t.spec());
           const transform: ITransformFunction<any> = converter.getTransformer(t.valueType as types.MatcherType);
-          const result = transform.call(converter, t.raw, t.context as types.ContextType);
+          const subject = 'SUBJECT';
+          const result = transform.call(converter, subject, t.raw, t.context as types.ContextType);
 
           expect(result.succeeded).to.be.true(`succeeded RESULT: ${result.succeeded}`);
           expect(result.value).to.equal(t.expected);
@@ -379,8 +380,9 @@ describe('XpathConverterImpl for "attributes" context [transforms]', () => {
       try {
         const converter = new Impl(testSpec);
         const transform: ITransformFunction<any> = converter.getTransformer('date');
+        const subject = 'SUBJECT';
         const dateValue = '2016-06-23';
-        const result = transform.call(converter, dateValue, 'attributes');
+        const result = transform.call(converter, subject, dateValue, 'attributes');
 
         expect(result.succeeded).to.be.true(`succeeded RESULT: ${result.succeeded}`);
         expect(result.value.format('YYYY-MM-DD')).to.equal('2016-06-23');
@@ -395,9 +397,10 @@ describe('XpathConverterImpl for "attributes" context [transforms]', () => {
       try {
         const converter = new Impl(testSpec);
         const transform: ITransformFunction<any> = converter.getTransformer('symbol');
+        const subject = 'SUBJECT';
         const symbolValue = '$excalibur';
         const symbolExpected = Symbol(symbolValue);
-        const result = transform.call(converter, symbolValue, 'attributes');
+        const result = transform.call(converter, subject, symbolValue, 'attributes');
 
         expect(result.succeeded).to.be.true(`succeeded RESULT: ${result.succeeded}`);
         expect(R.is(Symbol)(result.value)).to.be.true();
@@ -479,7 +482,8 @@ describe('XpathConverterImpl.transformCollection for "attributes" context', () =
           try {
             const converter = new Impl(Specs.default);
             const transform: ITransformFunction<any> = converter.getTransformer(matcher);
-            const result = transform.call(converter, t.raw, contextType);
+            const subject = 'SUBJECT';
+            const result = transform.call(converter, subject, t.raw, contextType);
 
             expect(result.succeeded).to.be.true(functify(result));
             expect(result.value).to.deep.equal(t.expected, functify(result));
@@ -501,7 +505,8 @@ describe('XpathConverterImpl.transformCollection for "attributes" context', () =
       try {
         const converter = new Impl(Specs.default);
         const transform: ITransformFunction<any> = converter.getTransformer(matcher);
-        const result = transform.call(converter, raw, contextType);
+        const subject = 'SUBJECT';
+        const result = transform.call(converter, subject, raw, contextType);
         // const expected = new Set([1, 2, 3, 4]);
         // const expected = ['1', '2', '3', '4'];
         const expected = [1, 2, 3, 4];
@@ -534,7 +539,8 @@ describe('XpathConverterImpl.transformCollection for "attributes" context', () =
       try {
         const converter = new Impl(spec);
         const transform: ITransformFunction<any> = converter.getTransformer(matcher);
-        const result: any = transform.call(converter, raw, contextType); // types.ITransformResult<any[]>
+        const subject = 'SUBJECT';
+        const result: any = transform.call(converter, subject, raw, contextType); // types.ITransformResult<any[]>
 
         expect(result.succeeded).to.be.true(functify(result));
         expect(result.value.size).to.equal(1, functify(result));
@@ -550,7 +556,8 @@ describe('XpathConverterImpl.transformCollection for "attributes" context', () =
       try {
         const converter = new Impl(spec);
         const transform: ITransformFunction<any> = converter.getTransformer(matcher);
-        const result = transform.call(converter, raw, contextType);
+        const subject = 'SUBJECT';
+        const result = transform.call(converter, subject, raw, contextType);
 
         expect(result.succeeded).to.be.true(functify(result));
         expect(result.value.size).to.equal(3, functify(result));
@@ -577,7 +584,8 @@ describe('XpathConverterImpl.transformCollection for "attributes" context', () =
 
       const converter = new Impl(spec);
       const transform: ITransformFunction<any> = converter.getTransformer(matcher);
-      const result = transform.call(converter, raw, contextType);
+      const subject = 'SUBJECT';
+      const result = transform.call(converter, subject, raw, contextType);
 
       expect(result.succeeded).to.be.true(functify(result));
       expect(R.keys(result.value).length).to.equal(3, functify(result));
@@ -599,7 +607,8 @@ describe('XpathConverterImpl.transformCollection for "attributes" context', () =
 
       const converter = new Impl(spec);
       const transform: ITransformFunction<any> = converter.getTransformer(matcher);
-      const result = transform.call(converter, raw, contextType);
+      const subject = 'SUBJECT';
+      const result = transform.call(converter, subject, raw, contextType);
 
       expect(result.succeeded).to.be.true(functify(result));
       expect(R.keys(result.value).length).to.equal(3, functify(result));
@@ -621,7 +630,8 @@ describe('XpathConverterImpl.transformCollection for "attributes" context', () =
 
       const converter = new Impl(spec);
       const transform: ITransformFunction<any> = converter.getTransformer(matcher);
-      const result = transform.call(converter, raw, contextType);
+      const subject = 'SUBJECT';
+      const result = transform.call(converter, subject, raw, contextType);
 
       expect(result.succeeded).to.be.true(functify(result));
       expect(R.keys(result.value).length).to.equal(3, functify(result));
@@ -642,7 +652,8 @@ describe('XpathConverterImpl.transformCollection for "attributes" context', () =
 
       const converter = new Impl(spec);
       const transform: ITransformFunction<any> = converter.getTransformer(matcher);
-      const result = transform.call(converter, raw, contextType);
+      const subject = 'SUBJECT';
+      const result = transform.call(converter, subject, raw, contextType);
 
       expect(result.succeeded).to.be.true(functify(result));
       expect(R.keys(result.value).length).to.equal(5, functify(result));
@@ -666,9 +677,10 @@ describe('XpathConverterImpl.transformCollection for "attributes" context', () =
 
         const converter = new Impl(spec);
         const transform: ITransformFunction<any> = converter.getTransformer(matcher);
+        const subject = 'SUBJECT';
 
         expect(() => {
-          transform.call(converter, raw, contextType);
+          transform.call(converter, subject, raw, contextType);
         }).to.throw();
       });
     });
@@ -685,9 +697,10 @@ describe('XpathConverterImpl.transformCollection for "attributes" context', () =
 
         const converter = new Impl(spec);
         const transform: ITransformFunction<any> = converter.getTransformer(matcher);
+        const subject = 'SUBJECT';
 
         expect(() => {
-          transform.call(converter, raw, contextType);
+          transform.call(converter, subject, raw, contextType);
         }).to.throw();
       });
     });
@@ -704,9 +717,10 @@ describe('XpathConverterImpl.transformCollection for "attributes" context', () =
 
         const converter = new Impl(spec);
         const transform: ITransformFunction<any> = converter.getTransformer(matcher);
+        const subject = 'SUBJECT';
 
         expect(() => {
-          transform.call(converter, raw, contextType);
+          transform.call(converter, subject, raw, contextType);
         }).to.throw();
       });
     });
