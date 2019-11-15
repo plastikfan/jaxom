@@ -258,10 +258,10 @@ export class XpathConverterImpl implements types.IConverterImpl {
         if (recurseAttributes.length > 1) {
           // Just need to map the at to a built element => array which we pass to merge
           //
-          let inheritedElements = R.map(at => {
+          const inheritedElements = R.map(at => {
             // select element bode by id
             //
-            let inheritedElementNode: Node = selectElementNodeById(
+            const inheritedElementNode: Node = selectElementNodeById(
               nodeName, id, at, elementNode.parentNode) as Node;
 
             if (!inheritedElementNode) {
@@ -278,7 +278,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
           // we are merging as expected, with b taking precedence over a. So the last item
           // in the list takes precedence.
           //
-          let doMergeElements = (a: any, b: any) => {
+          const doMergeElements = (a: any, b: any) => {
             let merged;
 
             const descendantsLabel = this.fetchSpecOption('labels/descendants');
@@ -288,8 +288,8 @@ export class XpathConverterImpl implements types.IConverterImpl {
               // Both a and b have children, therefore we must merge in such a way as to
               // not to lose any properties of a by calling R.mergeAll
               //
-              let mergedChildren = R.concat(a[descendantsLabel], b[descendantsLabel]); // save a
-              let allMergedWithoutChildrenOfA = R.mergeAll([a, b]); // This is where we lose the children of a
+              const mergedChildren = R.concat(a[descendantsLabel], b[descendantsLabel]); // save a
+              const allMergedWithoutChildrenOfA = R.mergeAll([a, b]); // This is where we lose the children of a
 
               // Restore the lost properties of a
               //
@@ -305,11 +305,11 @@ export class XpathConverterImpl implements types.IConverterImpl {
             return merged;
           };
 
-          let mergedInheritedElements = R.reduce(doMergeElements, {}, inheritedElements);
+          const mergedInheritedElements = R.reduce(doMergeElements, {}, inheritedElements);
 
           // Now combine with this element
           //
-          let mergeList = [mergedInheritedElements, element];
+          const mergeList = [mergedInheritedElements, element];
 
           // NB: This mergeAll is safe here, because we haven't yet built the children of this
           // element yet; this will happen later and is resolved in buildChildren.
@@ -330,13 +330,12 @@ export class XpathConverterImpl implements types.IConverterImpl {
 
           // Vertical recursion/merging to the base element
           //
-          let inheritedElement = this.buildElement(inheritedElementNode, parseInfo, previouslySeen);
+          const inheritedElement = this.buildElement(inheritedElementNode, parseInfo, previouslySeen);
 
           // Now we need to perform a merge of this element with the inherited element
           // ensuring that any properties in this element take precedence.
           //
-          let mergeList = [inheritedElement, element];
-          element = R.mergeAll(mergeList);
+          element = R.mergeAll([inheritedElement, element]);
         }
       } // else recursion ends
     }
@@ -546,7 +545,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
 
   private extractCoreCollectionValue (open: string, close: string, collectionValue: string): string {
     if (collectionValue.startsWith(open) && collectionValue.endsWith(close)) {
-      let coreValue = collectionValue.replace(open, '');
+      const coreValue = collectionValue.replace(open, '');
       return coreValue.slice(0, coreValue.length - close.length);
     }
 
@@ -568,8 +567,8 @@ export class XpathConverterImpl implements types.IConverterImpl {
 
     if (XpathConverterImpl.typeExpr.test(open)) {
 
-      let match = XpathConverterImpl.typeExpr.exec(open);
-      let collectionType = R.view(R.lensPath(['groups', CollectionTypeLabel]))(match);
+      const match = XpathConverterImpl.typeExpr.exec(open);
+      const collectionType = R.view(R.lensPath(['groups', CollectionTypeLabel]))(match);
 
       if (collectionType) {
         result = collectionType as string;
@@ -622,7 +621,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
         // "!<[Int8Array]>[1,2,3,4]" => [1,2,3,4]
         //
         const coreValue: string = this.extractCoreCollectionValue(capturedOpen, capturedClose, collectionValue);
-        let arrayElements: any[] = coreValue.split(delim);
+        const arrayElements: any[] = coreValue.split(delim);
 
         return isUnaryCollection(collectionType)
           ? this.transformUnaryCollection(subject, context, arrayElements)
@@ -663,8 +662,8 @@ export class XpathConverterImpl implements types.IConverterImpl {
 
     // Split out the values into an array of pairs
     //
-    let transformValue: any[] = R.reduce((acc: any[], collectionPair: string) => {
-      let elements: string[] = R.split(assocDelim)(collectionPair);
+    const transformValue: any[] = R.reduce((acc: any[], collectionPair: string) => {
+      const elements: string[] = R.split(assocDelim)(collectionPair);
       if (elements.length === 2) {
         const coercedKeyResult = this.transformAssoc(subject, assocKeyType, context, elements[0]);
         const coercedValueResult = this.transformAssoc(subject, assocValueType, context, elements[1]);
@@ -714,9 +713,9 @@ export class XpathConverterImpl implements types.IConverterImpl {
     const global = this.fetchSpecOption(
       `coercion/${context}/matchers/symbol/global`) as string;
 
-    let expr = new RegExp('^' + escapeRegExp(prefix));
+    const expr = new RegExp('^' + escapeRegExp(prefix));
 
-    let succeeded = expr.test(symbolValue);
+    const succeeded = expr.test(symbolValue);
 
     return {
       value: global ? Symbol.for(symbolValue.toString()) : Symbol(symbolValue),
@@ -765,21 +764,21 @@ export class XpathConverterImpl implements types.IConverterImpl {
    */
   buildChildren (subject: string, element: any, elementNode: Node, parseInfo: types.IParseInfo,
     previouslySeen: string[]): {} {
-    let selectionResult: any = xpath.select('./*', elementNode);
+    const selectionResult: any = xpath.select('./*', elementNode);
 
     const descendantsLabel = this.fetchSpecOption(`labels/descendants`) as string;
 
     if (selectionResult && selectionResult.length > 0) {
-      let getElementsFn: any = R.filter((child: any) => (child.nodeType === child.ELEMENT_NODE));
-      let elements: any = getElementsFn(selectionResult);
+      const getElementsFn: any = R.filter((child: any) => (child.nodeType === child.ELEMENT_NODE));
+      const elements: any = getElementsFn(selectionResult);
 
-      let children: any = R.reduce((acc, childElement: Element): any => {
-        let child = this.buildElement(childElement, parseInfo, previouslySeen);
+      const children: any = R.reduce((acc, childElement: Element): any => {
+        const child = this.buildElement(childElement, parseInfo, previouslySeen);
         return R.append(child, acc);
       }, [])(elements);
 
       if (R.includes(descendantsLabel, R.keys(element) as string[])) {
-        let merged = R.concat(children, element[descendantsLabel]);
+        const merged = R.concat(children, element[descendantsLabel]);
         element[descendantsLabel] = merged;
       } else {
         element[descendantsLabel] = children;
@@ -945,7 +944,7 @@ function selectElementNodeById (elementName: string, id: string, name: string,
   //
 
   if (rootNode && rootNode instanceof Node) {
-    let result: types.SelectResult = xpath.select(`.//${elementName}[@${id}="${name}"]`, rootNode, true);
+    const result: types.SelectResult = xpath.select(`.//${elementName}[@${id}="${name}"]`, rootNode, true);
 
     return result instanceof Node ? result : null;
   }
