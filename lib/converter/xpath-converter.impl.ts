@@ -439,7 +439,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
    * @returns {ITransformResult<boolean>}
    * @memberof XpathConverterImpl
    */
-  private transformBoolean(subject: string, booleanValue: string | boolean,
+  private transformBoolean (subject: string, booleanValue: string | boolean,
     context: types.ContextType): ITransformResult<boolean> {
 
     let value;
