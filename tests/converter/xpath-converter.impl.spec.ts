@@ -36,9 +36,9 @@ const testSpec: types.ISpec = Object.freeze({
     descendants: '_children',
     text: '_text'
   },
-  coercion: {
-    attributes: {
-      trim: true,
+  attributes: {
+    trim: true,
+    coercion: {
       matchers: {
         primitives: ['number', 'boolean'],
         collection: {
@@ -60,9 +60,11 @@ const testSpec: types.ISpec = Object.freeze({
         },
         string: true
       }
-    },
-    textNodes: {
-      trim: true,
+    }
+  },
+  textNodes: {
+    trim: true,
+    coercion: {
       matchers: {
         primitives: ['number', 'boolean'],
         collection: {
@@ -272,10 +274,10 @@ describe('XpathConverterImpl for "attributes" context [transforms]', () => {
   const tests = [
     // ['number]
     {
-      given: 'spec with "attributes/matchers/primitives" = number',
+      given: 'spec with "attributes/coercion/matchers/primitives" = number',
       context: 'attributes',
       spec: () => {
-        return R.set(R.lensPath(['coercion', 'attributes', 'matchers', 'primitives']),
+        return R.set(R.lensPath(['attributes', 'coercion', 'matchers', 'primitives']),
           ['number'])(testSpec);
       },
       valueType: 'number',
@@ -284,10 +286,10 @@ describe('XpathConverterImpl for "attributes" context [transforms]', () => {
     },
     // ['boolean']
     {
-      given: 'spec with "attributes/matchers/primitives" = boolean, value=true',
+      given: 'spec with "attributes/coercion/matchers/primitives" = boolean, value=true',
       context: 'attributes',
       spec: () => {
-        return R.set(R.lensPath(['coercion', 'attributes', 'matchers', 'primitives']),
+        return R.set(R.lensPath(['attributes', 'coercion', 'matchers', 'primitives']),
           ['boolean'])(testSpec);
       },
       valueType: 'boolean',
@@ -295,10 +297,10 @@ describe('XpathConverterImpl for "attributes" context [transforms]', () => {
       expected: true
     },
     {
-      given: 'spec with "attributes/matchers/primitives" = boolean, value=false',
+      given: 'spec with "attributes/coercion/matchers/primitives" = boolean, value=false',
       context: 'attributes',
       spec: () => {
-        return R.set(R.lensPath(['coercion', 'attributes', 'matchers', 'primitives']),
+        return R.set(R.lensPath(['attributes', 'coercion', 'matchers', 'primitives']),
           ['boolean'])(testSpec);
       },
       valueType: 'boolean',
@@ -306,10 +308,10 @@ describe('XpathConverterImpl for "attributes" context [transforms]', () => {
       expected: false
     },
     {
-      given: 'spec with "attributes/matchers/primitives" = boolean, value(string)="true"',
+      given: 'spec with "attributes/coercion/matchers/primitives" = boolean, value(string)="true"',
       context: 'attributes',
       spec: () => {
-        return R.set(R.lensPath(['coercion', 'attributes', 'matchers', 'primitives']),
+        return R.set(R.lensPath(['attributes', 'coercion', 'matchers', 'primitives']),
           ['boolean'])(testSpec);
       },
       valueType: 'boolean',
@@ -317,10 +319,10 @@ describe('XpathConverterImpl for "attributes" context [transforms]', () => {
       expected: true
     },
     {
-      given: 'spec with "attributes/matchers/primitives" = boolean, value(string)="false"',
+      given: 'spec with "attributes/coercion/matchers/primitives" = boolean, value(string)="false"',
       context: 'attributes',
       spec: () => {
-        return R.set(R.lensPath(['coercion', 'attributes', 'matchers', 'primitives']),
+        return R.set(R.lensPath(['attributes', 'coercion', 'matchers', 'primitives']),
           ['boolean'])(testSpec);
       },
       valueType: 'boolean',
@@ -329,10 +331,10 @@ describe('XpathConverterImpl for "attributes" context [transforms]', () => {
     },
     // ['string']
     {
-      given: 'spec with "attributes/matchers" = string(true)',
+      given: 'spec with "attributes/coercion/matchers" = string(true)',
       context: 'attributes',
       spec: () => {
-        return R.set(R.lensPath(['coercion', 'attributes', 'matchers']), {
+        return R.set(R.lensPath(['attributes', 'coercion', 'matchers']), {
           string: true
         })(testSpec);
       },
@@ -344,7 +346,7 @@ describe('XpathConverterImpl for "attributes" context [transforms]', () => {
       given: 'spec without a final string matcher and unhandled string value',
       context: 'attributes',
       spec: () => {
-        return R.set(R.lensPath(['coercion', 'attributes', 'matchers']), {
+        return R.set(R.lensPath(['attributes', 'coercion', 'matchers']), {
           primitives: ['number', 'boolean'],
           date: {
             format: 'YYYY-MM-DD'
@@ -375,7 +377,7 @@ describe('XpathConverterImpl for "attributes" context [transforms]', () => {
     });
   });
 
-  context('given: spec with "attributes/matchers/primitives" = date', () => {
+  context('given: spec with "attributes/coercion/matchers/primitives" = date', () => {
     it('should: coerce "date" value ok:', () => {
       try {
         const converter = new Impl(testSpec);
@@ -392,7 +394,7 @@ describe('XpathConverterImpl for "attributes" context [transforms]', () => {
     });
   });
 
-  context('given: spec with "attributes/matchers/primitives" = symbol', () => {
+  context('given: spec with "attributes/coercion/matchers/primitives" = symbol', () => {
     it('should coerce "symbol" value ok:', () => {
       try {
         const converter = new Impl(testSpec);
@@ -411,10 +413,10 @@ describe('XpathConverterImpl for "attributes" context [transforms]', () => {
     });
   });
 
-  context('given: spec with "attributes/matchers" = string(false)', () => {
+  context('given: spec with "attributes/coercion/matchers" = string(false)', () => {
     it('should: throw', () => {
       try {
-        const spec = R.set(R.lensPath(['coercion', 'attributes', 'matchers']), {
+        const spec = R.set(R.lensPath(['attributes', 'coercion', 'matchers']), {
           string: false
         })(testSpec);
         const converter = new Impl(spec);
@@ -526,7 +528,7 @@ describe('XpathConverterImpl.transformCollection for "attributes" context', () =
 
   context('Map collection', () => {
     const spec = R.set(
-      R.lensPath(['coercion', 'attributes', 'matchers', 'collection', 'assoc']),
+      R.lensPath(['attributes', 'coercion', 'matchers', 'collection', 'assoc']),
       {
         delim: '=',
         keyType: 'string',
@@ -575,7 +577,7 @@ describe('XpathConverterImpl.transformCollection for "attributes" context', () =
     it(`should: coerce as a multiple item Object`, () => {
       const raw = '!<Object>[a=one,b=two,c=three]';
       const spec = R.set(
-        R.lensPath(['coercion', 'attributes', 'matchers', 'collection', 'assoc']),
+        R.lensPath(['attributes', 'coercion', 'matchers', 'collection', 'assoc']),
         {
           delim: '=',
           keyType: 'string',
@@ -598,7 +600,7 @@ describe('XpathConverterImpl.transformCollection for "attributes" context', () =
     it(`should: coerce as a multiple item Object and numeric keys`, () => {
       const raw = '!<Object>[1=one,2=two,3=three]';
       const spec = R.set(
-        R.lensPath(['coercion', 'attributes', 'matchers', 'collection', 'assoc']),
+        R.lensPath(['attributes', 'coercion', 'matchers', 'collection', 'assoc']),
         {
           delim: '=',
           keyType: 'number',
@@ -621,7 +623,7 @@ describe('XpathConverterImpl.transformCollection for "attributes" context', () =
     it(`should: coerce as a multiple item Object and numeric keys and values`, () => {
       const raw = '!<Object>[1=15,2=30,3=40]';
       const spec = R.set(
-        R.lensPath(['coercion', 'attributes', 'matchers', 'collection', 'assoc']),
+        R.lensPath(['attributes', 'coercion', 'matchers', 'collection', 'assoc']),
         {
           delim: '=',
           keyType: ['number'],
@@ -644,7 +646,7 @@ describe('XpathConverterImpl.transformCollection for "attributes" context', () =
     it(`should: coerce as a multiple item Object mixed type numeric keys and values`, () => {
       const raw = '!<Object>[1=15,2=30,3=40,4=g,deuce=adv]';
       const spec = R.set(
-        R.lensPath(['coercion', 'attributes', 'matchers', 'collection', 'assoc']), {
+        R.lensPath(['attributes', 'coercion', 'matchers', 'collection', 'assoc']), {
           delim: '=',
           keyType: ['number', 'string'],
           valueType: ['number', 'string']
@@ -669,7 +671,7 @@ describe('XpathConverterImpl.transformCollection for "attributes" context', () =
       const raw = '!<Object>[1=15,2=30,3=40,4=g,deuce=adv]';
       it(`should: throw`, () => {
         const spec = R.set(
-          R.lensPath(['coercion', 'attributes', 'matchers', 'collection', 'assoc']), {
+          R.lensPath(['attributes', 'coercion', 'matchers', 'collection', 'assoc']), {
             delim: '=',
             keyType: 'duff',
             valueType: ['number', 'string']
@@ -689,7 +691,7 @@ describe('XpathConverterImpl.transformCollection for "attributes" context', () =
       const raw = '!<Object>[1=15,2=30,3=40,4=g,deuce=adv]';
       it(`should: throw`, () => {
         const spec = R.set(
-          R.lensPath(['coercion', 'attributes', 'matchers', 'collection', 'assoc']), {
+          R.lensPath(['attributes', 'coercion', 'matchers', 'collection', 'assoc']), {
             delim: '=',
             keyType: 'collection',
             valueType: ['number', 'string']
@@ -709,7 +711,7 @@ describe('XpathConverterImpl.transformCollection for "attributes" context', () =
       const raw = '!<Object>[1=15,2=30,3=40,4=g,deuce=adv]';
       it(`should: throw`, () => {
         const spec = R.set(
-          R.lensPath(['coercion', 'attributes', 'matchers', 'collection', 'assoc']), {
+          R.lensPath(['attributes', 'coercion', 'matchers', 'collection', 'assoc']), {
             delim: '=',
             keyType: 'string',
             valueType: ['duff', 'number', 'string']
@@ -733,23 +735,23 @@ describe('XpathConverterImpl.fetchSpecOption', () => {
     {
       given: 'fallback is true, "attributes" item missing from user spec',
       should: 'fetch option from default spec',
-      path: 'coercion/attributes/matchers/collection/assoc/delim',
+      path: 'attributes/coercion/matchers/collection/assoc/delim',
       fallback: true,
-      spec: () => R.set(R.lensPath(['coercion', 'attributes', 'matchers', 'collection', 'assoc']), {
+      spec: () => R.set(R.lensPath(['attributes', 'coercion', 'matchers', 'collection', 'assoc']), {
           // no delim here!
         keyType: 'string',
         valueType: 'string'
       })(localSpec),
       verify: (res: any) => {
-        expect(res).to.equal(Specs.fallBack?.coercion?.attributes?.matchers?.collection?.assoc?.delim);
+        expect(res).to.equal(Specs.fallBack?.attributes?.coercion?.matchers?.collection?.assoc?.delim);
       }
     },
     {
       given: 'fallback is true, "attributes" item exists in user spec',
       should: 'fetch option from  user spec',
-      path: 'coercion/attributes/matchers/collection/assoc/delim',
+      path: 'attributes/coercion/matchers/collection/assoc/delim',
       fallback: true,
-      spec: () => R.set(R.lensPath(['coercion', 'attributes', 'matchers', 'collection', 'assoc', 'delim']),
+      spec: () => R.set(R.lensPath(['attributes', 'coercion', 'matchers', 'collection', 'assoc', 'delim']),
         '|')(localSpec),
       verify: (res: any) => {
         expect(res).to.equal('|');
@@ -758,23 +760,23 @@ describe('XpathConverterImpl.fetchSpecOption', () => {
     {
       given: 'fallback is true, "textNodes" item missing from user spec',
       should: 'fetch option from default spec',
-      path: 'coercion/textNodes/matchers/collection/assoc/delim',
+      path: 'textNodes/coercion/matchers/collection/assoc/delim',
       fallback: true,
-      spec: () => R.set(R.lensPath(['coercion', 'textNodes', 'matchers', 'collection', 'assoc']), {
+      spec: () => R.set(R.lensPath(['textNodes', 'coercion', 'matchers', 'collection', 'assoc']), {
           // no delim here!
         keyType: 'string',
         valueType: 'string'
       })(localSpec),
       verify: (res: any) => {
-        expect(res).to.equal(Specs.fallBack?.coercion?.textNodes?.matchers?.collection?.assoc?.delim);
+        expect(res).to.equal(Specs.fallBack?.textNodes?.coercion?.matchers?.collection?.assoc?.delim);
       }
     },
     {
       given: 'fallback is true, "textNodes" item exists in user spec',
       should: 'fetch option from  user spec',
-      path: 'coercion/textNodes/matchers/collection/assoc/delim',
+      path: 'textNodes/coercion/matchers/collection/assoc/delim',
       fallback: true,
-      spec: () => R.set(R.lensPath(['coercion', 'textNodes', 'matchers', 'collection', 'assoc', 'delim']),
+      spec: () => R.set(R.lensPath(['textNodes', 'coercion', 'matchers', 'collection', 'assoc', 'delim']),
         '|')(localSpec),
       verify: (res: any) => {
         expect(res).to.equal('|');
@@ -807,9 +809,9 @@ describe('XpathConverterImpl.fetchSpecOption', () => {
     {
       given: 'fallback is false, "attributes" item missing from user spec',
       should: 'return nothing',
-      path: 'coercion/attributes/matchers/collection/assoc/delim',
+      path: 'attributes/coercion/matchers/collection/assoc/delim',
       fallback: false,
-      spec: () => R.set(R.lensPath(['coercion', 'attributes', 'matchers', 'collection', 'assoc']), {
+      spec: () => R.set(R.lensPath(['attributes', 'coercion', 'matchers', 'collection', 'assoc']), {
         // no delim here!
         keyType: 'string',
         valueType: 'string'
@@ -821,9 +823,9 @@ describe('XpathConverterImpl.fetchSpecOption', () => {
     {
       given: 'fallback is false, "textNodes" item missing from user spec',
       should: 'fetch option from default spec',
-      path: 'coercion/textNodes/matchers/collection/assoc/delim',
+      path: 'textNodes/coercion/matchers/collection/assoc/delim',
       fallback: false,
-      spec: () => R.set(R.lensPath(['coercion', 'textNodes', 'matchers', 'collection', 'assoc']), {
+      spec: () => R.set(R.lensPath(['textNodes', 'coercion', 'matchers', 'collection', 'assoc']), {
         // no delim here!
         keyType: 'string',
         valueType: 'string'

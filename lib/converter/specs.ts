@@ -21,9 +21,9 @@ const defaultSpec: types.ISpec = Object.freeze({
   // spec with an empty coercion property: coercion: {} (assuming of course that other non-coercion
   // properties are going to be overridden; otherwise just use the default spec).
   //
-  coercion: {
-    attributes: {
-      trim: true,
+  attributes: {
+    trim: true,
+    coercion: {
       matchers: {
         primitives: ['number', 'boolean'],
         collection: {
@@ -38,9 +38,11 @@ const defaultSpec: types.ISpec = Object.freeze({
         },
         string: true  // if false, then throw;
       }
-    },
-    textNodes: {
-      trim: true,
+    }
+  },
+  textNodes: {
+    trim: true,
+    coercion: {
       matchers: {
         collection: {
           // The following properties are not appropriate for textNodes, because the
@@ -70,9 +72,9 @@ const fallBackSpec: types.ISpec = Object.freeze({
     descendants: '_children',
     text: '_text'
   },
-  coercion: {
-    attributes: {
-      trim: true,
+  attributes: {
+    trim: true,
+    coercion: {
       matchers: {
         primitives: ['number', 'boolean'],
         collection: {
@@ -94,9 +96,11 @@ const fallBackSpec: types.ISpec = Object.freeze({
         },
         string: true  // if false, then throw;
       }
-    },
-    textNodes: {
-      trim: true,
+    }
+  },
+  textNodes: {
+    trim: true,
+    coercion: {
       matchers: {
         collection: {
           // The following properties are not appropriate for textNodes, because the
@@ -135,7 +139,12 @@ const attributesAsArraySpec: types.ISpec = Object.freeze({
     descendants: '_children',
     text: '_text'
   },
-  coercion: {} // coercion enabled with coercion defaults
+  attributes: {
+    coercion: {} // coercion enabled with coercion defaults
+  },
+  textNodes: {
+    coercion: {} // coercion enabled with coercion defaults
+  }
 });
 
 const attributesAsArrayWithoutCoercionSpec: types.ISpec = Object.freeze({
