@@ -21,57 +21,6 @@ const defaultSpec: types.ISpec = Object.freeze({
   // spec with an empty coercion property: coercion: {} (assuming of course that other non-coercion
   // properties are going to be overridden; otherwise just use the default spec).
   //
-  coercion: {
-    attributes: {
-      trim: true,
-      matchers: {
-        primitives: ['number', 'boolean'],
-        collection: {
-          delim: ',',
-          open: '!<type>[',
-          close: ']',
-          assoc: {
-            delim: '=',
-            keyType: 'string',
-            valueType: 'string'
-          }
-        },
-        string: true  // if false, then throw;
-      }
-    },
-    textNodes: {
-      trim: true,
-      matchers: {
-        collection: {
-          // The following properties are not appropriate for textNodes, because the
-          // constituents are already natively split: "delim", "open", "close"
-          //
-          assoc: {
-            delim: '=', // required for map types (key/value pair) collection types
-            // valueType: the name (or an array of) of a primitive type(s)
-            //
-            keyType: 'string',
-            valueType: 'string'
-          }
-        },
-        string: true // if false, then throw;
-      }
-    }
-  }
-});
-
-const _defaultSpec: unknown = Object.freeze({
-  name: 'default-spec',
-  labels: {
-    element: '_',
-    descendants: '_children',
-    text: '_text'
-  },
-  // 'coercion' is NOT default-able, if missing then coercion is disabled and everything is a
-  // string. If the user wants coercion but is happy with all the defaults, then they can provide a
-  // spec with an empty coercion property: coercion: {} (assuming of course that other non-coercion
-  // properties are going to be overridden; otherwise just use the default spec).
-  //
   attributes: {
     trim: true,
     coercion: {
@@ -117,66 +66,6 @@ const _defaultSpec: unknown = Object.freeze({
 // field, then it will be retrieved from this one.
 //
 const fallBackSpec: types.ISpec = Object.freeze({
-  name: 'full-with-defaults-spec',
-  labels: {
-    element: '_',
-    descendants: '_children',
-    text: '_text'
-  },
-  coercion: {
-    attributes: {
-      trim: true,
-      matchers: {
-        primitives: ['number', 'boolean'],
-        collection: {
-          delim: ',',
-          open: '!<type>[',
-          close: ']',
-          assoc: {
-            delim: '=',
-            keyType: 'string',
-            valueType: 'string'
-          }
-        },
-        date: {
-          format: 'YYYY-MM-DD'
-        },
-        symbol: {
-          prefix: '$',
-          global: true
-        },
-        string: true  // if false, then throw;
-      }
-    },
-    textNodes: {
-      trim: true,
-      matchers: {
-        collection: {
-          // The following properties are not appropriate for textNodes, because the
-          // constituents are already natively split: "delim", "open", "close"
-          //
-          assoc: {
-            delim: '=', // required for map types (key/value pair) collection types
-            // valueType: the name (or an array of) of a primitive type(s)
-            //
-            keyType: 'string',
-            valueType: 'string'
-          }
-        },
-        date: {
-          format: 'YYYY-MM-DD'
-        },
-        symbol: {
-          prefix: '$',
-          global: true
-        },
-        string: true // if false, then throw;
-      }
-    }
-  }
-});
-
-const _fallBackSpec: unknown = Object.freeze({
   name: 'full-with-defaults-spec',
   labels: {
     element: '_',
@@ -243,17 +132,6 @@ const withoutCoercionSpec: types.ISpec = Object.freeze({
 });
 
 const attributesAsArraySpec: types.ISpec = Object.freeze({
-  name: 'attributes-as-array-spec',
-  labels: {
-    attributes: '_attributes',
-    element: '_',
-    descendants: '_children',
-    text: '_text'
-  },
-  coercion: {} // coercion enabled with coercion defaults
-});
-
-const _attributesAsArraySpec: unknown = Object.freeze({
   name: 'attributes-as-array-spec',
   labels: {
     attributes: '_attributes',

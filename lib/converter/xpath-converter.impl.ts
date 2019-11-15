@@ -140,8 +140,8 @@ export class XpathConverterImpl implements types.IConverterImpl {
 
     if (attributeNodes && attributeNodes instanceof Array) {
       const attributesLabel = this.fetchSpecOption('labels/attributes', false) as string;
-      const doCoercion: boolean = R.is(Object)(this.fetchSpecOption('coercion', false));
-      const matchers = this.fetchSpecOption('coercion/attributes/matchers');
+      const doCoercion: boolean = R.is(Object)(this.fetchSpecOption('attributes/coercion', false));
+      const matchers = this.fetchSpecOption('attributes/coercion/matchers');
 
       if (attributesLabel && attributesLabel !== '') {
         // Build attributes as an array identified by labels.attributes
@@ -487,7 +487,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
   private transformPrimitives (subject: string, primitiveValue: types.PrimitiveType,
     context: types.ContextType): ITransformResult<any> {
 
-    const primitives = this.fetchSpecOption(`coercion/${context}/matchers/primitives`) as [];
+    const primitives = this.fetchSpecOption(`${context}/coercion/matchers/primitives`) as [];
 
     if (R.includes(R.toLower(primitiveValue), ['primitives', 'collection'])) {
       throw new e.JaxConfigError(`primitives matcher cannot contain: ${primitiveValue}`,
@@ -582,7 +582,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
   private transformDate (subject: string, dateValue: string,
     context: types.ContextType): ITransformResult<Date> {
 
-    const format = this.fetchSpecOption(`coercion/${context}/matchers/date/format`) as string;
+    const format = this.fetchSpecOption(`${context}/coercion/matchers/date/format`) as string;
 
     let momentDate;
     let succeeded;
@@ -705,8 +705,8 @@ export class XpathConverterImpl implements types.IConverterImpl {
     let succeeded = false;
     let value: any = null;
 
-    const delim = this.fetchSpecOption(`coercion/${context}/matchers/collection/delim`) as string;
-    const open = this.fetchSpecOption(`coercion/${context}/matchers/collection/open`) as string;
+    const delim = this.fetchSpecOption(`${context}/coercion/matchers/collection/delim`) as string;
+    const open = this.fetchSpecOption(`${context}/coercion/matchers/collection/open`) as string;
 
     const collectionType = this.extractTypeFromCollectionValue(collectionValue);
 
@@ -714,7 +714,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
       const openExpression: string = open.replace(CollectionTypePlaceHolder, ('<' + collectionType + '>'));
       const openExpr = new RegExp('^' + (escapeRegExp(openExpression)));
 
-      const close = this.fetchSpecOption(`coercion/${context}/matchers/collection/close`) as string;
+      const close = this.fetchSpecOption(`${context}/coercion/matchers/collection/close`) as string;
       const closeExpr = new RegExp(escapeRegExp(close) + '$');
 
       const openIsMatch = openExpr.test(collectionValue);
@@ -802,13 +802,13 @@ export class XpathConverterImpl implements types.IConverterImpl {
     collectionType: string, sourceCollection: any[]): ITransformResult<any[]> {
 
     const assocDelim = this.fetchSpecOption(
-      `coercion/${context}/matchers/collection/assoc/delim`) as string;
+      `${context}/coercion/matchers/collection/assoc/delim`) as string;
 
     const assocKeyType = this.fetchSpecOption(
-      `coercion/${context}/matchers/collection/assoc/keyType`) as string;
+      `${context}/coercion/matchers/collection/assoc/keyType`) as string;
 
     const assocValueType = this.fetchSpecOption(
-      `coercion/${context}/matchers/collection/assoc/valueType`) as string;
+      `${context}/coercion/matchers/collection/assoc/valueType`) as string;
 
     // Split out the values into an array of pairs
     //
@@ -859,10 +859,10 @@ export class XpathConverterImpl implements types.IConverterImpl {
     context: types.ContextType): ITransformResult<Symbol> {
 
     const prefix = this.fetchSpecOption(
-      `coercion/${context}/matchers/symbol/prefix`) as string;
+      `${context}/coercion/matchers/symbol/prefix`) as string;
 
     const global = this.fetchSpecOption(
-      `coercion/${context}/matchers/symbol/global`) as string;
+      `${context}/coercion/matchers/symbol/global`) as string;
 
     const expr = new RegExp('^' + escapeRegExp(prefix));
 
@@ -890,7 +890,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
   transformString (subject: string, stringValue: string, context: types.ContextType)
     : ITransformResult<string> {
     const stringCoercionAcceptable = this.fetchSpecOption(
-      `coercion/${context}/matchers/string`) as boolean;
+      `${context}/coercion/matchers/string`) as boolean;
 
     if (!stringCoercionAcceptable) {
       throw new e.JaxSolicitedError(`matching failed, terminated by string matcher.`,
@@ -1018,7 +1018,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
   public composeText (elementNode: any): string {
     let text = '';
     let currentChild = elementNode.firstChild;
-    const doTrim = this.fetchSpecOption('coercion/textNodes/trim') as boolean;
+    const doTrim = this.fetchSpecOption('textNodes/trim') as boolean;
 
     while (currentChild !== null) {
       if (currentChild.data && currentChild.data !== null) {

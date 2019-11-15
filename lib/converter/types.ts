@@ -78,6 +78,14 @@ export interface ISpec {
     descendants?: string;
     text?: string;
   };
+  attributes?: {
+    trim?: boolean;
+    coercion?: ICoercionEntity<IAttributesMatchers>
+  };
+  textNodes?: {
+    trim?: boolean;
+    coercion?: ICoercionEntity<ITextNodesMatchers>
+  };
   coercion?: { // NOT DEFAULT-ABLE. If not present, then coercion is turned off, so don't use defaults.
     attributes?: ICoercionEntity<IAttributesMatchers>,
     textNodes?: ICoercionEntity<ITextNodesMatchers>
