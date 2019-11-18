@@ -41,7 +41,7 @@ export class Transformer {
   }
 
   /**
-   * @method getTransformer
+   * @method getTransform
    * @description Dynamically retrieves the method for the matcher type specified.
    * (Remember when invoking the resultant method, the this reference may not be correct
    * depending on the invocation). function.call may be required.
@@ -50,12 +50,12 @@ export class Transformer {
    * @returns {ITransformFunction<any>}
    * @memberof XpathConverterImpl
    */
-  public getTransformer (name: types.MatcherType): ITransformFunction<any> {
+  public getTransform (name: types.MatcherType): ITransformFunction<any> {
     const result = this.transformers.get(name);
 
     if (!result) {
       throw new e.JaxInternalError(`Couldn't get transformer for matcher: ${name}`,
-        'getTransformer');
+        'getTransform');
     }
     return result;
   }
@@ -83,7 +83,7 @@ export class Transformer {
       // we don't have a successful coercion result.
       //
       R.keys(matchers).some((mt: types.MatcherType) => {
-        const transform = this.getTransformer(R.toLower(mt) as types.MatcherType);
+        const transform = this.getTransform(R.toLower(mt) as types.MatcherType);
         const result = transform.call(this, subject, rawValue, 'attributes');
 
         if (result.succeeded) {
@@ -316,7 +316,7 @@ export class Transformer {
       let self = this;
       assocTypes.some((val: types.PrimitiveType) => {
         if (R.includes(val, ['number', 'boolean', 'symbol', 'string'])) {
-          const transform = self.getTransformer(val);
+          const transform = self.getTransform(val);
           const coercedResult = transform.call(self, subject, assocValue, context);
 
           if (coercedResult.succeeded) {
@@ -438,7 +438,7 @@ export class Transformer {
     let succeeded = false;
 
     primitives.some((val: types.PrimitiveType) => {
-      const transform = this.getTransformer(val);
+      const transform = this.getTransform(val);
       const coercedResult = transform(subject, primitiveValue, context);
       succeeded = coercedResult.succeeded;
 
