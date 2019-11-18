@@ -1,7 +1,8 @@
 
-import * as types from './types';
-import { Specs } from './specs';
+import * as types from '../types';
+import { Specs } from '../specs';
 import { XpathConverterImpl as Impl } from './xpath-converter.impl';
+import { Transformer } from '../transformer/transformer.class';
 
 /**
  * @export
@@ -29,6 +30,7 @@ export class XpathConverter implements types.IConverter {
   }
 
   private impl: types.IConverterImpl;
+  private transformer: types.ITransformer;
 
   /**
    * @method buildElement
