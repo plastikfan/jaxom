@@ -104,3 +104,7 @@ export interface IConverter {
 export interface IConverterImpl {
   buildElement (elementNode: Node, parseInfo: IParseInfo, previouslySeen: string[]): any;
 }
+
+export interface ITransformer {
+  coerceAttributeValue (subject: string, matchers: any, rawValue: any, attributeName: string): {};
+}

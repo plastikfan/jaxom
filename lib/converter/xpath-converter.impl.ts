@@ -2,11 +2,12 @@
 import * as R from 'ramda';
 let moment = require('moment'); // why doesn't normal TS import work?
 import * as xpath from 'xpath-ts';
+import { functify } from 'jinxed';
 
 import * as types from '../types';
 import * as e from '../exceptions';
 import { Specs, CollectionTypePlaceHolder, CollectionTypeLabel } from '../specs';
-import { functify } from 'jinxed';
+import { Transformer } from '../transformer/transformer.class';
 
 /**
  * @description Internal implementation interface which is required due to the fact that
@@ -64,8 +65,12 @@ export class XpathConverterImpl implements types.IConverterImpl {
       throw new Error('null spec not permitted');
     }
 
+    this.transformer = new Transformer(this);
+
     this.makeTransformers();
   }
+
+  transformer: types.ITransformer;
 
   /**
    * @method initialise
