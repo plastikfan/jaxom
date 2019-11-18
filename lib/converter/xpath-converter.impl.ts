@@ -3,9 +3,9 @@ import * as R from 'ramda';
 let moment = require('moment'); // why doesn't normal TS import work?
 import * as xpath from 'xpath-ts';
 
-import * as types from './types';
-import * as e from './exceptions';
-import { Specs, CollectionTypePlaceHolder, CollectionTypeLabel } from './specs';
+import * as types from '../types';
+import * as e from '../exceptions';
+import { Specs, CollectionTypePlaceHolder, CollectionTypeLabel } from '../specs';
 import { functify } from 'jinxed';
 
 /**

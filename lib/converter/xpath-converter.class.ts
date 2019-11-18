@@ -1,6 +1,6 @@
 
-import * as types from './types';
-import { Specs } from './specs';
+import * as types from '../types';
+import { Specs } from '../specs';
 import { XpathConverterImpl as Impl } from './xpath-converter.impl';
 
 /**

@@ -1,6 +1,6 @@
 import { functify } from 'jinxed';
 import * as xp from 'xpath-ts';
-import * as types from '../lib/converter/types';
+import * as types from '../lib/types';
 
 export function logIfFailed (result: boolean, widget: any) {
   if (!result) {

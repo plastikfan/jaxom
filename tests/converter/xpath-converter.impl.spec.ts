@@ -7,9 +7,9 @@ import * as xp from 'xpath-ts';
 import 'xmldom-ts';
 const parser = new DOMParser();
 const { functify } = require('jinxed');
-import * as types from '../../lib/converter/types';
+import * as types from '../../lib/types';
 import * as Helpers from '../test-helpers';
-import { Specs } from '../../lib/converter/specs';
+import { Specs } from '../../lib/specs';
 
 import { XpathConverterImpl as Impl, ITransformFunction, composeElementPath }
   from '../../lib/converter/xpath-converter.impl';
