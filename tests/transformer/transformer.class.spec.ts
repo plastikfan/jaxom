@@ -2,97 +2,29 @@
 import { expect, assert, use } from 'chai';
 import dirtyChai from 'dirty-chai';
 use(dirtyChai);
+import * as sinon from 'sinon';
+import sinonChai from 'sinon-chai';
+use(sinonChai);
 import * as R from 'ramda';
 import 'xmldom-ts';
 const { functify } = require('jinxed');
 import * as types from '../../lib/types';
 import { Specs } from '../../lib/specs';
 import { Transformer, ITransformFunction } from '../../lib/transformer/transformer.class';
-
-const testSpec: types.ISpec = Object.freeze({
-  name: 'test-spec-with-attributes',
-  labels: {
-    element: '_',
-    descendants: '_children',
-    text: '_text'
-  },
-  attributes: {
-    trim: true,
-    coercion: {
-      matchers: {
-        primitives: ['number', 'boolean'],
-        collection: {
-          delim: ',',
-          open: '!<type>[',
-          close: ']',
-          assoc: {
-            delim: '=',
-            keyType: 'string',
-            valueType: 'string'
-          }
-        },
-        date: {
-          format: 'YYYY-MM-DD'
-        },
-        symbol: {
-          prefix: '$',
-          global: true
-        },
-        string: true
-      }
-    }
-  },
-  textNodes: {
-    trim: true,
-    coercion: {
-      matchers: {
-        primitives: ['number', 'boolean'],
-        collection: {
-          assoc: {
-            delim: '=',
-            keyType: 'string',
-            valueType: 'string'
-          }
-        },
-        date: {
-          format: 'YYYY-MM-DD'
-        },
-        symbol: {
-          prefix: '$',
-          global: true
-        },
-        string: true
-      }
-    }
-  }
-});
-
-class Stub {
-  constructor (private spec: types.ISpec) {
-    //
-  }
-  fetchSpecOption (path: string, fallBack: boolean = true): any {
-    const segments: string[] = R.split('/')(path);
-    const itemLens: R.Lens = R.lensPath(segments);
-
-    const result = fallBack
-      ? R.defaultTo(R.view(itemLens)(Specs.fallBack), R.view(itemLens)(this.spec))
-      : R.view(itemLens)(this.spec);
-
-    return result;
-  }
-}
+import { XpathConverterImpl } from '../../lib/converter/xpath-converter.impl';
 
 describe('Transformer for "attributes" context', () => {
+  afterEach(() => {
+    sinon.reset();
+  });
+
   const tests = [
     // ['number]
     {
       given: 'spec with "attributes/coercion/matchers/primitives" = number',
       context: 'attributes',
-      spec: () => {
-        return R.set(R.lensPath(['attributes', 'coercion', 'matchers', 'primitives']),
-          ['number'])(testSpec);
-      },
+      path: 'attributes/coercion/matchers/primitives',
+      specValue: ['number'],
       valueType: 'number',
       raw: 42,
       expected: 42
@@ -101,10 +33,8 @@ describe('Transformer for "attributes" context', () => {
     {
       given: 'spec with "attributes/coercion/matchers/primitives" = boolean, value=true',
       context: 'attributes',
-      spec: () => {
-        return R.set(R.lensPath(['attributes', 'coercion', 'matchers', 'primitives']),
-          ['boolean'])(testSpec);
-      },
+      path: 'attributes/coercion/matchers/primitives',
+      specValue: ['boolean'],
       valueType: 'boolean',
       raw: true,
       expected: true
@@ -112,10 +42,8 @@ describe('Transformer for "attributes" context', () => {
     {
       given: 'spec with "attributes/coercion/matchers/primitives" = boolean, value=false',
       context: 'attributes',
-      spec: () => {
-        return R.set(R.lensPath(['attributes', 'coercion', 'matchers', 'primitives']),
-          ['boolean'])(testSpec);
-      },
+      path: 'attributes/coercion/matchers/primitives',
+      specValue: ['boolean'],
       valueType: 'boolean',
       raw: false,
       expected: false
@@ -123,10 +51,8 @@ describe('Transformer for "attributes" context', () => {
     {
       given: 'spec with "attributes/coercion/matchers/primitives" = boolean, value(string)="true"',
       context: 'attributes',
-      spec: () => {
-        return R.set(R.lensPath(['attributes', 'coercion', 'matchers', 'primitives']),
-          ['boolean'])(testSpec);
-      },
+      path: 'attributes/coercion/matchers/primitives',
+      specValue: ['boolean'],
       valueType: 'boolean',
       raw: 'true',
       expected: true
@@ -134,10 +60,8 @@ describe('Transformer for "attributes" context', () => {
     {
       given: 'spec with "attributes/coercion/matchers/primitives" = boolean, value(string)="false"',
       context: 'attributes',
-      spec: () => {
-        return R.set(R.lensPath(['attributes', 'coercion', 'matchers', 'primitives']),
-          ['boolean'])(testSpec);
-      },
+      path: 'attributes/coercion/matchers/primitives',
+      specValue: ['boolean'],
       valueType: 'boolean',
       raw: 'false',
       expected: false
@@ -146,11 +70,8 @@ describe('Transformer for "attributes" context', () => {
     {
       given: 'spec with "attributes/coercion/matchers" = string(true)',
       context: 'attributes',
-      spec: () => {
-        return R.set(R.lensPath(['attributes', 'coercion', 'matchers']), {
-          string: true
-        })(testSpec);
-      },
+      path: 'attributes/coercion/matchers/string',
+      specValue: { string: true },
       valueType: 'string',
       raw: 'foo',
       expected: 'foo'
@@ -158,25 +79,23 @@ describe('Transformer for "attributes" context', () => {
     {
       given: 'spec without a final string matcher and unhandled string value',
       context: 'attributes',
-      spec: () => {
-        return R.set(R.lensPath(['attributes', 'coercion', 'matchers']), {
-          primitives: ['number', 'boolean'],
-          date: {
-            format: 'YYYY-MM-DD'
-          }
-        })(testSpec);
-      },
+      path: 'attributes/coercion/matchers/string',
+      specValue: true,
       valueType: 'string',
       raw: 'foo',
       expected: 'foo'
     }
   ];
 
-  tests.forEach((t) => {
+  tests.forEach((t: any) => {
     context(`given: ${t.given}`, () => {
       it(`should: coerce "${t.valueType}" value ok`, () => {
         try {
-          const transformer = new Transformer(new Stub(t.spec()));
+          const stub = new XpathConverterImpl();
+          sinon.stub(stub, 'fetchSpecOption')
+            .withArgs(t.path).returns(t.specValue);
+
+          const transformer = new Transformer(stub);
           const transform: ITransformFunction<any> = transformer.getTransform(t.valueType as types.MatcherType);
           const subject = '/SUBJECT';
           const result = transform.call(transformer, subject, t.raw, t.context as types.ContextType);
@@ -193,7 +112,11 @@ describe('Transformer for "attributes" context', () => {
   context('given: spec with "attributes/coercion/matchers/primitives" = date', () => {
     it('should: coerce "date" value ok:', () => {
       try {
-        const transformer = new Transformer(new Stub(testSpec));
+        const stub = new XpathConverterImpl();
+        sinon.stub(stub, 'fetchSpecOption')
+          .withArgs('attributes/coercion/matchers/date/format').returns('YYYY-MM-DD');
+
+        const transformer = new Transformer(stub);
         const transform: ITransformFunction<any> = transformer.getTransform('date');
         const subject = '/SUBJECT';
         const dateValue = '2016-06-23';
@@ -210,7 +133,12 @@ describe('Transformer for "attributes" context', () => {
   context('given: spec with "attributes/coercion/matchers/primitives" = symbol', () => {
     it('should coerce "symbol" value ok:', () => {
       try {
-        const transformer = new Transformer(new Stub(testSpec));
+        const stub = new XpathConverterImpl();
+        sinon.stub(stub, 'fetchSpecOption')
+          .withArgs('attributes/coercion/matchers/symbol/prefix').returns('$')
+          .withArgs('attributes/coercion/matchers/symbol/global').returns(true);
+
+        const transformer = new Transformer(stub);
         const transform: ITransformFunction<any> = transformer.getTransform('symbol');
         const subject = '/SUBJECT';
         const symbolValue = '$excalibur';
@@ -229,10 +157,10 @@ describe('Transformer for "attributes" context', () => {
   context('given: spec with "attributes/coercion/matchers" = string(false)', () => {
     it('should: throw', () => {
       try {
-        const spec = R.set(R.lensPath(['attributes', 'coercion', 'matchers']), {
-          string: false
-        })(testSpec);
-        const transformer = new Transformer(new Stub(spec));
+        const stub = new XpathConverterImpl();
+        sinon.stub(stub, 'fetchSpecOption')
+          .withArgs('attributes/coercion/matchers/string').returns(false);
+        const transformer = new Transformer(stub);
 
         expect(() => {
           const transform: ITransformFunction<any> = transformer.getTransform('string');
@@ -246,6 +174,21 @@ describe('Transformer for "attributes" context', () => {
 }); // Transformer for "attributes" context
 
 describe('Transformer.transformCollection for "attributes" context', () => {
+  class Stub {
+    constructor (private spec: types.ISpec) {
+      //
+    }
+    fetchSpecOption (path: string, fallBack: boolean = true): any {
+      const segments: string[] = R.split('/')(path);
+      const itemLens: R.Lens = R.lensPath(segments);
+
+      const result = fallBack
+        ? R.defaultTo(R.view(itemLens)(Specs.fallBack), R.view(itemLens)(this.spec))
+        : R.view(itemLens)(this.spec);
+
+      return result;
+    }
+  }
 
   const contextType: types.ContextType = 'attributes';
   const matcher: types.MatcherType = 'collection';
@@ -295,10 +238,10 @@ describe('Transformer.transformCollection for "attributes" context', () => {
       context(`given: a compound value, transformCollection (using default spec)`, () => {
         it(`should: ${t.should}`, () => {
           try {
-            const converter = new Transformer(new Stub(Specs.default));
-            const transform: ITransformFunction<any> = converter.getTransform(matcher);
+            const transformer = new Transformer(new Stub(Specs.default));
+            const transform: ITransformFunction<any> = transformer.getTransform(matcher);
             const subject = '/SUBJECT';
-            const result = transform.call(converter, subject, t.raw, contextType);
+            const result = transform.call(transformer, subject, t.raw, contextType);
 
             expect(result.succeeded).to.be.true(functify(result));
             expect(result.value).to.deep.equal(t.expected, functify(result));
@@ -318,10 +261,17 @@ describe('Transformer.transformCollection for "attributes" context', () => {
     it(`should: coerce as a multiple item Set`, () => {
       const raw = '!<Set>[1,2,3,4]';
       try {
-        const converter = new Transformer(new Stub(Specs.default));
-        const transform: ITransformFunction<any> = converter.getTransform(matcher);
+        const stub = new XpathConverterImpl();
+        sinon.stub(stub, 'fetchSpecOption')
+          .withArgs('attributes/coercion/matchers/collection/delim').returns(',')
+          .withArgs('attributes/coercion/matchers/collection/open').returns('!<type>[')
+          .withArgs('attributes/coercion/matchers/collection/close').returns(']')
+          .withArgs('attributes/coercion/matchers/primitives').returns(['number', 'boolean']);
+
+        const transformer = new Transformer(stub);
+        const transform: ITransformFunction<any> = transformer.getTransform(matcher);
         const subject = '/SUBJECT';
-        const result = transform.call(converter, subject, raw, contextType);
+        const result = transform.call(transformer, subject, raw, contextType);
         // const expected = new Set([1, 2, 3, 4]);
         // const expected = ['1', '2', '3', '4'];
         const expected = [1, 2, 3, 4];
@@ -340,22 +290,23 @@ describe('Transformer.transformCollection for "attributes" context', () => {
   // and the resulting set should contain numbers
 
   context('Map collection', () => {
-    const spec = R.set(
-      R.lensPath(['attributes', 'coercion', 'matchers', 'collection', 'assoc']),
-      {
-        delim: '=',
-        keyType: 'string',
-        valueType: 'string'
-      }
-    )(testSpec);
-
     it(`should: coerce as a single item map`, () => {
       const raw = '!<Map>[foo=bar]';
       try {
-        const converter = new Transformer(new Stub(spec));
-        const transform: ITransformFunction<any> = converter.getTransform(matcher);
+        const stub = new XpathConverterImpl();
+        sinon.stub(stub, 'fetchSpecOption')
+          .withArgs('attributes/coercion/matchers/collection/delim').returns(',')
+          .withArgs('attributes/coercion/matchers/collection/open').returns('!<type>[')
+          .withArgs('attributes/coercion/matchers/collection/close').returns(']')
+          .withArgs('attributes/coercion/matchers/collection/assoc/delim').returns('=')
+          .withArgs('attributes/coercion/matchers/collection/assoc/keyType').returns('string')
+          .withArgs('attributes/coercion/matchers/collection/assoc/valueType').returns('string')
+          .withArgs('attributes/coercion/matchers/string').returns(true);
+
+        const transformer = new Transformer(stub);
+        const transform: ITransformFunction<any> = transformer.getTransform(matcher);
         const subject = '/SUBJECT';
-        const result: any = transform.call(converter, subject, raw, contextType); // types.ITransformResult<any[]>
+        const result: any = transform.call(transformer, subject, raw, contextType); // types.ITransformResult<any[]>
 
         expect(result.succeeded).to.be.true(functify(result));
         expect(result.value.size).to.equal(1, functify(result));
@@ -369,10 +320,20 @@ describe('Transformer.transformCollection for "attributes" context', () => {
       const raw = '!<Map>[a=one,b=two,c=three]';
 
       try {
-        const converter = new Transformer(new Stub(spec));
-        const transform: ITransformFunction<any> = converter.getTransform(matcher);
+        const stub = new XpathConverterImpl();
+        sinon.stub(stub, 'fetchSpecOption')
+          .withArgs('attributes/coercion/matchers/collection/delim').returns(',')
+          .withArgs('attributes/coercion/matchers/collection/open').returns('!<type>[')
+          .withArgs('attributes/coercion/matchers/collection/close').returns(']')
+          .withArgs('attributes/coercion/matchers/collection/assoc/delim').returns('=')
+          .withArgs('attributes/coercion/matchers/collection/assoc/keyType').returns('string')
+          .withArgs('attributes/coercion/matchers/collection/assoc/valueType').returns('string')
+          .withArgs('attributes/coercion/matchers/string').returns(true);
+
+        const transformer = new Transformer(stub);
+        const transform: ITransformFunction<any> = transformer.getTransform(matcher);
         const subject = '/SUBJECT';
-        const result = transform.call(converter, subject, raw, contextType);
+        const result = transform.call(transformer, subject, raw, contextType);
 
         expect(result.succeeded).to.be.true(functify(result));
         expect(result.value.size).to.equal(3, functify(result));
@@ -389,18 +350,21 @@ describe('Transformer.transformCollection for "attributes" context', () => {
   context('Object instance collection', () => {
     it(`should: coerce as a multiple item Object`, () => {
       const raw = '!<Object>[a=one,b=two,c=three]';
-      const spec = R.set(
-        R.lensPath(['attributes', 'coercion', 'matchers', 'collection', 'assoc']),
-        {
-          delim: '=',
-          keyType: 'string',
-          valueType: 'string'
-        })(testSpec);
 
-      const converter = new Transformer(new Stub(spec));
-      const transform: ITransformFunction<any> = converter.getTransform(matcher);
+      const stub = new XpathConverterImpl();
+      sinon.stub(stub, 'fetchSpecOption')
+        .withArgs('attributes/coercion/matchers/collection/delim').returns(',')
+        .withArgs('attributes/coercion/matchers/collection/open').returns('!<type>[')
+        .withArgs('attributes/coercion/matchers/collection/close').returns(']')
+        .withArgs('attributes/coercion/matchers/collection/assoc/delim').returns('=')
+        .withArgs('attributes/coercion/matchers/collection/assoc/keyType').returns('string')
+        .withArgs('attributes/coercion/matchers/collection/assoc/valueType').returns('string')
+        .withArgs('attributes/coercion/matchers/string').returns(true);
+
+      const transformer = new Transformer(stub);
+      const transform: ITransformFunction<any> = transformer.getTransform(matcher);
       const subject = '/SUBJECT';
-      const result = transform.call(converter, subject, raw, contextType);
+      const result = transform.call(transformer, subject, raw, contextType);
 
       expect(result.succeeded).to.be.true(functify(result));
       expect(R.keys(result.value).length).to.equal(3, functify(result));
@@ -412,18 +376,21 @@ describe('Transformer.transformCollection for "attributes" context', () => {
 
     it(`should: coerce as a multiple item Object and numeric keys`, () => {
       const raw = '!<Object>[1=one,2=two,3=three]';
-      const spec = R.set(
-        R.lensPath(['attributes', 'coercion', 'matchers', 'collection', 'assoc']),
-        {
-          delim: '=',
-          keyType: 'number',
-          valueType: 'string'
-        })(testSpec);
 
-      const converter = new Transformer(new Stub(spec));
-      const transform: ITransformFunction<any> = converter.getTransform(matcher);
+      const stub = new XpathConverterImpl();
+      sinon.stub(stub, 'fetchSpecOption')
+        .withArgs('attributes/coercion/matchers/collection/delim').returns(',')
+        .withArgs('attributes/coercion/matchers/collection/open').returns('!<type>[')
+        .withArgs('attributes/coercion/matchers/collection/close').returns(']')
+        .withArgs('attributes/coercion/matchers/collection/assoc/delim').returns('=')
+        .withArgs('attributes/coercion/matchers/collection/assoc/keyType').returns('number')
+        .withArgs('attributes/coercion/matchers/collection/assoc/valueType').returns('string')
+        .withArgs('attributes/coercion/matchers/string').returns(true);
+
+      const transformer = new Transformer(stub);
+      const transform: ITransformFunction<any> = transformer.getTransform(matcher);
       const subject = '/SUBJECT';
-      const result = transform.call(converter, subject, raw, contextType);
+      const result = transform.call(transformer, subject, raw, contextType);
 
       expect(result.succeeded).to.be.true(functify(result));
       expect(R.keys(result.value).length).to.equal(3, functify(result));
@@ -435,18 +402,21 @@ describe('Transformer.transformCollection for "attributes" context', () => {
 
     it(`should: coerce as a multiple item Object and numeric keys and values`, () => {
       const raw = '!<Object>[1=15,2=30,3=40]';
-      const spec = R.set(
-        R.lensPath(['attributes', 'coercion', 'matchers', 'collection', 'assoc']),
-        {
-          delim: '=',
-          keyType: ['number'],
-          valueType: ['number']
-        })(testSpec);
 
-      const converter = new Transformer(new Stub(spec));
-      const transform: ITransformFunction<any> = converter.getTransform(matcher);
+      const stub = new XpathConverterImpl();
+      sinon.stub(stub, 'fetchSpecOption')
+        .withArgs('attributes/coercion/matchers/collection/delim').returns(',')
+        .withArgs('attributes/coercion/matchers/collection/open').returns('!<type>[')
+        .withArgs('attributes/coercion/matchers/collection/close').returns(']')
+        .withArgs('attributes/coercion/matchers/collection/assoc/delim').returns('=')
+        .withArgs('attributes/coercion/matchers/collection/assoc/keyType').returns('number')
+        .withArgs('attributes/coercion/matchers/collection/assoc/valueType').returns('number')
+        .withArgs('attributes/coercion/matchers/string').returns(true);
+
+      const transformer = new Transformer(stub);
+      const transform: ITransformFunction<any> = transformer.getTransform(matcher);
       const subject = '/SUBJECT';
-      const result = transform.call(converter, subject, raw, contextType);
+      const result = transform.call(transformer, subject, raw, contextType);
 
       expect(result.succeeded).to.be.true(functify(result));
       expect(R.keys(result.value).length).to.equal(3, functify(result));
@@ -458,17 +428,21 @@ describe('Transformer.transformCollection for "attributes" context', () => {
 
     it(`should: coerce as a multiple item Object mixed type numeric keys and values`, () => {
       const raw = '!<Object>[1=15,2=30,3=40,4=g,deuce=adv]';
-      const spec = R.set(
-        R.lensPath(['attributes', 'coercion', 'matchers', 'collection', 'assoc']), {
-          delim: '=',
-          keyType: ['number', 'string'],
-          valueType: ['number', 'string']
-        })(testSpec);
 
-      const converter = new Transformer(new Stub(spec));
-      const transform: ITransformFunction<any> = converter.getTransform(matcher);
+      const stub = new XpathConverterImpl();
+      sinon.stub(stub, 'fetchSpecOption')
+        .withArgs('attributes/coercion/matchers/collection/delim').returns(',')
+        .withArgs('attributes/coercion/matchers/collection/open').returns('!<type>[')
+        .withArgs('attributes/coercion/matchers/collection/close').returns(']')
+        .withArgs('attributes/coercion/matchers/collection/assoc/delim').returns('=')
+        .withArgs('attributes/coercion/matchers/collection/assoc/keyType').returns(['number', 'string'])
+        .withArgs('attributes/coercion/matchers/collection/assoc/valueType').returns(['number', 'string'])
+        .withArgs('attributes/coercion/matchers/string').returns(true);
+
+      const transformer = new Transformer(stub);
+      const transform: ITransformFunction<any> = transformer.getTransform(matcher);
       const subject = '/SUBJECT';
-      const result = transform.call(converter, subject, raw, contextType);
+      const result = transform.call(transformer, subject, raw, contextType);
 
       expect(result.succeeded).to.be.true(functify(result));
       expect(R.keys(result.value).length).to.equal(5, functify(result));
@@ -482,60 +456,72 @@ describe('Transformer.transformCollection for "attributes" context', () => {
   context('Error handling', () => {
     context('given: invalid assoc.keyType', () => {
       const raw = '!<Object>[1=15,2=30,3=40,4=g,deuce=adv]';
-      it(`should: throw`, () => {
-        const spec = R.set(
-          R.lensPath(['attributes', 'coercion', 'matchers', 'collection', 'assoc']), {
-            delim: '=',
-            keyType: 'duff',
-            valueType: ['number', 'string']
-          })(testSpec);
 
-        const converter = new Transformer(new Stub(spec));
-        const transform: ITransformFunction<any> = converter.getTransform(matcher);
+      it(`should: throw`, () => {
+        const stub = new XpathConverterImpl();
+        sinon.stub(stub, 'fetchSpecOption')
+          .withArgs('attributes/coercion/matchers/collection/delim').returns(',')
+          .withArgs('attributes/coercion/matchers/collection/open').returns('!<type>[')
+          .withArgs('attributes/coercion/matchers/collection/close').returns(']')
+          .withArgs('attributes/coercion/matchers/collection/assoc/delim').returns('=')
+          .withArgs('attributes/coercion/matchers/collection/assoc/keyType').returns('duff') // <-- !!
+          .withArgs('attributes/coercion/matchers/collection/assoc/valueType').returns(['number', 'string'])
+          .withArgs('attributes/coercion/matchers/string').returns(true);
+
+        const transformer = new Transformer(stub);
+        const transform: ITransformFunction<any> = transformer.getTransform(matcher);
         const subject = '/SUBJECT';
 
         expect(() => {
-          transform.call(converter, subject, raw, contextType);
+          transform.call(transformer, subject, raw, contextType);
         }).to.throw();
       });
     });
 
     context('given: invalid "collection" assoc.keyType', () => {
       const raw = '!<Object>[1=15,2=30,3=40,4=g,deuce=adv]';
-      it(`should: throw`, () => {
-        const spec = R.set(
-          R.lensPath(['attributes', 'coercion', 'matchers', 'collection', 'assoc']), {
-            delim: '=',
-            keyType: 'collection',
-            valueType: ['number', 'string']
-          })(testSpec);
 
-        const converter = new Transformer(new Stub(spec));
-        const transform: ITransformFunction<any> = converter.getTransform(matcher);
+      it(`should: throw`, () => {
+        const stub = new XpathConverterImpl();
+        sinon.stub(stub, 'fetchSpecOption')
+          .withArgs('attributes/coercion/matchers/collection/delim').returns(',')
+          .withArgs('attributes/coercion/matchers/collection/open').returns('!<type>[')
+          .withArgs('attributes/coercion/matchers/collection/close').returns(']')
+          .withArgs('attributes/coercion/matchers/collection/assoc/delim').returns('=')
+          .withArgs('attributes/coercion/matchers/collection/assoc/keyType').returns('collection') // <-- !!
+          .withArgs('attributes/coercion/matchers/collection/assoc/valueType').returns(['number', 'string'])
+          .withArgs('attributes/coercion/matchers/string').returns(true);
+
+        const transformer = new Transformer(stub);
+        const transform: ITransformFunction<any> = transformer.getTransform(matcher);
         const subject = '/SUBJECT';
 
         expect(() => {
-          transform.call(converter, subject, raw, contextType);
+          transform.call(transformer, subject, raw, contextType);
         }).to.throw();
       });
     });
 
     context('given: invalid assoc.valueType', () => {
       const raw = '!<Object>[1=15,2=30,3=40,4=g,deuce=adv]';
-      it(`should: throw`, () => {
-        const spec = R.set(
-          R.lensPath(['attributes', 'coercion', 'matchers', 'collection', 'assoc']), {
-            delim: '=',
-            keyType: 'string',
-            valueType: ['duff', 'number', 'string']
-          })(testSpec);
 
-        const converter = new Transformer(new Stub(spec));
-        const transform: ITransformFunction<any> = converter.getTransform(matcher);
+      it(`should: throw`, () => {
+        const stub = new XpathConverterImpl();
+        sinon.stub(stub, 'fetchSpecOption')
+          .withArgs('attributes/coercion/matchers/collection/delim').returns(',')
+          .withArgs('attributes/coercion/matchers/collection/open').returns('!<type>[')
+          .withArgs('attributes/coercion/matchers/collection/close').returns(']')
+          .withArgs('attributes/coercion/matchers/collection/assoc/delim').returns('=')
+          .withArgs('attributes/coercion/matchers/collection/assoc/keyType').returns('string')
+          .withArgs('attributes/coercion/matchers/collection/assoc/valueType').returns(['duff', 'number', 'string']) // <-- !!
+          .withArgs('attributes/coercion/matchers/string').returns(true);
+
+        const transformer = new Transformer(stub);
+        const transform: ITransformFunction<any> = transformer.getTransform(matcher);
         const subject = '/SUBJECT';
 
         expect(() => {
-          transform.call(converter, subject, raw, contextType);
+          transform.call(transformer, subject, raw, contextType);
         }).to.throw();
       });
     });
