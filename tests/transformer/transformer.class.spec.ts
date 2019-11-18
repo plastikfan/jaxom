@@ -3,13 +3,10 @@ import { expect, assert, use } from 'chai';
 import dirtyChai from 'dirty-chai';
 use(dirtyChai);
 import * as R from 'ramda';
-import * as xp from 'xpath-ts';
 import 'xmldom-ts';
-const parser = new DOMParser();
 const { functify } = require('jinxed');
 import * as types from '../../lib/types';
 import { Specs } from '../../lib/specs';
-import * as Helpers from '../test-helpers';
 import { Transformer, ITransformFunction } from '../../lib/transformer/transformer.class';
 
 const testSpec: types.ISpec = Object.freeze({

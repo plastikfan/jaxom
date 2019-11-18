@@ -20,7 +20,7 @@ export class Transformer {
    * @description Performs static initialisation of the class (Does NOT need to be called by
    * the client, even though it is public)
    * @static
-   * @memberof XpathConverterImpl
+   * @memberof Transformer
    */
   static initialise (): void {
     this.typeExpr = /\<(?<type>[\w\[\]]+)\>/;
@@ -48,7 +48,7 @@ export class Transformer {
    *
    * @param {types.MatcherType} name
    * @returns {ITransformFunction<any>}
-   * @memberof XpathConverterImpl
+   * @memberof Transformer
    */
   public getTransform (name: types.MatcherType): ITransformFunction<any> {
     const result = this.transformers.get(name);
@@ -72,7 +72,7 @@ export class Transformer {
    * @param {*} rawValue
    * @param {string} attributeName
    * @returns
-   * @memberof XpathConverterImpl
+   * @memberof Transformer
    */
   coerceAttributeValue (subject: string, matchers: any, rawValue: any, attributeName: string): {} {
     let resultValue = rawValue;
@@ -94,7 +94,7 @@ export class Transformer {
     } else {
       throw new e.JaxInternalError(
         `invalid matchers: ${functify(matchers)}, for attribute: ${attributeName} / raw value: ${rawValue}`,
-        'coerceAttributeValue');
+          'coerceAttributeValue');
     }
 
     return resultValue;
@@ -111,7 +111,7 @@ export class Transformer {
    * @param {string} collectionValue
    * @param {types.ContextType} context
    * @returns {ITransformResult<any[]>}
-   * @memberof XpathConverterImpl
+   * @memberof Transformer
    */
   private transformCollection (subject: string, collectionValue: string,
     context: types.ContextType): ITransformResult<any[]> {
@@ -182,7 +182,7 @@ export class Transformer {
    * @private
    * @param {string} open
    * @returns {string}
-   * @memberof XpathConverterImpl
+   * @memberof Transformer
    */
   private extractTypeFromCollectionValue (open: string): string {
     let result = '';
@@ -213,7 +213,7 @@ export class Transformer {
    * @param {types.ContextType} context
    * @param {any[]} sourceCollection
    * @returns {ITransformResult<any[]>}
-   * @memberof XpathConverterImpl
+   * @memberof Transformer
    */
   private transformUnaryCollection (subject: string, context: types.ContextType,
     sourceCollection: any[]): ITransformResult<any[]> {
@@ -239,7 +239,7 @@ export class Transformer {
    * @param {string} collectionType
    * @param {any[]} sourceCollection
    * @returns {ITransformResult<any[]>}
-   * @memberof XpathConverterImpl
+   * @memberof Transformer
    */
   private transformAssociativeCollection (subject: string, context: types.ContextType,
     collectionType: string, sourceCollection: any[]): ITransformResult<any[]> {
@@ -298,7 +298,7 @@ export class Transformer {
    * @param {types.ContextType} context
    * @param {string} assocValue
    * @returns {ITransformResult<any>}
-   * @memberof XpathConverterImpl
+   * @memberof Transformer
    */
   private transformAssoc (subject: string, assocType: any,
     context: types.ContextType, assocValue: string): ITransformResult<any> {
@@ -350,7 +350,7 @@ export class Transformer {
    * @param {number} numberValue
    * @param {types.ContextType} context
    * @returns {ITransformResult<number>}
-   * @memberof XpathConverterImpl
+   * @memberof Transformer
    */
   private transformNumber (subject: string, numberValue: number,
     context: types.ContextType): ITransformResult<number> {
@@ -377,7 +377,7 @@ export class Transformer {
    * @param {(string | boolean)} booleanValue
    * @param {types.ContextType} context
    * @returns {ITransformResult<boolean>}
-   * @memberof XpathConverterImpl
+   * @memberof Transformer
    */
   private transformBoolean (subject: string, booleanValue: string | boolean,
     context: types.ContextType): ITransformResult<boolean> {
@@ -422,7 +422,7 @@ export class Transformer {
    * @param {types.PrimitiveType} primitiveValue
    * @param {types.ContextType} context
    * @returns {ITransformResult<any>}
-   * @memberof XpathConverterImpl
+   * @memberof Transformer
    */
   private transformPrimitives (subject: string, primitiveValue: types.PrimitiveType,
     context: types.ContextType): ITransformResult<any> {
@@ -464,7 +464,7 @@ export class Transformer {
    * @param {string} dateValue
    * @param {types.ContextType} context
    * @returns {ITransformResult<Date>}
-   * @memberof XpathConverterImpl
+   * @memberof Transformer
    */
   private transformDate (subject: string, dateValue: string,
     context: types.ContextType): ITransformResult<Date> {
@@ -496,7 +496,7 @@ export class Transformer {
    * @param {Symbol} symbolValue
    * @param {contextType} context
    * @returns
-   * @memberof XpathConverterImpl
+   * @memberof Transformer
    */
   transformSymbol (subject: string, symbolValue: string,
     context: types.ContextType): ITransformResult<Symbol> {
@@ -528,7 +528,7 @@ export class Transformer {
    * @param {string} stringValue
    * @param {contextType} context
    * @returns: { value: the transformed string, succeeded: flag to indicate transform result }
-   * @memberof XpathConverterImpl
+   * @memberof Transformer
    */
   transformString (subject: string, stringValue: string, context: types.ContextType)
     : ITransformResult<string> {
@@ -552,7 +552,7 @@ export class Transformer {
    * @param {string} t
    * @param {*} collectionElements: the source to create the typed collection from
    * @returns {*}
-   * @memberof XpathConverterImpl
+   * @memberof Transformer
    */
   createTypedCollection (t: string, collectionElements: any): any {
     let collection: any;
@@ -590,7 +590,7 @@ export class Transformer {
    * @param {string} close
    * @param {string} collectionValue
    * @returns {string}
-   * @memberof XpathConverterImpl
+   * @memberof Transformer
    */
   extractCoreCollectionValue (open: string, close: string, collectionValue: string): string {
     if (collectionValue.startsWith(open) && collectionValue.endsWith(close)) {
