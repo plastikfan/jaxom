@@ -108,3 +108,8 @@ export interface IConverterImpl {
 export interface ITransformer {
   coerceAttributeValue (subject: string, matchers: any, rawValue: any, attributeName: string): {};
 }
+
+export interface ISpecService {
+  fetchOption (path: string, fallBack: boolean): {};
+  getSpec (): ISpec;
+}
