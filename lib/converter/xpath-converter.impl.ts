@@ -9,40 +9,6 @@ import { Specs } from '../specs';
 import { Transformer } from '../transformer/transformer.class';
 
 /**
- * @description Internal implementation interface which is required due to the fact that
- * transform operations are chained together (a bit like chain of responsibility). That
- * is to say, that for a particular value being parsed from the xml (either from a text
- * node or attribute value), each transform function may succeed or fail. When a fail occurs
- * by a particular transform function, that doesn't mean a real error. All it means is that
- * that transform function is not applicable to that value, so we should just try the next
- * transform in the chain. This is why we can't throw an exception from a transform function
- * and instead need a boolean flag (@value) as well as the transformed result (@succeeded).
- * The only time we can throw an exception is if the user has defined the string transform
- * (via the string boolean flag) to be false. All values in xml source are clearly a string
- * therefore but if the user has defined various other transforms one of which must succeed,
- * we can prevent a raw string representation being returned if that's required.
- *
- * @export
- * @interface ITransformResult
- * @template T
- */
-export interface ITransformResult<T> {
-  value: T;
-  succeeded: boolean;
-}
-
-/**
- * @description Defines the signature of transform functions.
- *
- * @export
- * @interface ITransformFunction
- * @template T The type of the transform result payload.
- */
-export interface ITransformFunction<T> {
-  (s: string, v: any, c: types.ContextType): ITransformResult<T>;
-}
-
-/**
  * @export
  * @class XpathConverterImpl
  * @implements {types.IConverter}
