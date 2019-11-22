@@ -2,7 +2,7 @@
 import * as R from 'ramda';
 import * as types from '../types';
 
-export default class SpecOptionService implements types.ISpecService {
+export class SpecOptionService implements types.ISpecService {
 
   constructor (private spec: types.ISpec = defaultSpec) {
 
