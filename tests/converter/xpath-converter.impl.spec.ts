@@ -8,11 +8,10 @@ import 'xmldom-ts';
 const parser = new DOMParser();
 import * as types from '../../lib/types';
 import * as Helpers from '../test-helpers';
-import { Specs } from '../../lib/specs';
 
 import { XpathConverterImpl as Impl, composeElementPath }
   from '../../lib/converter/xpath-converter.impl';
-import { SpecOptionService } from '../../lib/specService/spec-option-service.class';
+import { SpecOptionService, Specs } from '../../lib/specService/spec-option-service.class';
 
 const testParseInfo: types.IParseInfo = {
   elements: new Map<string, types.IElementInfo>([

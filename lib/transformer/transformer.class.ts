@@ -3,7 +3,11 @@ import * as R from 'ramda';
 import { functify } from 'jinxed';
 let moment = require('moment'); // why doesn't normal TS import work?
 import * as types from '../types';
-import * as specs from '../specs';
+import {
+  CollectionTypePlaceHolder,
+  CollectionTypeLabel
+} from '../specService/spec-option-service.class';
+
 import * as e from '../exceptions';
 
 export class Transformer {
@@ -111,7 +115,7 @@ export class Transformer {
     const collectionType = this.extractTypeFromCollectionValue(collectionValue);
 
     if (collectionType) {
-      const openExpression: string = open.replace(specs.CollectionTypePlaceHolder, ('<' + collectionType + '>'));
+      const openExpression: string = open.replace(CollectionTypePlaceHolder, ('<' + collectionType + '>'));
       const openExpr = new RegExp('^' + (this.escapeRegExp(openExpression)));
 
       const close = this.options.fetchOption(`${context}/coercion/matchers/collection/close`) as string;
@@ -177,7 +181,7 @@ export class Transformer {
     if (Transformer.typeExpr.test(open)) {
 
       const match = Transformer.typeExpr.exec(open);
-      const collectionType = R.view(R.lensPath(['groups', specs.CollectionTypeLabel]))(match);
+      const collectionType = R.view(R.lensPath(['groups', CollectionTypeLabel]))(match);
 
       if (collectionType) {
         result = collectionType as string;

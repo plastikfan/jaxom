@@ -9,9 +9,8 @@ import * as R from 'ramda';
 import 'xmldom-ts';
 const { functify } = require('jinxed');
 import * as types from '../../lib/types';
-import { Specs } from '../../lib/specs';
 import { Transformer, ITransformFunction } from '../../lib/transformer/transformer.class';
-import { SpecOptionService } from '../../lib/specService/spec-option-service.class';
+import { SpecOptionService, Specs } from '../../lib/specService/spec-option-service.class';
 
 describe('Transformer for "attributes" context', () => {
   afterEach(() => {
