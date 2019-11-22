@@ -8,7 +8,7 @@ import * as e from '../exceptions';
 
 export class Transformer {
 
-  constructor (private options: specs.IFetchSpecOption) {
+  constructor (private options: types.ISpecService) {
 
   }
 
@@ -105,8 +105,8 @@ export class Transformer {
     let succeeded = false;
     let value: any = null;
 
-    const delim = this.options.fetchSpecOption(`${context}/coercion/matchers/collection/delim`) as string;
-    const open = this.options.fetchSpecOption(`${context}/coercion/matchers/collection/open`) as string;
+    const delim = this.options.fetchOption(`${context}/coercion/matchers/collection/delim`) as string;
+    const open = this.options.fetchOption(`${context}/coercion/matchers/collection/open`) as string;
 
     const collectionType = this.extractTypeFromCollectionValue(collectionValue);
 
@@ -114,7 +114,7 @@ export class Transformer {
       const openExpression: string = open.replace(specs.CollectionTypePlaceHolder, ('<' + collectionType + '>'));
       const openExpr = new RegExp('^' + (this.escapeRegExp(openExpression)));
 
-      const close = this.options.fetchSpecOption(`${context}/coercion/matchers/collection/close`) as string;
+      const close = this.options.fetchOption(`${context}/coercion/matchers/collection/close`) as string;
       const closeExpr = new RegExp(this.escapeRegExp(close) + '$');
 
       const openIsMatch = openExpr.test(collectionValue);
@@ -231,13 +231,13 @@ export class Transformer {
   private transformAssociativeCollection (subject: string, context: types.ContextType,
     collectionType: string, sourceCollection: any[]): ITransformResult<any[]> {
 
-    const assocDelim = this.options.fetchSpecOption(
+    const assocDelim = this.options.fetchOption(
       `${context}/coercion/matchers/collection/assoc/delim`) as string;
 
-    const assocKeyType = this.options.fetchSpecOption(
+    const assocKeyType = this.options.fetchOption(
       `${context}/coercion/matchers/collection/assoc/keyType`) as string;
 
-    const assocValueType = this.options.fetchSpecOption(
+    const assocValueType = this.options.fetchOption(
       `${context}/coercion/matchers/collection/assoc/valueType`) as string;
 
     // Split out the values into an array of pairs
@@ -414,7 +414,7 @@ export class Transformer {
   private transformPrimitives (subject: string, primitiveValue: types.PrimitiveType,
     context: types.ContextType): ITransformResult<any> {
 
-    const primitives = this.options.fetchSpecOption(`${context}/coercion/matchers/primitives`) as [];
+    const primitives = this.options.fetchOption(`${context}/coercion/matchers/primitives`) as [];
 
     if (R.includes(R.toLower(primitiveValue), ['primitives', 'collection'])) {
       throw new e.JaxConfigError(`primitives matcher cannot contain: ${primitiveValue}`,
@@ -456,7 +456,7 @@ export class Transformer {
   private transformDate (subject: string, dateValue: string,
     context: types.ContextType): ITransformResult<Date> {
 
-    const format = this.options.fetchSpecOption(`${context}/coercion/matchers/date/format`) as string;
+    const format = this.options.fetchOption(`${context}/coercion/matchers/date/format`) as string;
 
     let momentDate;
     let succeeded;
@@ -488,10 +488,10 @@ export class Transformer {
   transformSymbol (subject: string, symbolValue: string,
     context: types.ContextType): ITransformResult<Symbol> {
 
-    const prefix = this.options.fetchSpecOption(
+    const prefix = this.options.fetchOption(
       `${context}/coercion/matchers/symbol/prefix`) as string;
 
-    const global = this.options.fetchSpecOption(
+    const global = this.options.fetchOption(
       `${context}/coercion/matchers/symbol/global`) as string;
 
     const expr = new RegExp('^' + this.escapeRegExp(prefix));
@@ -519,7 +519,7 @@ export class Transformer {
    */
   transformString (subject: string, stringValue: string, context: types.ContextType)
     : ITransformResult<string> {
-    const stringCoercionAcceptable = this.options.fetchSpecOption(
+    const stringCoercionAcceptable = this.options.fetchOption(
       `${context}/coercion/matchers/string`) as boolean;
 
     if (!stringCoercionAcceptable) {

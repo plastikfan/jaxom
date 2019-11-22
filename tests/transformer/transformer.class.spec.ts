@@ -11,7 +11,7 @@ const { functify } = require('jinxed');
 import * as types from '../../lib/types';
 import { Specs } from '../../lib/specs';
 import { Transformer, ITransformFunction } from '../../lib/transformer/transformer.class';
-import { XpathConverterImpl } from '../../lib/converter/xpath-converter.impl';
+import { SpecOptionService } from '../../lib/specService/spec-option-service.class';
 
 describe('Transformer for "attributes" context', () => {
   afterEach(() => {
@@ -91,8 +91,8 @@ describe('Transformer for "attributes" context', () => {
     context(`given: ${t.given}`, () => {
       it(`should: coerce "${t.valueType}" value ok`, () => {
         try {
-          const stub = new XpathConverterImpl();
-          sinon.stub(stub, 'fetchSpecOption')
+          const stub = new SpecOptionService();
+          sinon.stub(stub, 'fetchOption')
             .withArgs(t.path).returns(t.specValue);
 
           const transformer = new Transformer(stub);
@@ -112,8 +112,8 @@ describe('Transformer for "attributes" context', () => {
   context('given: spec with "attributes/coercion/matchers/primitives" = date', () => {
     it('should: coerce "date" value ok:', () => {
       try {
-        const stub = new XpathConverterImpl();
-        sinon.stub(stub, 'fetchSpecOption')
+        const stub = new SpecOptionService();
+        sinon.stub(stub, 'fetchOption')
           .withArgs('attributes/coercion/matchers/date/format').returns('YYYY-MM-DD');
 
         const transformer = new Transformer(stub);
@@ -133,8 +133,8 @@ describe('Transformer for "attributes" context', () => {
   context('given: spec with "attributes/coercion/matchers/primitives" = symbol', () => {
     it('should coerce "symbol" value ok:', () => {
       try {
-        const stub = new XpathConverterImpl();
-        sinon.stub(stub, 'fetchSpecOption')
+        const stub = new SpecOptionService();
+        sinon.stub(stub, 'fetchOption')
           .withArgs('attributes/coercion/matchers/symbol/prefix').returns('$')
           .withArgs('attributes/coercion/matchers/symbol/global').returns(true);
 
@@ -157,8 +157,8 @@ describe('Transformer for "attributes" context', () => {
   context('given: spec with "attributes/coercion/matchers" = string(false)', () => {
     it('should: throw', () => {
       try {
-        const stub = new XpathConverterImpl();
-        sinon.stub(stub, 'fetchSpecOption')
+        const stub = new SpecOptionService();
+        sinon.stub(stub, 'fetchOption')
           .withArgs('attributes/coercion/matchers/string').returns(false);
         const transformer = new Transformer(stub);
 
@@ -178,15 +178,18 @@ describe('Transformer.transformCollection for "attributes" context', () => {
     constructor (private spec: types.ISpec) {
       //
     }
-    fetchSpecOption (path: string, fallBack: boolean = true): any {
+
+    fetchOption (path: string, fallBack: boolean = true): any {
       const segments: string[] = R.split('/')(path);
       const itemLens: R.Lens = R.lensPath(segments);
 
-      const result = fallBack
-        ? R.defaultTo(R.view(itemLens)(Specs.fallBack), R.view(itemLens)(this.spec))
-        : R.view(itemLens)(this.spec);
+      const result = fallBack ? R.defaultTo(R.view(itemLens)(Specs.fallBack), R.view(itemLens)(this.spec)) : R.view(itemLens)(this.spec);
 
       return result;
+    }
+
+    getSpec (): types.ISpec {
+      return this.spec;
     }
   }
 
@@ -261,8 +264,8 @@ describe('Transformer.transformCollection for "attributes" context', () => {
     it(`should: coerce as a multiple item Set`, () => {
       const raw = '!<Set>[1,2,3,4]';
       try {
-        const stub = new XpathConverterImpl();
-        sinon.stub(stub, 'fetchSpecOption')
+        const stub = new SpecOptionService();
+        sinon.stub(stub, 'fetchOption')
           .withArgs('attributes/coercion/matchers/collection/delim').returns(',')
           .withArgs('attributes/coercion/matchers/collection/open').returns('!<type>[')
           .withArgs('attributes/coercion/matchers/collection/close').returns(']')
@@ -293,8 +296,8 @@ describe('Transformer.transformCollection for "attributes" context', () => {
     it(`should: coerce as a single item map`, () => {
       const raw = '!<Map>[foo=bar]';
       try {
-        const stub = new XpathConverterImpl();
-        sinon.stub(stub, 'fetchSpecOption')
+        const stub = new SpecOptionService();
+        sinon.stub(stub, 'fetchOption')
           .withArgs('attributes/coercion/matchers/collection/delim').returns(',')
           .withArgs('attributes/coercion/matchers/collection/open').returns('!<type>[')
           .withArgs('attributes/coercion/matchers/collection/close').returns(']')
@@ -320,8 +323,8 @@ describe('Transformer.transformCollection for "attributes" context', () => {
       const raw = '!<Map>[a=one,b=two,c=three]';
 
       try {
-        const stub = new XpathConverterImpl();
-        sinon.stub(stub, 'fetchSpecOption')
+        const stub = new SpecOptionService();
+        sinon.stub(stub, 'fetchOption')
           .withArgs('attributes/coercion/matchers/collection/delim').returns(',')
           .withArgs('attributes/coercion/matchers/collection/open').returns('!<type>[')
           .withArgs('attributes/coercion/matchers/collection/close').returns(']')
@@ -351,8 +354,8 @@ describe('Transformer.transformCollection for "attributes" context', () => {
     it(`should: coerce as a multiple item Object`, () => {
       const raw = '!<Object>[a=one,b=two,c=three]';
 
-      const stub = new XpathConverterImpl();
-      sinon.stub(stub, 'fetchSpecOption')
+      const stub = new SpecOptionService();
+      sinon.stub(stub, 'fetchOption')
         .withArgs('attributes/coercion/matchers/collection/delim').returns(',')
         .withArgs('attributes/coercion/matchers/collection/open').returns('!<type>[')
         .withArgs('attributes/coercion/matchers/collection/close').returns(']')
@@ -377,8 +380,8 @@ describe('Transformer.transformCollection for "attributes" context', () => {
     it(`should: coerce as a multiple item Object and numeric keys`, () => {
       const raw = '!<Object>[1=one,2=two,3=three]';
 
-      const stub = new XpathConverterImpl();
-      sinon.stub(stub, 'fetchSpecOption')
+      const stub = new SpecOptionService();
+      sinon.stub(stub, 'fetchOption')
         .withArgs('attributes/coercion/matchers/collection/delim').returns(',')
         .withArgs('attributes/coercion/matchers/collection/open').returns('!<type>[')
         .withArgs('attributes/coercion/matchers/collection/close').returns(']')
@@ -403,8 +406,8 @@ describe('Transformer.transformCollection for "attributes" context', () => {
     it(`should: coerce as a multiple item Object and numeric keys and values`, () => {
       const raw = '!<Object>[1=15,2=30,3=40]';
 
-      const stub = new XpathConverterImpl();
-      sinon.stub(stub, 'fetchSpecOption')
+      const stub = new SpecOptionService();
+      sinon.stub(stub, 'fetchOption')
         .withArgs('attributes/coercion/matchers/collection/delim').returns(',')
         .withArgs('attributes/coercion/matchers/collection/open').returns('!<type>[')
         .withArgs('attributes/coercion/matchers/collection/close').returns(']')
@@ -429,8 +432,8 @@ describe('Transformer.transformCollection for "attributes" context', () => {
     it(`should: coerce as a multiple item Object mixed type numeric keys and values`, () => {
       const raw = '!<Object>[1=15,2=30,3=40,4=g,deuce=adv]';
 
-      const stub = new XpathConverterImpl();
-      sinon.stub(stub, 'fetchSpecOption')
+      const stub = new SpecOptionService();
+      sinon.stub(stub, 'fetchOption')
         .withArgs('attributes/coercion/matchers/collection/delim').returns(',')
         .withArgs('attributes/coercion/matchers/collection/open').returns('!<type>[')
         .withArgs('attributes/coercion/matchers/collection/close').returns(']')
@@ -458,8 +461,8 @@ describe('Transformer.transformCollection for "attributes" context', () => {
       const raw = '!<Object>[1=15,2=30,3=40,4=g,deuce=adv]';
 
       it(`should: throw`, () => {
-        const stub = new XpathConverterImpl();
-        sinon.stub(stub, 'fetchSpecOption')
+        const stub = new SpecOptionService();
+        sinon.stub(stub, 'fetchOption')
           .withArgs('attributes/coercion/matchers/collection/delim').returns(',')
           .withArgs('attributes/coercion/matchers/collection/open').returns('!<type>[')
           .withArgs('attributes/coercion/matchers/collection/close').returns(']')
@@ -482,8 +485,8 @@ describe('Transformer.transformCollection for "attributes" context', () => {
       const raw = '!<Object>[1=15,2=30,3=40,4=g,deuce=adv]';
 
       it(`should: throw`, () => {
-        const stub = new XpathConverterImpl();
-        sinon.stub(stub, 'fetchSpecOption')
+        const stub = new SpecOptionService();
+        sinon.stub(stub, 'fetchOption')
           .withArgs('attributes/coercion/matchers/collection/delim').returns(',')
           .withArgs('attributes/coercion/matchers/collection/open').returns('!<type>[')
           .withArgs('attributes/coercion/matchers/collection/close').returns(']')
@@ -506,8 +509,8 @@ describe('Transformer.transformCollection for "attributes" context', () => {
       const raw = '!<Object>[1=15,2=30,3=40,4=g,deuce=adv]';
 
       it(`should: throw`, () => {
-        const stub = new XpathConverterImpl();
-        sinon.stub(stub, 'fetchSpecOption')
+        const stub = new SpecOptionService();
+        sinon.stub(stub, 'fetchOption')
           .withArgs('attributes/coercion/matchers/collection/delim').returns(',')
           .withArgs('attributes/coercion/matchers/collection/open').returns('!<type>[')
           .withArgs('attributes/coercion/matchers/collection/close').returns(']')
@@ -526,4 +529,4 @@ describe('Transformer.transformCollection for "attributes" context', () => {
       });
     });
   }); // Error handling
-}); // XpathConverterImpl.transformCollection for "attributes" context
+}); // Transformer.transformCollection for "attributes" context

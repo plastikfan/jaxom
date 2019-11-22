@@ -110,6 +110,6 @@ export interface ITransformer {
 }
 
 export interface ISpecService {
-  fetchOption (path: string, fallBack: boolean): {};
+  fetchOption (path: string, fallBack?: boolean): {};
   getSpec (): ISpec;
 }

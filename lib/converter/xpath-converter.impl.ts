@@ -7,6 +7,7 @@ import * as types from '../types';
 import * as e from '../exceptions';
 import { Specs } from '../specs';
 import { Transformer } from '../transformer/transformer.class';
+import { SpecOptionService } from '../specService/spec-option-service.class';
 
 /**
  * @export
@@ -30,7 +31,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
       throw new Error('null spec not permitted');
     }
 
-    this.transformer = new Transformer(this);
+    this.transformer = new Transformer(new SpecOptionService(spec));
   }
 
   transformer: types.ITransformer;
