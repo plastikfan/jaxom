@@ -9,36 +9,23 @@ import * as e from '../exceptions';
 export class Transformer {
 
   constructor (private options: specs.IFetchSpecOption) {
-    this.makeTransformers();
+
   }
 
-  private static typeExpr: RegExp;
-  private transformers: Map<string, ITransformFunction<any>>;
-
-  /**
-   * @method initialise
-   * @description Performs static initialisation of the class (Does NOT need to be called by
-   * the client, even though it is public)
-   * @static
-   * @memberof Transformer
-   */
-  static initialise (): void {
-    this.typeExpr = /\<(?<type>[\w\[\]]+)\>/;
-  }
-
-  // This really should be a static, but there is no way to add a class's methods to a static
-  // binding.
+  // Ideally this would be static, but can't add non-static methods to a static
+  // collection!
   //
-  private makeTransformers (): void {
-    this.transformers = new Map<string, ITransformFunction<any>>();
-    this.transformers.set('number', this.transformNumber);
-    this.transformers.set('boolean', this.transformBoolean);
-    this.transformers.set('primitives', this.transformPrimitives);
-    this.transformers.set('collection', this.transformCollection);
-    this.transformers.set('date', this.transformDate);
-    this.transformers.set('symbol', this.transformSymbol);
-    this.transformers.set('string', this.transformString);
-  }
+  private readonly transformers = new Map<string, ITransformFunction<any>>([
+    ['number', this.transformNumber],
+    ['boolean', this.transformBoolean],
+    ['primitives', this.transformPrimitives],
+    ['collection', this.transformCollection],
+    ['date', this.transformDate],
+    ['symbol', this.transformSymbol],
+    ['string', this.transformString]
+  ]);
+
+  private static readonly typeExpr = /\<(?<type>[\w\[\]]+)\>/;
 
   /**
    * @method getTransform
@@ -623,8 +610,6 @@ export class Transformer {
       'int16array', 'int32array', 'uint32array', 'float32array', 'float64array', 'set']);
   }
 } // Transformer class
-
-Transformer.initialise();
 
 /**
  * @description Internal implementation interface which is required due to the fact that
