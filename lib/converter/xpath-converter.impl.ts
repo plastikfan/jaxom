@@ -5,8 +5,8 @@ import { functify } from 'jinxed';
 
 import * as types from '../types';
 import * as e from '../exceptions';
-import { Specs } from '../specs';
 import { Transformer } from '../transformer/transformer.class';
+import { SpecOptionService } from '../specService/spec-option-service.class';
 
 /**
  * @export
@@ -25,12 +25,14 @@ export class XpathConverterImpl implements types.IConverterImpl {
    *
    * @memberof XpathConverterImpl
    */
-  constructor (private spec: types.ISpec = Specs.default) {
-    if (!spec) {
-      throw new Error('null spec not permitted');
+  constructor (private options: types.ISpecService = new SpecOptionService()) {
+    if (!options) {
+      throw new Error('null spec option service not permitted');
     }
 
-    this.transformer = new Transformer(this);
+    // Control freak!
+    //
+    this.transformer = new Transformer(options);
   }
 
   transformer: types.ITransformer;
@@ -51,7 +53,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
 
     const subject = composeElementPath(elementNode);
     let element: any = this.buildLocalAttributes(subject, elementNode);
-    const elementLabel = this.fetchSpecOption('labels/element') as string;
+    const elementLabel = this.options.fetchOption('labels/element') as string;
 
     element[elementLabel] = elementNode.nodeName;
 
@@ -96,9 +98,9 @@ export class XpathConverterImpl implements types.IConverterImpl {
     let element: any = {};
 
     if (attributeNodes && attributeNodes instanceof Array) {
-      const attributesLabel = this.fetchSpecOption('labels/attributes', false) as string;
-      const doCoercion: boolean = R.is(Object)(this.fetchSpecOption('attributes/coercion', false));
-      const matchers = this.fetchSpecOption('attributes/coercion/matchers');
+      const attributesLabel = this.options.fetchOption('labels/attributes', false) as string;
+      const doCoercion: boolean = R.is(Object)(this.options.fetchOption('attributes/coercion', false));
+      const matchers = this.options.fetchOption('attributes/coercion/matchers');
 
       if (attributesLabel && attributesLabel !== '') {
         // Build attributes as an array identified by labels.attributes
@@ -222,7 +224,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
           const doMergeElements = (a: any, b: any) => {
             let merged;
 
-            const descendantsLabel = this.fetchSpecOption('labels/descendants');
+            const descendantsLabel = this.options.fetchOption('labels/descendants') as string;
 
             if (R.includes(descendantsLabel, R.keys(a) as string[])
               && R.includes(descendantsLabel, R.keys(b) as string[])) {
@@ -300,7 +302,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
     previouslySeen: string[]): {} {
     const selectionResult: any = xpath.select('./*', elementNode);
 
-    const descendantsLabel = this.fetchSpecOption(`labels/descendants`) as string;
+    const descendantsLabel = this.options.fetchOption(`labels/descendants`) as string;
 
     if (selectionResult && selectionResult.length > 0) {
       const getElementsFn: any = R.filter((child: any) => (child.nodeType === child.ELEMENT_NODE));
@@ -318,7 +320,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
         element[descendantsLabel] = children;
       }
 
-      const elementLabel = this.fetchSpecOption(`labels/element`) as string;
+      const elementLabel = this.options.fetchOption(`labels/element`) as string;
       const elementInfo: types.IElementInfo = this.getElementInfo(
         element[elementLabel], parseInfo);
 
@@ -361,7 +363,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
     let elementText: string = this.composeText(elementNode);
 
     if (elementText && elementText !== '') {
-      const textLabel = this.fetchSpecOption(`labels/text`) as string;
+      const textLabel = this.options.fetchOption(`labels/text`) as string;
       element[textLabel] = elementText;
     }
 
@@ -399,7 +401,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
   public composeText (elementNode: any): string {
     let text = '';
     let currentChild = elementNode.firstChild;
-    const doTrim = this.fetchSpecOption('textNodes/trim') as boolean;
+    const doTrim = this.options.fetchOption('textNodes/trim') as boolean;
 
     while (currentChild !== null) {
       if (currentChild.data && currentChild.data !== null) {
@@ -410,38 +412,6 @@ export class XpathConverterImpl implements types.IConverterImpl {
 
     return text;
   } // composeText
-
-  /**
-   * @method fetchSpecOption
-   * @description Fetches the option denoted by the path. If the option requested does
-   * not appear in spec the provided, the option will be fetched from the fallBack
-   * spec (with caveats see fallBack parameter). The path specified must be treated
-   * as absolute and relates to the base spec.
-   *
-   * @private
-   * @param {string} path delimited string containing the segments used to build a lens
-   * for inspecting the spec.
-   * @param {boolean} [fallBack=true] The setting of this value depends from where it is
-   * being called as well as the item being requested. Eg, labels.attribute is an optional
-   * and its presence acts like a flag. For items with flag like behaviour, then it is
-   * ok to set fallBack to false, as we should return nothing in this scenario instead of
-   * looking into the fallBack spec. Also, if called from a transform function and a value
-   * is being retrieved from under ./coercion, then its ok allow fallBack = true, because
-   * all transform functions are activated as a result of coercion being active.
-   *
-   * @returns {*}
-   * @memberof XpathConverterImpl
-   */
-  public fetchSpecOption (path: string, fallBack: boolean = true): any {
-    const segments: string[] = R.split('/')(path);
-    const itemLens: R.Lens = R.lensPath(segments);
-
-    const result = fallBack
-      ? R.defaultTo(R.view(itemLens)(Specs.fallBack), R.view(itemLens)(this.spec))
-      : R.view(itemLens)(this.spec);
-
-    return result;
-  }
 } // class XpathConverterImpl
 
 /**

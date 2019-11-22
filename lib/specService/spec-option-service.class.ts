@@ -1,12 +1,57 @@
 
-import * as types from './types';
+import * as R from 'ramda';
+import * as types from '../types';
+
+export class SpecOptionService implements types.ISpecService {
+
+  constructor (private spec: types.ISpec = defaultSpec) {
+
+  }
+
+  // ---------------------------------------------------- ISpecService interface
+
+  /**
+   * @method fetchOption
+   * @description Fetches the option denoted by the path. If the option requested does
+   * not appear in spec the provided, the option will be fetched from the fallBack
+   * spec (with caveats see fallBack parameter). The path specified must be treated
+   * as absolute and relates to the base spec.
+   *
+   * @private
+   * @param {string} path delimited string containing the segments used to build a lens
+   * for inspecting the spec.
+   * @param {boolean} [fallBack=true] The setting of this value depends from where it is
+   * being called as well as the item being requested. Eg, labels.attribute is an optional
+   * and its presence acts like a flag. For items with flag like behaviour, then it is
+   * ok to set fallBack to false, as we should return nothing in this scenario instead of
+   * looking into the fallBack spec. Also, if called from a transform function and a value
+   * is being retrieved from under ./coercion, then its ok allow fallBack = true, because
+   * all transform functions are activated as a result of coercion being active.
+   *
+   * @returns {*}
+   * @memberof SpecOptionService
+   */
+  public fetchOption (path: string, fallBack: boolean = true): any {
+    const segments: string[] = R.split('/')(path);
+    const itemLens: R.Lens = R.lensPath(segments);
+
+    const result = fallBack
+      ? R.defaultTo(R.view(itemLens)(Specs.fallBack), R.view(itemLens)(this.spec))
+      : R.view(itemLens)(this.spec);
+
+    return result;
+  }
+
+  getSpec (): types.ISpec {
+    return this.spec;
+  }
+
+  // ISpecService interface ====================================================
+
+} // class SpecOptionService
 
 export const CollectionTypeLabel = 'type';
 export const CollectionTypePlaceHolder = `<type>`;
-
-export interface IFetchSpecOption {
-  fetchSpecOption (path: string, fallBack?: boolean): any;
-}
 
 // This is the spec used by the converter when the user does not supply a custom or
 // specify a predefined one. By default, we don't want to use symbol and date matchers
@@ -40,7 +85,7 @@ const defaultSpec: types.ISpec = Object.freeze({
             valueType: 'string'
           }
         },
-        string: true  // if false, then throw;
+        string: true // if false, then throw;
       }
     }
   },
@@ -98,7 +143,7 @@ const fallBackSpec: types.ISpec = Object.freeze({
           prefix: '$',
           global: true
         },
-        string: true  // if false, then throw;
+        string: true // if false, then throw;
       }
     }
   },

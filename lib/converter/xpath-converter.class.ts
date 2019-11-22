@@ -1,8 +1,7 @@
 
 import * as types from '../types';
-import { Specs } from '../specs';
 import { XpathConverterImpl as Impl } from './xpath-converter.impl';
-import { Transformer } from '../transformer/transformer.class';
+import { SpecOptionService, Specs } from '../specService/spec-option-service.class';
 
 /**
  * @export
@@ -26,11 +25,12 @@ export class XpathConverter implements types.IConverter {
       throw new Error('null spec not permitted');
     }
 
-    this.impl = new Impl(spec);
+    // Control freak!
+    //
+    this.impl = new Impl(new SpecOptionService(spec));
   }
 
   private impl: types.IConverterImpl;
-  private transformer: types.ITransformer;
 
   /**
    * @method buildElement
