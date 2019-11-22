@@ -12,6 +12,7 @@ import { Specs } from '../../lib/specs';
 
 import { XpathConverterImpl as Impl, composeElementPath }
   from '../../lib/converter/xpath-converter.impl';
+import { SpecOptionService } from '../../lib/specService/spec-option-service.class';
 
 const testParseInfo: types.IParseInfo = {
   elements: new Map<string, types.IElementInfo>([
@@ -185,7 +186,7 @@ describe('converter.impl.buildLocalAttributes', () => {
       const applicationNode: types.SelectResult = xp.select('/Application', document, true);
 
       if (applicationNode && applicationNode instanceof Node) {
-        const converter = new Impl(Specs.attributesAsArray);
+        const converter = new Impl(new SpecOptionService(Specs.attributesAsArray));
         const directoryNode: types.NullableNode = Helpers.selectElementNodeById(
           'Directory', 'name', 'archive', applicationNode);
 
