@@ -269,3 +269,156 @@ describe('composeElementPath', () => {
     });
   });
 }); // composeElementPath
+
+describe('converter.impl.getElementInfo', () => {
+  let converter: Impl;
+  beforeEach(() => {
+    converter = new Impl();
+  });
+
+  context('IParseInfo without common or def', () => {
+    const withoutCommonOrDefInfo: types.IParseInfo = {
+      elements: new Map<string, types.IElementInfo>([
+        [
+          'Command',
+          {
+            id: 'cmd',
+            recurse: 'inherits',
+            discards: ['inherits', 'abstract'],
+            descendants: {
+              by: 'index',
+              throwIfCollision: false,
+              throwIfMissing: false
+            }
+          }
+        ]
+      ])
+    };
+
+    context('given: named element IS present', () => {
+      it('should: return named parse info', () => {
+        const result = converter.getElementInfo('Command', withoutCommonOrDefInfo);
+        expect(result.id).to.equal('cmd');
+      });
+    });
+
+    context('given: named element is NOT present', () => {
+      it('should: return empty parse info', () => {
+        const result = converter.getElementInfo('Task', withoutCommonOrDefInfo);
+        expect(result.id).to.equal(types.EmptyElementInfo.id);
+      });
+    });
+  }); // IParseInfo without common or def
+
+  context('IParseInfo with common', () => {
+    const withCommonInfo: types.IParseInfo = {
+      elements: new Map<string, types.IElementInfo>([
+        [ 'Command', { id: 'cmd' } ]
+      ]),
+      common: {
+        id: 'common-id',
+        recurse: 'inherits',
+        discards: ['inherits', 'abstract'],
+        descendants: {
+          by: 'index',
+          throwIfCollision: false,
+          throwIfMissing: false
+        }
+      }
+    };
+
+    context('given: named element IS present', () => {
+      it('should: return named info merged with common', () => {
+        const result = converter.getElementInfo('Command', withCommonInfo);
+        expect(result.id).to.equal('cmd');
+        expect(result.recurse).to.equal('inherits');
+      });
+    });
+
+    context('given: named element is NOT present', () => {
+      it('should: return common info', () => {
+        const result = converter.getElementInfo('Task', withCommonInfo);
+        expect(result.id).to.equal('common-id');
+        expect(result.recurse).to.equal('inherits');
+      });
+    });
+  }); // IParseInfo with common
+
+  context('IParseInfo with def', () => {
+    const withDefInfo: types.IParseInfo = {
+      elements: new Map<string, types.IElementInfo>([
+        ['Command', { id: 'cmd' }]
+      ]),
+      def: {
+        id: 'def-id',
+        recurse: 'inherits',
+        discards: ['inherits', 'abstract'],
+        descendants: {
+          by: 'index',
+          throwIfCollision: false,
+          throwIfMissing: false
+        }
+      }
+    };
+
+    context('given: named element IS present', () => {
+      it('should: return named info', () => {
+        const result = converter.getElementInfo('Command', withDefInfo);
+        expect(result.id).to.equal('cmd');
+        expect(result.recurse).to.be.undefined();
+      });
+    });
+
+    context('given: named element is NOT present', () => {
+      it('should: return def info', () => {
+        const result = converter.getElementInfo('Task', withDefInfo);
+        expect(result.id).to.equal('def-id');
+        expect(result.recurse).to.equal('inherits');
+      });
+    });
+  }); // IParseInfo with def
+
+  context('IParseInfo with common and def', () => {
+    const withCommonAndDefInfo: types.IParseInfo = {
+      elements: new Map<string, types.IElementInfo>([
+        ['Command', { id: 'cmd' }]
+      ]),
+      common: {
+        id: 'common-id',
+        recurse: 'from',
+        discards: ['from', 'abstract'],
+        descendants: {
+          by: 'group'
+        }
+      },
+      def: {
+        id: 'def-id',
+        recurse: 'inherits',
+        discards: ['inherits', 'abstract'],
+        descendants: {
+          by: 'index',
+          throwIfCollision: false,
+          throwIfMissing: false
+        }
+      }
+    };
+
+    context('given: named element IS present', () => {
+      it('should: return named info', () => {
+        const result = converter.getElementInfo('Command', withCommonAndDefInfo);
+        expect(result.id).to.equal('cmd');
+        expect(result.recurse).to.equal('from');
+        expect(result.descendants?.by).to.equal('group');
+      });
+    });
+
+    context('given: named element is NOT present', () => {
+      it('should: return def info', () => {
+        const result = converter.getElementInfo('Task', withCommonAndDefInfo);
+        expect(result.id).to.equal('def-id');
+        expect(result.recurse).to.equal('inherits');
+        expect(result.descendants?.by).to.equal('index');
+      });
+    });
+  }); // IParseInfo with common and def
+}); // converter.impl.getElementInfo

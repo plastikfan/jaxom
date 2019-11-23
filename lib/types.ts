@@ -2,8 +2,6 @@
 // Element Parse Info
 //
 export interface IElementInfo {
-  // 'id' is optional so that user can specify an object without an id for default
-  //
   readonly id: string;
   readonly recurse?: string;
   readonly discards?: ReadonlyArray<string>;
@@ -14,10 +12,11 @@ export interface IElementInfo {
   };
 }
 
-export const EmptyElementInfo: IElementInfo = { id: 'name' };
+export const EmptyElementInfo: IElementInfo = { id: '' };
 
 export interface IParseInfo {
   readonly elements: ReadonlyMap<string, IElementInfo>;
+  readonly common?: IElementInfo;
   readonly def?: IElementInfo;
 }
 

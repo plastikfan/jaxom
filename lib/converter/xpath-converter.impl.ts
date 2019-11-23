@@ -374,14 +374,28 @@ export class XpathConverterImpl implements types.IConverterImpl {
    * @method getElementInfo
    * @description Retrieves the elementInfo for the name specified.
    *
-   * @private
    * @param {string} elementName
    * @param {types.IParseInfo} parseInfo
    * @returns {types.IElementInfo}
    * @memberof XpathConverterImpl
    */
-  private getElementInfo (elementName: string, parseInfo: types.IParseInfo): types.IElementInfo {
-    return parseInfo.elements.get(elementName) ?? parseInfo.def ?? types.EmptyElementInfo;
+  getElementInfo (elementName: string, parseInfo: types.IParseInfo): types.IElementInfo {
+    const namedOrDefaultElementInfo: types.IElementInfo | undefined = parseInfo.elements.get(
+      elementName) ?? parseInfo.def;
+
+    let result: types.IElementInfo = types.EmptyElementInfo;
+
+    if (namedOrDefaultElementInfo) {
+      result = parseInfo.common
+        ? R.mergeDeepRight(parseInfo.common, namedOrDefaultElementInfo)
+        : namedOrDefaultElementInfo;
+    } else {
+      if (parseInfo.common) {
+        result = parseInfo.common;
+      }
+    }
+
+    return result;
   }
 
   /**
