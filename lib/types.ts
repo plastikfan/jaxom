@@ -100,6 +100,7 @@ export interface IConverter {
 
 export interface IConverterImpl {
   build (elementNode: Node, parseInfo: IParseInfo, previouslySeen: string[]): any;
+  buildElement (elementNode: Node, parseInfo: IParseInfo, previouslySeen: string[]): any;
 }
 
 export interface INormaliser {

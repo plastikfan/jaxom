@@ -55,6 +55,22 @@ export class XpathConverterImpl implements types.IConverterImpl {
   build (elementNode: Node, parseInfo: types.IParseInfo,
     previouslySeen: string[] = []): any {
 
+    return this.buildElement(elementNode, parseInfo, previouslySeen);
+  } // build
+
+  /**
+   * @method buildElement
+   * @description builds the native object representing an element, and recurses in 2 dimensions;
+   * by the "recurse" attribute (usually "inherits") and via the element's direct descendants.
+   * @private
+   * @param {Node} elementNode
+   * @param {types.IParseInfo} parseInfo
+   * @param {string[]} [previouslySeen=[]]
+   * @returns
+   * @memberof XpathConverterImpl
+   */
+  buildElement (elementNode: Node, parseInfo: types.IParseInfo, previouslySeen: string[]): any {
+
     const { recurse = '', discards = [], id = '' } = this.getElementInfo(elementNode.nodeName, parseInfo);
     const subject = composeElementPath(elementNode, id);
     let element: any = this.buildLocalAttributes(subject, elementNode);
@@ -82,7 +98,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
     }, discards);
 
     return element;
-  } // build
+  } // buildElement
 
   /**
    * @method buildLocalAttributes
@@ -221,7 +237,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
 
             // Horizontal recursion/merging eg: (at => base-command|domain-command|uni-command)
             //
-            return this.build(inheritedElementNode, parseInfo, previouslySeen);
+            return this.buildElement(inheritedElementNode, parseInfo, previouslySeen);
           }, recurseAttributes);
 
           // Now merge one by one. On the first iteration a={} and b=first-element. This means
@@ -280,7 +296,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
 
           // Vertical recursion/merging to the base element
           //
-          const inheritedElement = this.build(inheritedElementNode, parseInfo, previouslySeen);
+          const inheritedElement = this.buildElement(inheritedElementNode, parseInfo, previouslySeen);
 
           // Now we need to perform a merge of this element with the inherited element
           // ensuring that any properties in this element take precedence.
@@ -316,7 +332,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
       const elements: any = getElementsFn(selectionResult);
 
       const children: any = R.reduce((acc, childElement: Element): any => {
-        const child = this.build(childElement, parseInfo, previouslySeen);
+        const child = this.buildElement(childElement, parseInfo, previouslySeen);
         return R.append(child, acc);
       }, [])(elements);
 
