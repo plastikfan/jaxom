@@ -104,11 +104,15 @@ export interface IConverterImpl {
   buildElement (elementNode: Node, parseInfo: IParseInfo, previouslySeen: string[]): any;
 }
 
+export interface INormaliser {
+  combineDescendants (subject: string, parent: {}): {};
+}
+
 export interface ITransformer {
   coerceAttributeValue (subject: string, matchers: any, rawValue: any, attributeName: string): {};
 }
 
 export interface ISpecService {
-  fetchOption (path: string, fallBack?: boolean): {};
+  fetchOption (path: string, fallBack?: boolean): any;
   getSpec (): ISpec;
 }
