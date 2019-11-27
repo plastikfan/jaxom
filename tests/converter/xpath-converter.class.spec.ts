@@ -35,7 +35,7 @@ const testParseInfo: types.IParseInfo = {
   }
 };
 
-describe('xpath-converter.buildElement', () => {
+describe('xpath-converter.build', () => {
   context('given: new object / command with no inheritance, using default spec', () => {
     it('should: return a command object all local attributes', () => {
       const data = `<?xml version="1.0"?>
@@ -1057,4 +1057,4 @@ describe('xpath-converter.buildElement', () => {
       }
     });
   });
-}); // xpath-converter.buildElement
+}); // xpath-converter.build

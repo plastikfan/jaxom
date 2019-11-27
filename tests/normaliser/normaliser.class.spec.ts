@@ -102,7 +102,7 @@ describe('Normaliser.combine', () => {
         if (commandNode) {
           const converter = new Impl();
           expect(() => {
-            converter.buildElement(commandNode, testParseInfo);
+            converter.build(commandNode, testParseInfo);
           }).to.throw();
         } else {
           assert.fail("Couldn't get test command");
