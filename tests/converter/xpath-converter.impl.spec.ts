@@ -9,7 +9,7 @@ const parser = new DOMParser();
 import * as types from '../../lib/types';
 import * as Helpers from '../test-helpers';
 
-import { XpathConverterImpl as Impl, composeElementPath }
+import { XpathConverterImpl as Impl, composeElementPath, composeIdQualifierPathSegment }
   from '../../lib/converter/xpath-converter.impl';
 import { SpecOptionService, Specs } from '../../lib/specService/spec-option-service.class';
 
@@ -226,13 +226,27 @@ describe('composeElementPath', () => {
 
   const tests = [
     {
-      given: 'An intermediate element node',
+      given: 'An intermediate element node WITH id',
       path: '/Application/Expressions[@name="content-expressions"]',
+      id: 'name',
+      expected: '/Application/Expressions[@name="content-expressions"]'
+    },
+    {
+      given: 'A leaf element node WITH id',
+      path: '/Application/Expressions/Expression/Pattern[@eg="_"]',
+      id: 'eg',
+      expected: '/Application/Expressions/Expression/Pattern[@eg="_"]'
+    },
+    {
+      given: 'An intermediate element node without id',
+      path: '/Application/Expressions[@name="content-expressions"]',
+      id: '',
       expected: '/Application/Expressions'
     },
     {
-      given: 'A leaf element node',
+      given: 'A leaf element node without id',
       path: '/Application/Expressions/Expression/Pattern[@eg="_"]',
+      id: '',
       expected: '/Application/Expressions/Expression/Pattern'
     }
   ];
@@ -244,7 +258,7 @@ describe('composeElementPath', () => {
         const node: types.SelectResult = xp.select(t.path, document, true);
 
         if (node && node instanceof Node) {
-          const result = composeElementPath(node);
+          const result = composeElementPath(node, t.id);
 
           expect(result).to.equal(t.expected);
         } else {

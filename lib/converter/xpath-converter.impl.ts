@@ -56,7 +56,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
     previouslySeen: string[] = []): any {
 
     const { recurse = '', discards = [], id = '' } = this.getElementInfo(elementNode.nodeName, parseInfo);
-    const subject = composeElementPath(elementNode);
+    const subject = composeElementPath(elementNode, id);
     let element: any = this.buildLocalAttributes(subject, elementNode);
     const elementLabel = this.options.fetchOption('labels/element') as string;
 
@@ -238,7 +238,6 @@ export class XpathConverterImpl implements types.IConverterImpl {
               // Both a and b have children, therefore we must merge in such a way as to
               // not to lose any properties of a by calling R.mergeAll
               //
-              console.log(`!!! recurseThroughAttribute.doMergeElements; ${elementNode.nodeName}(@${id}=${element[id]})`);
               const mergedChildren = R.concat(a[descendantsLabel], b[descendantsLabel]); // save a
               const allMergedWithoutChildrenOfA = R.mergeAll([a, b]); // This is where we lose the children of a
 
@@ -511,12 +510,30 @@ function selectElementNodeById (elementName: string, id: string, name: string,
  * @param {types.NullableNode} node
  * @returns {string}
  */
-export function composeElementPath (node: types.NullableNode): string {
+export function composeElementPath (localNode: types.NullableNode, id: string = ''): string {
+  return composeElementSegment(localNode) + composeIdQualifierPathSegment(localNode, id);
+}
+
+function composeElementSegment (node: types.NullableNode): string {
   if (!node) {
     return '/';
   } else if (node instanceof Document) {
     return '';
   } else {
-    return `${composeElementPath(node.parentNode)}/${node.nodeName}`;
+    return `${composeElementSegment(node.parentNode)}/${node.nodeName}`;
   }
+}
+
+export function composeIdQualifierPathSegment (localNode: types.NullableNode, id: string): string {
+  let idSegment = '';
+
+  if (id !== '' && localNode) {
+    const attributeNode: types.SelectResult = xpath.select(`@${id}`, localNode, true);
+
+    if (attributeNode && (attributeNode instanceof Node)) {
+      idSegment = `[@${attributeNode.nodeName}="${attributeNode.nodeValue}"]`;
+    }
+  }
+
+  return idSegment;
 }
