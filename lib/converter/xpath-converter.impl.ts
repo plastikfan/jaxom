@@ -72,7 +72,6 @@ export class XpathConverterImpl implements types.IConverterImpl {
     }
 
     if (this.isCombinable(subject, element, recurse)) {
-      console.log(`??? subject: "${id === '' ? subject : (subject + '[@' + id + '=' + element[id])}']'" is combinable`);
       element = this.normaliser.combineDescendants(subject, element);
     }
 
@@ -239,6 +238,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
               // Both a and b have children, therefore we must merge in such a way as to
               // not to lose any properties of a by calling R.mergeAll
               //
+              console.log(`!!! recurseThroughAttribute.doMergeElements; ${elementNode.nodeName}(@${id}=${element[id]})`);
               const mergedChildren = R.concat(a[descendantsLabel], b[descendantsLabel]); // save a
               const allMergedWithoutChildrenOfA = R.mergeAll([a, b]); // This is where we lose the children of a
 
@@ -322,6 +322,9 @@ export class XpathConverterImpl implements types.IConverterImpl {
       }, [])(elements);
 
       if (R.includes(descendantsLabel, R.keys(element) as string[])) {
+        if (!(element[descendantsLabel] instanceof Array)) {
+          throw new e.JaxConfigError('Element is not marked as abstract', subject);
+        }
         const merged = R.concat(children, element[descendantsLabel]);
         element[descendantsLabel] = merged;
       } else {
