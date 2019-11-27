@@ -1,3 +1,4 @@
+import { EmptyElementInfo } from './../types';
 
 import * as R from 'ramda';
 import * as xpath from 'xpath-ts';
@@ -7,6 +8,7 @@ import * as types from '../types';
 import * as e from '../exceptions';
 import { Transformer } from '../transformer/transformer.class';
 import { SpecOptionService } from '../specService/spec-option-service.class';
+import { Normaliser } from '../normaliser/normaliser.class';
 
 /**
  * @export
@@ -33,9 +35,11 @@ export class XpathConverterImpl implements types.IConverterImpl {
     // Control freak!
     //
     this.transformer = new Transformer(options);
+    this.normaliser = new Normaliser(options);
   }
 
   transformer: types.ITransformer;
+  normaliser: Normaliser;
 
   /**
    * @method buildElement
@@ -51,17 +55,25 @@ export class XpathConverterImpl implements types.IConverterImpl {
   buildElement (elementNode: Node, parseInfo: types.IParseInfo,
     previouslySeen: string[] = []): any {
 
+    const { recurse = '', discards = [], id = '' } = this.getElementInfo(elementNode.nodeName, parseInfo);
     const subject = composeElementPath(elementNode);
     let element: any = this.buildLocalAttributes(subject, elementNode);
     const elementLabel = this.options.fetchOption('labels/element') as string;
 
     element[elementLabel] = elementNode.nodeName;
 
-    const { recurse = '', discards = [] } = this.getElementInfo(elementNode.nodeName, parseInfo);
-
     if ((recurse !== '') && (elementNode instanceof Element)) {
       element = this.recurseThroughAttribute(subject, element, elementNode,
         parseInfo, previouslySeen);
+    }
+
+    if (elementNode.hasChildNodes()) {
+      element = this.buildChildren(subject, element, elementNode, parseInfo, previouslySeen);
+    }
+
+    if (this.isCombinable(subject, element, recurse)) {
+      console.log(`??? subject: "${id === '' ? subject : (subject + '[@' + id + '=' + element[id])}']'" is combinable`);
+      element = this.normaliser.combineDescendants(subject, element);
     }
 
     // Finally, filter out attributes we don't need on the final built native element
@@ -69,10 +81,6 @@ export class XpathConverterImpl implements types.IConverterImpl {
     R.forEach(at => {
       element = R.dissoc(at, element);
     }, discards);
-
-    if (elementNode.hasChildNodes()) {
-      element = this.buildChildren(subject, element, elementNode, parseInfo, previouslySeen);
-    }
 
     return element;
   } // buildElement
@@ -426,6 +434,31 @@ export class XpathConverterImpl implements types.IConverterImpl {
 
     return text;
   } // composeText
+
+  public isAbstract (subject: string, element: {}): boolean {
+    const attributesLabel: string = this.options.fetchOption('labels/attributes');
+    let result = false;
+
+    if (attributesLabel) {
+      const attributes = R.view(R.lensProp(attributesLabel))(element);
+      if (attributes instanceof Array) {
+        result = R.includes('abstract')(attributes);
+      } else {
+        throw new e.JaxInternalError('item in spec at "labels/attributes" is not an array',
+          'XpathConverterImpl.isAbstract');
+      }
+
+    } else {
+      result = R.has('abstract')(element);
+    }
+
+    return result;
+  }
+
+  public isCombinable (subject: string, element: {}, recurse: string): boolean {
+    return recurse !== '' && !this.isAbstract(subject, element);
+  }
+
 } // class XpathConverterImpl
 
 /**

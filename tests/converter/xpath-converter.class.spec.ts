@@ -15,15 +15,24 @@ const testParseInfo: types.IParseInfo = {
   elements: new Map<string, types.IElementInfo>([
     ['Command', {
       id: 'name',
-      recurse: 'inherits',
-      discards: ['inherits', 'abstract'],
-      descendants: {
-        by: 'index',
-        throwIfCollision: false,
-        throwIfMissing: false
-      }
+      recurse: 'inherits'
+    }],
+    ['Argument', {
+      id: 'ref'
     }]
-  ])
+  ]),
+  common: {
+    id: '',
+    discards: ['inherits', 'abstract'],
+    descendants: {
+      by: 'index',
+      throwIfCollision: false,
+      throwIfMissing: false
+    }
+  },
+  def: {
+    id: ''
+  }
 };
 
 describe('xpath-converter.buildElement', () => {
@@ -42,14 +51,14 @@ describe('xpath-converter.buildElement', () => {
       const commandsNode = xp.select('/Application/Cli/Commands', document, true);
 
       if (commandsNode && commandsNode instanceof Node) {
-        let leafCommandNode: types.NullableNode = Helpers.selectElementNodeById(
+        const leafCommandNode: types.NullableNode = Helpers.selectElementNodeById(
           'Command', 'name', 'leaf', commandsNode);
 
         if (leafCommandNode) {
           const converter = new Jaxom();
-          let command: {} = converter.buildElement(leafCommandNode, testParseInfo);
+          const command: {} = converter.buildElement(leafCommandNode, testParseInfo);
 
-          let result = Helpers.logIfFailedStringify(R.where({
+          const result = Helpers.logIfFailedStringify(R.where({
             'name': R.equals('leaf'),
             'describe': R.equals('this is a leaf command'),
             'type': R.equals('native')
@@ -83,13 +92,13 @@ describe('xpath-converter.buildElement', () => {
 
       if (commandsNode && commandsNode instanceof Node) {
         const converter = new Jaxom();
-        let leafCommandNode: types.NullableNode = Helpers.selectElementNodeById(
+        const leafCommandNode: types.NullableNode = Helpers.selectElementNodeById(
           'Command', 'name', 'leaf', commandsNode);
 
         if (leafCommandNode) {
-          let command: {} = converter.buildElement(leafCommandNode, testParseInfo);
+          const command: {} = converter.buildElement(leafCommandNode, testParseInfo);
 
-          let result = Helpers.logIfFailedStringify(R.where({
+          const result = Helpers.logIfFailedStringify(R.where({
             'name': R.equals('leaf'),
             'describe': R.equals('this is a leaf command'),
             'type': R.equals('native')
@@ -155,11 +164,11 @@ describe('xpath-converter.buildElement', () => {
 
       if (expressionsNode && expressionsNode instanceof Node) {
         const converter = new Jaxom();
-        let expressionNode: types.NullableNode = Helpers.selectElementNodeById(
+        const expressionNode: types.NullableNode = Helpers.selectElementNodeById(
           'Expression', 'name', 'person\'s-name-expression', expressionsNode);
 
         if (expressionNode) {
-          let element: {} = converter.buildElement(expressionNode, {
+          const element: {} = converter.buildElement(expressionNode, {
             elements: new Map<string, types.IElementInfo>([
               ['Expression', {
                 id: 'name',
@@ -172,7 +181,7 @@ describe('xpath-converter.buildElement', () => {
             ])
           });
 
-          let result = Helpers.logIfFailedStringify(R.where({
+          const result = Helpers.logIfFailedStringify(R.where({
             'name': R.equals(`person's-name-expression`),
             'eg': R.equals('Mick Mars')
           })(element), element);
@@ -204,7 +213,7 @@ describe('xpath-converter.buildElement', () => {
 
       if (sourcesNode && sourcesNode instanceof Node) {
         const converter = new Jaxom();
-        let sourceNode: types.NullableNode = Helpers.selectElementNodeById(
+        const sourceNode: types.NullableNode = Helpers.selectElementNodeById(
           'Source', 'name', 'some-json-source', sourcesNode);
 
         if (sourceNode) {
@@ -221,7 +230,7 @@ describe('xpath-converter.buildElement', () => {
             ])
           });
 
-          let result = Helpers.logIfFailedStringify(R.where({
+          const result = Helpers.logIfFailedStringify(R.where({
             'name': R.equals('some-json-source'),
             'provider': R.equals('json-provider')
           })(source), source);
@@ -255,11 +264,11 @@ describe('xpath-converter.buildElement', () => {
 
       if (argumentsNode && argumentsNode instanceof Node) {
         const converter = new Jaxom();
-        let argumentNode: types.NullableNode = Helpers.selectElementNodeById(
+        const argumentNode: types.NullableNode = Helpers.selectElementNodeById(
           'Argument', 'name', 'filesys', argumentsNode);
 
         if (argumentNode) {
-          let source: {} = converter.buildElement(argumentNode, {
+          const source: {} = converter.buildElement(argumentNode, {
             elements: new Map<string, types.IElementInfo>([
               ['Source', {
                 id: 'name',
@@ -272,7 +281,7 @@ describe('xpath-converter.buildElement', () => {
             ])
           });
 
-          let result = Helpers.logIfFailedStringify(R.where({
+          const result = Helpers.logIfFailedStringify(R.where({
             'name': R.equals('filesys'),
             'alias': R.equals('fs'),
             'optional': R.equals(true)
@@ -307,11 +316,11 @@ describe('xpath-converter.buildElement', () => {
 
       if (treesNode && treesNode instanceof Node) {
         const converter = new Jaxom();
-        let treeNode: types.NullableNode = Helpers.selectElementNodeById(
+        const treeNode: types.NullableNode = Helpers.selectElementNodeById(
           'Tree', 'alias', 'skipa', treesNode);
 
         if (treeNode) {
-          let tree: {} = converter.buildElement(treeNode, {
+          const tree: {} = converter.buildElement(treeNode, {
             elements: new Map<string, types.IElementInfo>([
               ['Tree', {
                 id: 'alias',
@@ -324,7 +333,7 @@ describe('xpath-converter.buildElement', () => {
             ])
           });
 
-          let result = Helpers.logIfFailedStringify(R.where({
+          const result = Helpers.logIfFailedStringify(R.where({
             'alias': R.equals('skipa'),
             'root': R.equals('/Volumes/Epsilon/Skipa')
           })(tree), tree);
@@ -359,13 +368,13 @@ describe('xpath-converter.buildElement', () => {
 
         if (commandsNode && commandsNode instanceof Node) {
           const converter = new Jaxom();
-          let leafCommandNode: types.NullableNode = Helpers.selectElementNodeById(
+          const leafCommandNode: types.NullableNode = Helpers.selectElementNodeById(
             'Command', 'name', 'leaf', commandsNode);
 
           if (leafCommandNode) {
-            let command: {} = converter.buildElement(leafCommandNode, testParseInfo);
+            const command: {} = converter.buildElement(leafCommandNode, testParseInfo);
 
-            let result = Helpers.logIfFailedStringify(R.where({
+            const result = Helpers.logIfFailedStringify(R.where({
               'name': R.equals('leaf'),
               'describe': R.equals('this is a leaf command'),
               'type': R.equals('native')
@@ -441,13 +450,13 @@ describe('xpath-converter.buildElement', () => {
 
         if (commandsNode && commandsNode instanceof Node) {
           const converter = new Jaxom();
-          let leafCommandNode: types.NullableNode = Helpers.selectElementNodeById(
+          const leafCommandNode: types.NullableNode = Helpers.selectElementNodeById(
             'Command', 'name', 'leaf', commandsNode);
 
           if (leafCommandNode) {
-            let command: {} = converter.buildElement(leafCommandNode, testParseInfo);
+            const command: {} = converter.buildElement(leafCommandNode, testParseInfo);
 
-            let result = Helpers.logIfFailedStringify(R.where({
+            const result = Helpers.logIfFailedStringify(R.where({
               'name': R.equals('leaf'),
               'describe': R.equals('this is a leaf command'),
               'type': R.equals('native'),
@@ -483,13 +492,13 @@ describe('xpath-converter.buildElement', () => {
 
       if (commandsNode && commandsNode instanceof Node) {
         const converter = new Jaxom();
-        let leafCommandNode: types.NullableNode = Helpers.selectElementNodeById(
+        const leafCommandNode: types.NullableNode = Helpers.selectElementNodeById(
           'Command', 'name', 'leaf', commandsNode);
 
         if (leafCommandNode) {
-          let command: {} = converter.buildElement(leafCommandNode, testParseInfo);
+          const command: {} = converter.buildElement(leafCommandNode, testParseInfo);
 
-          let result = Helpers.logIfFailedStringify(R.where({
+          const result = Helpers.logIfFailedStringify(R.where({
             'name': R.equals('leaf'),
             'describe': R.equals('this is a leaf command'),
             'type': R.equals('native'),
@@ -527,13 +536,13 @@ describe('xpath-converter.buildElement', () => {
 
       if (commandsNode && commandsNode instanceof Node) {
         const converter = new Jaxom();
-        let leafCommandNode: types.NullableNode = Helpers.selectElementNodeById(
+        const leafCommandNode: types.NullableNode = Helpers.selectElementNodeById(
           'Command', 'name', 'leaf', commandsNode);
 
         if (leafCommandNode) {
-          let command: {} = converter.buildElement(leafCommandNode, testParseInfo);
+          const command: {} = converter.buildElement(leafCommandNode, testParseInfo);
 
-          let result = Helpers.logIfFailedStringify(R.where({
+          const result = Helpers.logIfFailedStringify(R.where({
             'name': R.equals('leaf'),
             'describe': R.equals('this is a leaf command'),
             'album': R.equals('powerslave'),
@@ -571,13 +580,13 @@ describe('xpath-converter.buildElement', () => {
 
       if (commandsNode && commandsNode instanceof Node) {
         const converter = new Jaxom();
-        let leafCommandNode: types.NullableNode = Helpers.selectElementNodeById(
+        const leafCommandNode: types.NullableNode = Helpers.selectElementNodeById(
           'Command', 'name', 'leaf', commandsNode);
 
         if (leafCommandNode) {
-          let command: {} = converter.buildElement(leafCommandNode, testParseInfo);
+          const command: {} = converter.buildElement(leafCommandNode, testParseInfo);
 
-          let result = Helpers.logIfFailedStringify(R.where({
+          const result = Helpers.logIfFailedStringify(R.where({
             'name': R.equals('leaf'),
             'describe': R.equals('this is a leaf command'),
             'filter': R.equals('leaf-filter')
@@ -614,13 +623,13 @@ describe('xpath-converter.buildElement', () => {
 
       if (commandsNode && commandsNode instanceof Node) {
         const converter = new Jaxom();
-        let leafCommandNode: types.NullableNode = Helpers.selectElementNodeById(
+        const leafCommandNode: types.NullableNode = Helpers.selectElementNodeById(
           'Command', 'name', 'leaf', commandsNode);
 
         if (leafCommandNode) {
-          let command: {} = converter.buildElement(leafCommandNode, testParseInfo);
+          const command: {} = converter.buildElement(leafCommandNode, testParseInfo);
 
-          let result = Helpers.logIfFailedStringify(R.where({
+          const result = Helpers.logIfFailedStringify(R.where({
             'name': R.equals('leaf'),
             'describe': R.equals('this is a leaf command'),
             'album': R.equals('powerslave'),
@@ -660,13 +669,13 @@ describe('xpath-converter.buildElement', () => {
 
       if (commandsNode && commandsNode instanceof Node) {
         const converter = new Jaxom();
-        let leafCommandNode: types.NullableNode = Helpers.selectElementNodeById(
+        const leafCommandNode: types.NullableNode = Helpers.selectElementNodeById(
           'Command', 'name', 'leaf', commandsNode);
 
         if (leafCommandNode) {
-          let command: {} = converter.buildElement(leafCommandNode, testParseInfo);
+          const command: {} = converter.buildElement(leafCommandNode, testParseInfo);
 
-          let result = Helpers.logIfFailedStringify(R.where({
+          const result = Helpers.logIfFailedStringify(R.where({
             'name': R.equals('leaf'),
             'describe': R.equals('this is a leaf command'),
             'album': R.equals('powerslave'),
@@ -844,21 +853,24 @@ describe('xpath-converter.buildElement', () => {
       if (testCommandNode) {
         it('should: return a command object with all children attached', () => {
           const command: any = converter.buildElement(testCommandNode, testParseInfo);
-          let result = Helpers.logIfFailedStringify(R.where({
+          const result = Helpers.logIfFailedStringify(R.where({
             'name': R.equals('test'),
             'describe': R.equals('Test regular expression definitions'),
             '_': R.equals('Command'),
-            '_children': R.is(Array)
+            '_children': R.is(Object)
           })(command), command);
 
           expect(result).to.be.true(functify(command));
         });
 
-        it('should: return a command object where no of children is 4', () => {
+        it('should: return a command object where no of children is ??4??', () => {
           const command: any = converter.buildElement(testCommandNode, testParseInfo);
-          let children = command['_children'];
+          const children = command['_children'];
+          const argumentsArray = children['Arguments'];
+          const argumentGroupsArray = children['ArgumentGroups'];
 
-          expect(children.length).to.equal(4);
+          expect(argumentsArray.length).to.equal(5);
+          expect(argumentGroupsArray.length).to.equal(2);
         });
       } else {
         assert.fail('Couldn\'t get Command node.');
@@ -902,30 +914,37 @@ describe('xpath-converter.buildElement', () => {
 
     if (commandsNode && commandsNode instanceof Node) {
       const converter = new Jaxom();
-      let testCommandNode: types.NullableNode = Helpers.selectElementNodeById(
+      const testCommandNode: types.NullableNode = Helpers.selectElementNodeById(
         'Command', 'name', 'test', commandsNode);
 
-      if (testCommandNode) {
-        let command: any = converter.buildElement(testCommandNode, testParseInfo);
+      if (testCommandNode && testCommandNode instanceof Node) {
+        it('should: return a command object with all children attached', () => {
+          const command: any = converter.buildElement(testCommandNode, testParseInfo);
 
-        if (command) {
-          it('should: return a command object with all children attached', () => {
-            let result = Helpers.logIfFailedStringify(R.where({
+          if (command) {
+            const result = Helpers.logIfFailedStringify(R.where({
               'name': R.equals('test'),
               'describe': R.equals('Test regular expression definitions'),
               '_': R.equals('Command'),
-              '_children': R.is(Array)
+              '_children': R.is(Object)
             })(command), command);
 
             expect(result).to.be.true(functify(command));
-          });
+          } else {
+            assert.fail('Couldn\'t get Command node.');
+          }
+        });
 
-          it('should: return a command object where no of children is 3', () => {
-            let children = command['_children'];
+        it('should: return a command object where no of children is 8', () => {
+          const command: any = converter.buildElement(testCommandNode, testParseInfo);
 
-            expect(children.length).to.equal(3);
-          });
-        }
+          if (command) {
+            const children = command['_children'];
+            expect(children['Arguments'].length).to.equal(8);
+          } else {
+            assert.fail('Couldn\'t get Command node.');
+          }
+        });
       } else {
         assert.fail('Couldn\'t get Command node.');
       }
@@ -972,29 +991,25 @@ describe('xpath-converter.buildElement', () => {
         'Command', 'name', 'test', commandsNode);
 
       if (testCommandNode) {
-        const command: any = converter.buildElement(
-          testCommandNode, testParseInfo);
+        it('should: return a command object with all children attached', () => {
+          const command: any = converter.buildElement(testCommandNode, testParseInfo);
+          const result = Helpers.logIfFailedStringify(R.where({
+            'name': R.equals('test'),
+            'describe': R.equals('Test regular expression definitions'),
+            '_': R.equals('Command'),
+            '_children': R.is(Object)
+          })(command), command);
 
-        if (command) {
-          it('should: return a command object with all children attached', () => {
-            let result = Helpers.logIfFailedStringify(R.where({
-              'name': R.equals('test'),
-              'describe': R.equals('Test regular expression definitions'),
-              '_': R.equals('Command'),
-              '_children': R.is(Array)
-            })(command), command);
+          expect(result).to.be.true(functify(command));
+        });
 
-            expect(result).to.be.true(functify(command));
-          });
+        it('return a command object with all 8 children attached', () => {
+          const command: any = converter.buildElement(testCommandNode, testParseInfo);
+          const children = command['_children'];
+          const argumentsArray = children['Arguments'];
 
-          it('return a command object with all 3 children attached', () => {
-            let children = command['_children'];
-
-            expect(children.length).to.equal(3);
-          });
-        } else {
-          assert.fail('Couldn\'t build element');
-        }
+          expect(argumentsArray.length).to.equal(8);
+        });
       } else {
         assert.fail('Couldn\'t get Command node.');
       }
@@ -1023,13 +1038,13 @@ describe('xpath-converter.buildElement', () => {
 
       if (expressionsNode && expressionsNode instanceof Node) {
         const converter = new Jaxom();
-        let expressionNode: types.NullableNode = Helpers.selectElementNodeById(
+        const expressionNode: types.NullableNode = Helpers.selectElementNodeById(
           'Expression', 'name', 'meta-prefix-expression', expressionsNode);
 
         if (expressionNode) {
-          let command: {} = converter.buildElement(expressionNode, testParseInfo);
+          const command: {} = converter.buildElement(expressionNode, testParseInfo);
 
-          let result = Helpers.logIfFailedStringify(R.where({
+          const result = Helpers.logIfFailedStringify(R.where({
             'name': R.equals('meta-prefix-expression')
           })(command), command);
 
