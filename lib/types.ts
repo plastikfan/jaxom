@@ -95,9 +95,7 @@ export type SelectResult = string | number | boolean | Node | Node[];
 export type SelectNodeResult = Node | Node[];
 export type NullableNode = Node | null;
 export interface IConverter {
-  // Need to figure out the correct Node type
-  //
-  buildElement (elementNode: Node, parseInfo: IParseInfo): any;
+  build (elementNode: Node, parseInfo: IParseInfo): any;
 }
 
 export interface IConverterImpl {

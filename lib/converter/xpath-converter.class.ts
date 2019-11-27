@@ -33,19 +33,16 @@ export class XpathConverter implements types.IConverter {
   private impl: types.IConverterImpl;
 
   /**
-   * @method buildElement
+   * @method build
    * @description builds the native object representing an element and recurses in 2 dimensions;
    * by the "recurse" attribute (usually "inherits") and via the element's direct descendants.
-   * The structure of the JSON object is defined by the Spec object passed as the spec param.
-   * buildElement uses the default spec. To use a different spec, use buildElementWithSpec
-   * and pass in another one. Predefined specs are available as members on the exported specs
-   * object, or users can define their own.
+   *
    * @param {*} elementNode
    * @param {types.IParseInfo} parseInfo
    * @returns
    * @memberof XpathConverter
    */
-  buildElement (elementNode: Node, parseInfo: types.IParseInfo): any {
+  build (elementNode: Node, parseInfo: types.IParseInfo): any {
     return this.impl.buildElement(elementNode, parseInfo, []);
   }
 } // class XpathConverter

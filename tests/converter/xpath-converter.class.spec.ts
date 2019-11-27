@@ -56,7 +56,7 @@ describe('xpath-converter.buildElement', () => {
 
         if (leafCommandNode) {
           const converter = new Jaxom();
-          const command: {} = converter.buildElement(leafCommandNode, testParseInfo);
+          const command: {} = converter.build(leafCommandNode, testParseInfo);
 
           const result = Helpers.logIfFailedStringify(R.where({
             'name': R.equals('leaf'),
@@ -96,7 +96,7 @@ describe('xpath-converter.buildElement', () => {
           'Command', 'name', 'leaf', commandsNode);
 
         if (leafCommandNode) {
-          const command: {} = converter.buildElement(leafCommandNode, testParseInfo);
+          const command: {} = converter.build(leafCommandNode, testParseInfo);
 
           const result = Helpers.logIfFailedStringify(R.where({
             'name': R.equals('leaf'),
@@ -136,7 +136,7 @@ describe('xpath-converter.buildElement', () => {
 
         if (invalidCommandNode) {
           expect(() => {
-            converter.buildElement(invalidCommandNode, testParseInfo);
+            converter.build(invalidCommandNode, testParseInfo);
           }).to.throw(Error);
         } else {
           assert.fail('FAILURE! Couldn\'t get Command node.');
@@ -168,7 +168,7 @@ describe('xpath-converter.buildElement', () => {
           'Expression', 'name', 'person\'s-name-expression', expressionsNode);
 
         if (expressionNode) {
-          const element: {} = converter.buildElement(expressionNode, {
+          const element: {} = converter.build(expressionNode, {
             elements: new Map<string, types.IElementInfo>([
               ['Expression', {
                 id: 'name',
@@ -217,7 +217,7 @@ describe('xpath-converter.buildElement', () => {
           'Source', 'name', 'some-json-source', sourcesNode);
 
         if (sourceNode) {
-          let source: {} = converter.buildElement(sourceNode, {
+          let source: {} = converter.build(sourceNode, {
             elements: new Map<string, types.IElementInfo>([
               ['Source', {
                 id: 'name',
@@ -268,7 +268,7 @@ describe('xpath-converter.buildElement', () => {
           'Argument', 'name', 'filesys', argumentsNode);
 
         if (argumentNode) {
-          const source: {} = converter.buildElement(argumentNode, {
+          const source: {} = converter.build(argumentNode, {
             elements: new Map<string, types.IElementInfo>([
               ['Source', {
                 id: 'name',
@@ -320,7 +320,7 @@ describe('xpath-converter.buildElement', () => {
           'Tree', 'alias', 'skipa', treesNode);
 
         if (treeNode) {
-          const tree: {} = converter.buildElement(treeNode, {
+          const tree: {} = converter.build(treeNode, {
             elements: new Map<string, types.IElementInfo>([
               ['Tree', {
                 id: 'alias',
@@ -372,7 +372,7 @@ describe('xpath-converter.buildElement', () => {
             'Command', 'name', 'leaf', commandsNode);
 
           if (leafCommandNode) {
-            const command: {} = converter.buildElement(leafCommandNode, testParseInfo);
+            const command: {} = converter.build(leafCommandNode, testParseInfo);
 
             const result = Helpers.logIfFailedStringify(R.where({
               'name': R.equals('leaf'),
@@ -413,7 +413,7 @@ describe('xpath-converter.buildElement', () => {
             'Command', 'name', 'leaf', commandsNode);
 
           if (leafCommandNode) {
-            const command: {} = converter.buildElement(leafCommandNode, testParseInfo);
+            const command: {} = converter.build(leafCommandNode, testParseInfo);
 
             const result = Helpers.logIfFailedStringify(R.where({
               'name': R.equals('leaf'),
@@ -454,7 +454,7 @@ describe('xpath-converter.buildElement', () => {
             'Command', 'name', 'leaf', commandsNode);
 
           if (leafCommandNode) {
-            const command: {} = converter.buildElement(leafCommandNode, testParseInfo);
+            const command: {} = converter.build(leafCommandNode, testParseInfo);
 
             const result = Helpers.logIfFailedStringify(R.where({
               'name': R.equals('leaf'),
@@ -496,7 +496,7 @@ describe('xpath-converter.buildElement', () => {
           'Command', 'name', 'leaf', commandsNode);
 
         if (leafCommandNode) {
-          const command: {} = converter.buildElement(leafCommandNode, testParseInfo);
+          const command: {} = converter.build(leafCommandNode, testParseInfo);
 
           const result = Helpers.logIfFailedStringify(R.where({
             'name': R.equals('leaf'),
@@ -540,7 +540,7 @@ describe('xpath-converter.buildElement', () => {
           'Command', 'name', 'leaf', commandsNode);
 
         if (leafCommandNode) {
-          const command: {} = converter.buildElement(leafCommandNode, testParseInfo);
+          const command: {} = converter.build(leafCommandNode, testParseInfo);
 
           const result = Helpers.logIfFailedStringify(R.where({
             'name': R.equals('leaf'),
@@ -584,7 +584,7 @@ describe('xpath-converter.buildElement', () => {
           'Command', 'name', 'leaf', commandsNode);
 
         if (leafCommandNode) {
-          const command: {} = converter.buildElement(leafCommandNode, testParseInfo);
+          const command: {} = converter.build(leafCommandNode, testParseInfo);
 
           const result = Helpers.logIfFailedStringify(R.where({
             'name': R.equals('leaf'),
@@ -627,7 +627,7 @@ describe('xpath-converter.buildElement', () => {
           'Command', 'name', 'leaf', commandsNode);
 
         if (leafCommandNode) {
-          const command: {} = converter.buildElement(leafCommandNode, testParseInfo);
+          const command: {} = converter.build(leafCommandNode, testParseInfo);
 
           const result = Helpers.logIfFailedStringify(R.where({
             'name': R.equals('leaf'),
@@ -673,7 +673,7 @@ describe('xpath-converter.buildElement', () => {
           'Command', 'name', 'leaf', commandsNode);
 
         if (leafCommandNode) {
-          const command: {} = converter.buildElement(leafCommandNode, testParseInfo);
+          const command: {} = converter.build(leafCommandNode, testParseInfo);
 
           const result = Helpers.logIfFailedStringify(R.where({
             'name': R.equals('leaf'),
@@ -717,7 +717,7 @@ describe('xpath-converter.buildElement', () => {
           'Command', 'name', 'leaf', commandsNode);
 
         if (leafCommandNode) {
-          const command: {} = converter.buildElement(leafCommandNode, testParseInfo);
+          const command: {} = converter.build(leafCommandNode, testParseInfo);
 
           const result = Helpers.logIfFailedStringify(R.where({
             'name': R.equals('leaf'),
@@ -761,7 +761,7 @@ describe('xpath-converter.buildElement', () => {
 
         if (leafCommandNode) {
           expect(() => {
-            converter.buildElement(leafCommandNode, testParseInfo);
+            converter.build(leafCommandNode, testParseInfo);
           }).to.throw(Error);
         } else {
           assert.fail('FAILURE! Couldn\'t get Command node.');
@@ -795,7 +795,7 @@ describe('xpath-converter.buildElement', () => {
 
         if (leafCommandNode) {
           expect(() => {
-            converter.buildElement(leafCommandNode, testParseInfo);
+            converter.build(leafCommandNode, testParseInfo);
           }).to.throw(Error);
         } else {
           assert.fail('FAILURE! Couldn\'t get Command node.');
@@ -852,7 +852,7 @@ describe('xpath-converter.buildElement', () => {
 
       if (testCommandNode) {
         it('should: return a command object with all children attached', () => {
-          const command: any = converter.buildElement(testCommandNode, testParseInfo);
+          const command: any = converter.build(testCommandNode, testParseInfo);
           const result = Helpers.logIfFailedStringify(R.where({
             'name': R.equals('test'),
             'describe': R.equals('Test regular expression definitions'),
@@ -864,7 +864,7 @@ describe('xpath-converter.buildElement', () => {
         });
 
         it('should: return a command object where no of children is ??4??', () => {
-          const command: any = converter.buildElement(testCommandNode, testParseInfo);
+          const command: any = converter.build(testCommandNode, testParseInfo);
           const children = command['_children'];
           const argumentsArray = children['Arguments'];
           const argumentGroupsArray = children['ArgumentGroups'];
@@ -919,7 +919,7 @@ describe('xpath-converter.buildElement', () => {
 
       if (testCommandNode && testCommandNode instanceof Node) {
         it('should: return a command object with all children attached', () => {
-          const command: any = converter.buildElement(testCommandNode, testParseInfo);
+          const command: any = converter.build(testCommandNode, testParseInfo);
 
           if (command) {
             const result = Helpers.logIfFailedStringify(R.where({
@@ -936,7 +936,7 @@ describe('xpath-converter.buildElement', () => {
         });
 
         it('should: return a command object where no of children is 8', () => {
-          const command: any = converter.buildElement(testCommandNode, testParseInfo);
+          const command: any = converter.build(testCommandNode, testParseInfo);
 
           if (command) {
             const children = command['_children'];
@@ -992,7 +992,7 @@ describe('xpath-converter.buildElement', () => {
 
       if (testCommandNode) {
         it('should: return a command object with all children attached', () => {
-          const command: any = converter.buildElement(testCommandNode, testParseInfo);
+          const command: any = converter.build(testCommandNode, testParseInfo);
           const result = Helpers.logIfFailedStringify(R.where({
             'name': R.equals('test'),
             'describe': R.equals('Test regular expression definitions'),
@@ -1004,7 +1004,7 @@ describe('xpath-converter.buildElement', () => {
         });
 
         it('return a command object with all 8 children attached', () => {
-          const command: any = converter.buildElement(testCommandNode, testParseInfo);
+          const command: any = converter.build(testCommandNode, testParseInfo);
           const children = command['_children'];
           const argumentsArray = children['Arguments'];
 
@@ -1042,7 +1042,7 @@ describe('xpath-converter.buildElement', () => {
           'Expression', 'name', 'meta-prefix-expression', expressionsNode);
 
         if (expressionNode) {
-          const command: {} = converter.buildElement(expressionNode, testParseInfo);
+          const command: {} = converter.build(expressionNode, testParseInfo);
 
           const result = Helpers.logIfFailedStringify(R.where({
             'name': R.equals('meta-prefix-expression')
