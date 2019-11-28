@@ -81,7 +81,7 @@ describe('xpath-converter.build', () => {
           <Cli>
             <Commands>
               <Command name="base-command" abstract="true"/>
-              <Command name="mid-command" inherits="base-command" type="native"/>
+              <Command name="mid-command" inherits="base-command" type="native" abstract="true"/>
               <Command name="leaf" inherits="mid-command" describe="this is a leaf command"/>
             </Commands>
           </Cli>
@@ -356,7 +356,7 @@ describe('xpath-converter.build', () => {
             <Cli>
               <Commands>
                 <Command name="base-command" abstract="true"/>
-                <Command name="mid-command" inherits="base-command" type="native"/>
+                <Command name="mid-command" inherits="base-command" type="native" abstract="true"/>
                 <Command name="leaf" inherits="mid-command" describe="this is a leaf command"/>
               </Commands>
             </Cli>
@@ -397,7 +397,7 @@ describe('xpath-converter.build', () => {
             <Cli>
               <Commands>
                 <Command name="base-command" abstract="true"/>
-                <Command name="mid-command" inherits="base-command" type="native"/>
+                <Command name="mid-command" inherits="base-command" type="native" abstract="true"/>
                 <Command name="leaf" inherits="mid-command" describe="this is a leaf command"/>
               </Commands>
             </Cli>
@@ -437,8 +437,8 @@ describe('xpath-converter.build', () => {
           <Application name="pez">
             <Cli>
               <Commands>
-                <Command name="base-command" abstract="true" filter="alpha"/>
-                <Command name="mid-command" inherits="base-command" type="native" filter="beta"/>
+                <Command name="base-command" filter="alpha" abstract="true"/>
+                <Command name="mid-command" inherits="base-command" type="native" filter="beta" abstract="true"/>
                 <Command name="leaf" inherits="mid-command" describe="this is a leaf command"/>
               </Commands>
             </Cli>
@@ -480,8 +480,8 @@ describe('xpath-converter.build', () => {
         <Application name="pez">
           <Cli>
             <Commands>
-              <Command name="base-command" abstract="true" filter="alpha"/>
-              <Command name="mid-command" inherits="base-command" type="native"/>
+              <Command name="base-command" filter="alpha" abstract="true"/>
+              <Command name="mid-command" inherits="base-command" type="native" abstract="true"/>
               <Command name="leaf" inherits="mid-command" describe="this is a leaf command" filter="beta"/>
             </Commands>
           </Cli>
@@ -521,9 +521,9 @@ describe('xpath-converter.build', () => {
         <Application name="pez">
           <Cli>
             <Commands>
-              <Command name="alpha-command" abstract="true" filter="alpha"/>
-              <Command name="beta-command" type="native"/>
-              <Command name="gamma-command" theme="concept"/>
+              <Command name="alpha-command" filter="alpha" abstract="true"/>
+              <Command name="beta-command" type="native" abstract="true"/>
+              <Command name="gamma-command" theme="concept" abstract="true"/>
               <Command name="leaf" inherits="alpha-command,beta-command,gamma-command"
                 describe="this is a leaf command" album="powerslave"/>
             </Commands>
@@ -565,9 +565,9 @@ describe('xpath-converter.build', () => {
         <Application name="pez">
           <Cli>
             <Commands>
-              <Command name="alpha-command" abstract="true" filter="alpha-filter"/>
-              <Command name="beta-command" filter="beta-filter"/>
-              <Command name="gamma-command" filter="gamma-filter"/>
+              <Command name="alpha-command" filter="alpha-filter" abstract="true"/>
+              <Command name="beta-command" filter="beta-filter" abstract="true"/>
+              <Command name="gamma-command" filter="gamma-filter" abstract="true"/>
               <Command name="leaf" inherits="alpha-command,beta-command,gamma-command"
                 describe="this is a leaf command" filter="leaf-filter"/>
             </Commands>
@@ -609,9 +609,9 @@ describe('xpath-converter.build', () => {
         <Application name="pez">
           <Cli>
             <Commands>
-              <Command name="alpha-command" abstract="true" filter="alpha"/>
-              <Command name="beta-command" inherits="alpha-command" type="native"/>
-              <Command name="gamma-command" theme="concept"/>
+              <Command name="alpha-command" filter="alpha" abstract="true"/>
+              <Command name="beta-command" inherits="alpha-command" type="native" abstract="true"/>
+              <Command name="gamma-command" theme="concept" abstract="true"/>
               <Command name="leaf" inherits="beta-command,gamma-command"
                 describe="this is a leaf command" album="powerslave"/>
             </Commands>
@@ -649,14 +649,14 @@ describe('xpath-converter.build', () => {
   });
 
   context('given: command with dual inheritance (2+1 commands, no args)', () => {
-    it('return a command object all inherited attributes from 2 base commands', () => {
+    it('should: return a command object all inherited attributes from 2 base commands', () => {
       const data = `<?xml version="1.0"?>
         <Application name="pez">
           <Cli>
             <Commands>
-              <Command name="alpha-command" abstract="true" filter="alpha"/>
-              <Command name="beta-command" inherits="alpha-command" type="native"/>
-              <Command name="gamma-command" theme="concept"/>
+              <Command name="alpha-command" filter="alpha" abstract="true"/>
+              <Command name="beta-command" inherits="alpha-command" type="native" abstract="true"/>
+              <Command name="gamma-command" theme="concept" abstract="true"/>
               <Command name="leaf" inherits="beta-command,gamma-command"
                 describe="this is a leaf command" album="powerslave"/>
             </Commands>
@@ -700,8 +700,8 @@ describe('xpath-converter.build', () => {
         <Application name="pez">
           <Cli>
             <Commands>
-              <Command name="alpha-command" filter="alpha-filter" mode="auto"/>
-              <Command name="beta-command" filter="beta-filter"/>
+              <Command name="alpha-command" filter="alpha-filter" mode="auto" abstract="true"/>
+              <Command name="beta-command" filter="beta-filter" abstract="true"/>
               <Command name="leaf" inherits="alpha-command,beta-command"
                 describe="this is a leaf command"/>
             </Commands>
@@ -742,8 +742,8 @@ describe('xpath-converter.build', () => {
         <Application name="pez">
           <Cli>
             <Commands>
-              <Command name="alpha-command" inherits="beta-command"/>
-              <Command name="beta-command" inherits="alpha-command"/>
+              <Command name="alpha-command" inherits="beta-command" abstract="true"/>
+              <Command name="beta-command" inherits="alpha-command" abstract="true"/>
               <Command name="leaf" inherits="beta-command"
                 describe="this is a leaf command"/>
             </Commands>
@@ -892,7 +892,7 @@ describe('xpath-converter.build', () => {
                 <ArgumentRef name="tree"/>
               </Arguments>
             </Command>
-            <Command name="duo-command" abstract="true" inherits="uni-command">
+            <Command name="duo-command" inherits="uni-command" abstract="true">
               <Arguments>
                 <ArgumentRef name="from"/>
                 <ArgumentRef name="to"/>
@@ -1055,6 +1055,70 @@ describe('xpath-converter.build', () => {
       } else {
         assert.fail('Couldn\'t get Expressions node.');
       }
+    });
+  });
+
+  context('Prohibited element inheritance', () => {
+    const tests = [
+      {
+        given: 'attempt to directly build abstract element',
+        data: `<?xml version="1.0"?>
+          <Application name="pez">
+            <Cli>
+              <Commands>
+                <Command name="beta-command" abstract="true"/>
+                <Command name="leaf" inherits="beta-command"
+                  describe="this is a leaf command"/>
+              </Commands>
+            </Cli>
+          </Application>`,
+        query: '/Application/Cli/Commands/Command[@name="beta-command"]'
+      },
+      {
+        given: 'attempt to inherit from concrete parent',
+        data: `<?xml version="1.0"?>
+          <Application name="pez">
+            <Cli>
+              <Commands>
+                <Command name="beta-command"/>
+                <Command name="leaf" inherits="beta-command"
+                  describe="this is a leaf command"/>
+              </Commands>
+            </Cli>
+          </Application>`,
+        query: '/Application/Cli/Commands/Command[@name="leaf"]'
+      },
+      {
+        given: 'attempt to inherit from concrete parent (abstract explicitly set to "false")',
+        data: `<?xml version="1.0"?>
+          <Application name="pez">
+            <Cli>
+              <Commands>
+                <Command name="beta-command" abstract="false"/>
+                <Command name="leaf" inherits="beta-command"
+                  describe="this is a leaf command"/>
+              </Commands>
+            </Cli>
+          </Application>`,
+        query: '/Application/Cli/Commands/Command[@name="leaf"]'
+      }
+    ];
+
+    tests.forEach(t => {
+      context(`given: ${t.given}`, () => {
+        it('should: throw', () => {
+          const document: Document = parser.parseFromString(t.data, 'text/xml');
+          const commandNode: types.SelectResult = xp.select(t.query, document, true);
+          if (commandNode && commandNode instanceof Node) {
+            const converter = new Jaxom();
+            expect(() => {
+              converter.build(commandNode, testParseInfo);
+            }).to.throw();
+          } else {
+            assert.fail('Couldn\'t get command node');
+          }
+        });
+      });
     });
   });
 }); // xpath-converter.build

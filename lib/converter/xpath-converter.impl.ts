@@ -55,6 +55,17 @@ export class XpathConverterImpl implements types.IConverterImpl {
   build (elementNode: Node, parseInfo: types.IParseInfo,
     previouslySeen: string[] = []): any {
 
+    const abstractValue = getAttributeValue(elementNode, 'abstract');
+
+    if (abstractValue && abstractValue === 'true') {
+      const { id = '' } = this.getElementInfo(elementNode.nodeName, parseInfo);
+      const subject = composeElementPath(elementNode, id);
+
+      throw new e.JaxConfigError(
+        `Attempt to directly build abstract entity is prohibited. (Please remove "abstract")`,
+          subject);
+    }
+
     return this.buildElement(elementNode, parseInfo, previouslySeen);
   } // build
 
@@ -85,10 +96,10 @@ export class XpathConverterImpl implements types.IConverterImpl {
 
     if (elementNode.hasChildNodes()) {
       element = this.buildChildren(subject, element, elementNode, parseInfo, previouslySeen);
-    }
 
-    if (this.isCombinable(subject, element, recurse)) {
-      element = this.normaliser.combineDescendants(subject, element);
+      if (this.isCombinable(subject, element, recurse)) {
+        element = this.normaliser.combineDescendants(subject, element);
+      }
     }
 
     // Finally, filter out attributes we don't need on the final built native element
@@ -234,6 +245,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
               throw new e.JaxConfigError(`Could not find element of type: '${nodeName}', id: '${id}'='${at}'`,
                 subject);
             }
+            this.validateInheritedElement(subject, inheritedElementNode);
 
             // Horizontal recursion/merging eg: (at => base-command|domain-command|uni-command)
             //
@@ -293,6 +305,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
               `Could not find element of type: '${nodeName}', id: '${id}'='${inheritedElementName}'`,
                 subject);
           }
+          this.validateInheritedElement(subject, inheritedElementNode);
 
           // Vertical recursion/merging to the base element
           //
@@ -471,6 +484,15 @@ export class XpathConverterImpl implements types.IConverterImpl {
     }
 
     return result;
+  } // isAbstract
+
+  public validateInheritedElement (subject: string, inheritedNode: Node): void {
+    const inheritedAbstractValue = getAttributeValue(inheritedNode, 'abstract');
+    if (!inheritedAbstractValue || inheritedAbstractValue === 'false') {
+      throw new e.JaxConfigError(
+        `Can't inherit from non abstract element: ${inheritedNode.nodeName}`,
+          subject);
+    }
   }
 
   public isCombinable (subject: string, element: {}, recurse: string): boolean {
@@ -515,7 +537,7 @@ function selectElementNodeById (elementName: string, id: string, name: string,
     return result instanceof Node ? result : null;
   }
   return null;
-}
+} // selectElementNodeById
 
 /**
  * @function composeElementPath
@@ -541,15 +563,24 @@ function composeElementSegment (node: types.NullableNode): string {
 }
 
 export function composeIdQualifierPathSegment (localNode: types.NullableNode, id: string): string {
-  let idSegment = '';
+  let idSegment = getAttributeValue(localNode, id) ?? '';
 
-  if (id !== '' && localNode) {
-    const attributeNode: types.SelectResult = xpath.select(`@${id}`, localNode, true);
-
-    if (attributeNode && (attributeNode instanceof Node)) {
-      idSegment = `[@${attributeNode.nodeName}="${attributeNode.nodeValue}"]`;
-    }
+  if (idSegment) {
+    idSegment = `[@${id}="${idSegment}"]`;
   }
 
   return idSegment;
+}
+
+function getAttributeValue (localNode: types.NullableNode, attributeName: string): string {
+  let attributeValue = '';
+  if (attributeName !== '' && localNode) {
+    const attributeNode: types.SelectResult = xpath.select(`@${attributeName}`, localNode, true);
+
+    if (attributeNode && (attributeNode instanceof Node) && attributeNode.nodeValue) {
+      attributeValue = attributeNode.nodeValue;
+    }
+  }
+
+  return attributeValue;
 }
