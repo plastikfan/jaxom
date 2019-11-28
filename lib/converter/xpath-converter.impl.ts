@@ -206,118 +206,116 @@ export class XpathConverterImpl implements types.IConverterImpl {
       return element;
     }
 
-    if (recurse !== '') {
-      if (R.includes(identifier, previouslySeen)) {
-        throw new e.JaxConfigError(`Circular reference detected, element '${identifier}', has already been encountered.`,
-          subject);
-      } else {
-        previouslySeen = R.append(identifier, previouslySeen);
-      }
-      const { nodeName } = elementNode;
+    if (R.includes(identifier, previouslySeen)) {
+      throw new e.JaxConfigError(`Circular reference detected, element '${identifier}', has already been encountered.`,
+        subject);
+    } else {
+      previouslySeen = R.append(identifier, previouslySeen);
+    }
+    const { nodeName } = elementNode;
 
-      // First get the recurse element(s), which is a csv inside @inherits.
-      //
-      const recurseAttr = elementNode.getAttribute(recurse) ?? '';
+    // First get the recurse element(s), which is a csv inside @inherits.
+    //
+    const recurseAttr = elementNode.getAttribute(recurse) ?? '';
 
-      // No attempt needs to be made to correctly merge inheritance chains, because the
-      // inheritance chain is stripped off at the end anyway, since the concrete element
-      // will have no use for it.
+    // No attempt needs to be made to correctly merge inheritance chains, because the
+    // inheritance chain is stripped off at the end anyway, since the concrete element
+    // will have no use for it.
+    //
+    if (recurseAttr !== '') {
+      // This is where horizontal merging occurs. IE, if this element inherits
+      // from multiple commands (eg @inherits="base-command,domain-command,uni-command").
+      // Usually, we'd expect that commands that are being merged horizontally, will not
+      // contain clashes in properties, but that doesn't mean it can't occur. Also
+      // this is where vertical merging could be required.
       //
-      if (recurseAttr !== '') {
-        // This is where horizontal merging occurs. IE, if this element inherits
-        // from multiple commands (eg @inherits="base-command,domain-command,uni-command").
-        // Usually, we'd expect that commands that are being merged horizontally, will not
-        // contain clashes in properties, but that doesn't mean it can't occur. Also
-        // this is where vertical merging could be required.
+      const recurseAttributes = R.split(',', recurseAttr);
+
+      if (recurseAttributes.length > 1) {
+        // Just need to map the at to a built element => array which we pass to merge
         //
-        const recurseAttributes = R.split(',', recurseAttr);
-
-        if (recurseAttributes.length > 1) {
-          // Just need to map the at to a built element => array which we pass to merge
+        const inheritedElements = R.map(at => {
+          // select element bode by id
           //
-          const inheritedElements = R.map(at => {
-            // select element bode by id
-            //
-            const inheritedElementNode: Node = selectElementNodeById(
-              nodeName, id, at, elementNode.parentNode) as Node;
-
-            if (!inheritedElementNode) {
-              throw new e.JaxConfigError(`Could not find element of type: '${nodeName}', id: '${id}'='${at}'`,
-                subject);
-            }
-            this.validateInheritedElement(subject, inheritedElementNode);
-
-            // Horizontal recursion/merging eg: (at => base-command|domain-command|uni-command)
-            //
-            return this.buildElement(inheritedElementNode, parseInfo, previouslySeen);
-          }, recurseAttributes);
-
-          // Now merge one by one. On the first iteration a={} and b=first-element. This means
-          // we are merging as expected, with b taking precedence over a. So the last item
-          // in the list takes precedence.
-          //
-          const doMergeElements = (a: any, b: any) => {
-            let merged;
-
-            const descendantsLabel = this.options.fetchOption('labels/descendants') as string;
-
-            if (R.includes(descendantsLabel, R.keys(a) as string[])
-              && R.includes(descendantsLabel, R.keys(b) as string[])) {
-              // Both a and b have children, therefore we must merge in such a way as to
-              // not to lose any properties of a by calling R.mergeAll
-              //
-              const mergedChildren = R.concat(a[descendantsLabel], b[descendantsLabel]); // save a
-              const allMergedWithoutChildrenOfA = R.mergeAll([a, b]); // This is where we lose the children of a
-
-              // Restore the lost properties of a
-              //
-              const childrenLens = R.lensProp(descendantsLabel);
-              merged = R.set(childrenLens, mergedChildren, allMergedWithoutChildrenOfA);
-            } else {
-              // There is no clash between the children of a or b, therefore we can
-              // use R.mergeAll safely.
-              //
-              merged = R.mergeAll([a, b]);
-            }
-
-            return merged;
-          };
-
-          const mergedInheritedElements = R.reduce(doMergeElements, {}, inheritedElements);
-
-          // Now combine with this element
-          //
-          const mergeList = [mergedInheritedElements, element];
-
-          // NB: This mergeAll is safe here, because we haven't yet built the children of this
-          // element yet; this will happen later and is resolved in buildChildren.
-          //
-          element = R.mergeAll(mergeList);
-        } else {
-          // Now build the singular inherited element
-          //
-          const inheritedElementName: string = recurseAttributes[0];
-          const inheritedElementNode = selectElementNodeById(
-            nodeName, id, inheritedElementName, elementNode.parentNode) as Node;
+          const inheritedElementNode: Node = selectElementNodeById(
+            nodeName, id, at, elementNode.parentNode) as Node;
 
           if (!inheritedElementNode) {
-            throw new e.JaxConfigError(
-              `Could not find element of type: '${nodeName}', id: '${id}'='${inheritedElementName}'`,
-                subject);
+            throw new e.JaxConfigError(`Could not find element of type: '${nodeName}', id: '${id}'='${at}'`,
+              subject);
           }
           this.validateInheritedElement(subject, inheritedElementNode);
 
-          // Vertical recursion/merging to the base element
+          // Horizontal recursion/merging eg: (at => base-command|domain-command|uni-command)
           //
-          const inheritedElement = this.buildElement(inheritedElementNode, parseInfo, previouslySeen);
+          return this.buildElement(inheritedElementNode, parseInfo, previouslySeen);
+        }, recurseAttributes);
 
-          // Now we need to perform a merge of this element with the inherited element
-          // ensuring that any properties in this element take precedence.
-          //
-          element = R.mergeAll([inheritedElement, element]);
+        // Now merge one by one. On the first iteration a={} and b=first-element. This means
+        // we are merging as expected, with b taking precedence over a. So the last item
+        // in the list takes precedence.
+        //
+        const doMergeElements = (a: any, b: any) => {
+          let merged;
+
+          const descendantsLabel = this.options.fetchOption('labels/descendants') as string;
+
+          if (R.includes(descendantsLabel, R.keys(a) as string[])
+            && R.includes(descendantsLabel, R.keys(b) as string[])) {
+            // Both a and b have children, therefore we must merge in such a way as to
+            // not to lose any properties of a by calling R.mergeAll
+            //
+            const mergedChildren = R.concat(a[descendantsLabel], b[descendantsLabel]); // save a
+            const allMergedWithoutChildrenOfA = R.mergeAll([a, b]); // This is where we lose the children of a
+
+            // Restore the lost properties of a
+            //
+            const childrenLens = R.lensProp(descendantsLabel);
+            merged = R.set(childrenLens, mergedChildren, allMergedWithoutChildrenOfA);
+          } else {
+            // There is no clash between the children of a or b, therefore we can
+            // use R.mergeAll safely.
+            //
+            merged = R.mergeAll([a, b]);
+          }
+
+          return merged;
+        };
+
+        const mergedInheritedElements = R.reduce(doMergeElements, {}, inheritedElements);
+
+        // Now combine with this element
+        //
+        const mergeList = [mergedInheritedElements, element];
+
+        // NB: This mergeAll is safe here, because we haven't yet built the children of this
+        // element yet; this will happen later and is resolved in buildChildren.
+        //
+        element = R.mergeAll(mergeList);
+      } else {
+        // Now build the singular inherited element
+        //
+        const inheritedElementName: string = recurseAttributes[0];
+        const inheritedElementNode = selectElementNodeById(
+          nodeName, id, inheritedElementName, elementNode.parentNode) as Node;
+
+        if (!inheritedElementNode) {
+          throw new e.JaxConfigError(
+            `Could not find element of type: '${nodeName}', id: '${id}'='${inheritedElementName}'`,
+            subject);
         }
-      } // else recursion ends
-    }
+        this.validateInheritedElement(subject, inheritedElementNode);
+
+        // Vertical recursion/merging to the base element
+        //
+        const inheritedElement = this.buildElement(inheritedElementNode, parseInfo, previouslySeen);
+
+        // Now we need to perform a merge of this element with the inherited element
+        // ensuring that any properties in this element take precedence.
+        //
+        element = R.mergeAll([inheritedElement, element]);
+      }
+    } // else recursion ends
 
     return element;
   } // recurseThroughAttribute
