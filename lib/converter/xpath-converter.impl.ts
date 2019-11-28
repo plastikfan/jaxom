@@ -1,4 +1,3 @@
-import { EmptyElementInfo } from './../types';
 
 import * as R from 'ramda';
 import * as xpath from 'xpath-ts';
@@ -199,8 +198,10 @@ export class XpathConverterImpl implements types.IConverterImpl {
   private recurseThroughAttribute (subject: string, element: any, elementNode: Element,
     parseInfo: types.IParseInfo, previouslySeen: string[]): {} {
 
-    const { id, recurse = '' } = this.getElementInfo(elementNode.nodeName, parseInfo);
-    const identifier = element[id] ?? '';
+    const ei = this.getElementInfo(elementNode.nodeName, parseInfo);
+    const id: string = ei.id ?? '';
+    const recurse: string = ei.recurse ?? '';
+    const identifier = id ? element[id] : '';
 
     if (identifier === '') {
       return element;
@@ -360,39 +361,42 @@ export class XpathConverterImpl implements types.IConverterImpl {
       const elementLabel = this.options.fetchOption(`labels/element`) as string;
       const elementInfo: types.IElementInfo = this.getElementInfo(
         element[elementLabel], parseInfo);
+      const id: string = elementInfo?.id ?? '';
 
-      if (R.hasPath(['descendants', 'by'], elementInfo)) {
-        const descendants = element[descendantsLabel];
+      if (id !== '') {
+        if (R.hasPath(['descendants', 'by'], elementInfo)) {
+          const descendants = element[descendantsLabel];
 
-        if (R.all(R.has(elementInfo.id))(children)) {
-          if (R.pathEq(['descendants', 'by'], 'index', elementInfo)) {
-            if (elementInfo?.descendants?.throwIfMissing) {
-              // We need a new version of ramda's indexBy function that can take an extra
-              // parameter being a function which is invoked to handle duplicate keys. In
-              // its absence, we can find duplicates via a reduce ...
-              //
-              R.reduce((acc: any, val: any) => {
-                if (R.includes(val[elementInfo.id], acc)) {
-                  throw new e.JaxSolicitedError(`Element collision found: ${functify(val)}`,
-                  subject);
-                }
-                return R.append(val[elementInfo.id], acc);
-              }, [])(descendants);
+          if (R.all(R.has(id))(children)) {
+            if (R.pathEq(['descendants', 'by'], 'index', elementInfo)) {
+              if (elementInfo?.descendants?.throwIfMissing) {
+                // We need a new version of ramda's indexBy function that can take an extra
+                // parameter being a function which is invoked to handle duplicate keys. In
+                // its absence, we can find duplicates via a reduce ...
+                //
+                R.reduce((acc: any, val: any) => {
+                  if (R.includes(val[id], acc)) {
+                    throw new e.JaxSolicitedError(`Element collision found: ${functify(val)}`,
+                      subject);
+                  }
+                  return R.append(val[id], acc);
+                }, [])(descendants);
+              }
+
+              element[descendantsLabel] = R.indexBy(R.prop(id),
+                descendants);
+            } else if (R.pathEq(['descendants', 'by'], 'group', elementInfo)) {
+              element[descendantsLabel] = R.groupBy(R.prop(id),
+                descendants);
             }
-
-            element[descendantsLabel] = R.indexBy(R.prop(elementInfo.id),
-              descendants);
-          } else if (R.pathEq(['descendants', 'by'], 'group', elementInfo)) {
-            element[descendantsLabel] = R.groupBy(R.prop(elementInfo.id),
-              descendants);
+          } else if (elementInfo?.descendants?.throwIfMissing) {
+            const missing: any = R.find(
+              R.complement(R.has(id))
+            )(children) ?? {};
+            throw new e.JaxSolicitedError(
+              `Element is missing key attribute "${id}": (${functify(missing)})`,
+                subject);
           }
-        } else if (elementInfo?.descendants?.throwIfMissing) {
-          const missing: any = R.find(
-            R.complement(R.has(elementInfo.id))
-          )(children) ?? {};
-          throw new e.JaxSolicitedError(
-            `Element is missing key attribute "${elementInfo.id}": (${functify(missing)})`,
-              subject);
         }
       }
     }
@@ -420,7 +424,7 @@ export class XpathConverterImpl implements types.IConverterImpl {
     const namedOrDefaultElementInfo: types.IElementInfo | undefined = parseInfo.elements.get(
       elementName) ?? parseInfo.def;
 
-    let result: types.IElementInfo = types.EmptyElementInfo;
+    let result: types.IElementInfo = {};
 
     if (namedOrDefaultElementInfo) {
       result = parseInfo.common

@@ -9,7 +9,7 @@ const parser = new DOMParser();
 import * as types from '../../lib/types';
 import * as Helpers from '../test-helpers';
 
-import { XpathConverterImpl as Impl, composeElementPath, composeIdQualifierPathSegment }
+import { XpathConverterImpl as Impl, composeElementPath }
   from '../../lib/converter/xpath-converter.impl';
 import { SpecOptionService, Specs } from '../../lib/specService/spec-option-service.class';
 
@@ -319,7 +319,7 @@ describe('converter.impl.getElementInfo', () => {
     context('given: named element is NOT present', () => {
       it('should: return empty parse info', () => {
         const result = converter.getElementInfo('Task', withoutCommonOrDefInfo);
-        expect(result.id).to.equal(types.EmptyElementInfo.id);
+        expect(result).to.deep.equal({});
       });
     });
   }); // IParseInfo without common or def

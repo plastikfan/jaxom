@@ -2,7 +2,7 @@
 // Element Parse Info
 //
 export interface IElementInfo {
-  readonly id: string;
+  readonly id?: string;
   readonly recurse?: string;
   readonly discards?: ReadonlyArray<string>;
   readonly descendants?: {
@@ -11,8 +11,6 @@ export interface IElementInfo {
     readonly throwIfMissing?: boolean;
   };
 }
-
-export const EmptyElementInfo: IElementInfo = { id: '' };
 
 export interface IParseInfo {
   readonly elements: ReadonlyMap<string, IElementInfo>;

@@ -22,7 +22,6 @@ const testParseInfo: types.IParseInfo = {
     }]
   ]),
   common: {
-    id: '',
     discards: ['inherits', 'abstract'],
     descendants: {
       by: 'index',
@@ -31,7 +30,6 @@ const testParseInfo: types.IParseInfo = {
     }
   },
   def: {
-    id: ''
   }
 };
 
