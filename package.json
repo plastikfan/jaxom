@@ -41,7 +41,7 @@
   },
   "homepage": "https://github.com/plastikfan/jaxom#readme",
   "dependencies": {
-    "@types/ramda": "^0.26.34",
+    "@types/ramda": "^0.26.36",
     "@types/xregexp": "^3.0.30",
     "jinxed": "0.0.2",
     "moment": "^2.24.0",
