@@ -9,12 +9,17 @@ import { Transformer } from '../transformer/transformer.class';
 import { SpecOptionService } from '../specService/spec-option-service.class';
 import { Normaliser } from '../normaliser/normaliser.class';
 
+export interface IConverterImpl {
+  build (elementNode: Node, parseInfo: types.IParseInfo, previouslySeen: string[]): any;
+  buildElement (elementNode: Node, parseInfo: types.IParseInfo, previouslySeen: string[]): any;
+}
+
 /**
  * @export
  * @class XpathConverterImpl
  * @implements {types.IConverter}
  */
-export class XpathConverterImpl implements types.IConverterImpl {
+export class XpathConverterImpl implements IConverterImpl {
   /**
    * Creates an instance of XpathConverterImpl.
    * @param {types.ISpec} [spec=Specs.default] The XpathConverterImpl uses a spec to define

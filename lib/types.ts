@@ -21,17 +21,17 @@ export interface IParseInfo {
 // Spec
 //
 
-interface IAssociativeCollection { // {DEF}
+export interface IAssociativeCollection { // {DEF}
   delim?: string;
   keyType?: string;
   valueType?: string;
 }
 
-interface ITextNodeCollection { // {DEF}
+export interface ITextNodeCollection { // {DEF}
   assoc?: IAssociativeCollection;
 }
 
-interface IAttributeNodeCollection { // {DEF}
+export interface IAttributeNodeCollection { // {DEF}
   delim?: string;
   open?: string;
   close?: string;
@@ -42,7 +42,7 @@ export type ContextType = 'attributes' | 'textNodes';
 export type MatcherType = 'number' | 'boolean' | 'primitives' | 'collection' | 'date' | 'symbol' | 'string';
 export type PrimitiveType = 'number' | 'boolean';
 
-interface IMatchers { // {DEF}
+export interface IMatchers { // {DEF}
   primitives?: ReadonlyArray<PrimitiveType>;
   // collection
   date?: {
@@ -55,15 +55,14 @@ interface IMatchers { // {DEF}
   string?: boolean;
 }
 
-interface IAttributesMatchers extends IMatchers {
+export interface IAttributesMatchers extends IMatchers {
   collection?: IAttributeNodeCollection;
 }
 
-interface ITextNodesMatchers extends IMatchers {
+export interface ITextNodesMatchers extends IMatchers {
   collection?: ITextNodeCollection;
 }
-interface ICoercionEntity<T extends IMatchers> {
-  trim?: boolean;
+export interface ICoercionEntity<T extends IMatchers> {
   matchers?: T;
 }
 
@@ -76,16 +75,16 @@ export interface ISpec {
     text?: string;
   };
   attributes?: {
-    trim?: boolean;
+    trim?: boolean; // {DEF}
+    // coercion NOT DEFAULT-ABLE. If not present, then coercion is turned off
+    //
     coercion?: ICoercionEntity<IAttributesMatchers>
   };
   textNodes?: {
-    trim?: boolean;
+    trim?: boolean; // {DEF}
+    // coercion NOT DEFAULT-ABLE. If not present, then coercion is turned off
+    //
     coercion?: ICoercionEntity<ITextNodesMatchers>
-  };
-  coercion?: { // NOT DEFAULT-ABLE. If not present, then coercion is turned off, so don't use defaults.
-    attributes?: ICoercionEntity<IAttributesMatchers>,
-    textNodes?: ICoercionEntity<ITextNodesMatchers>
   };
 }
 
@@ -94,11 +93,6 @@ export type SelectNodeResult = Node | Node[];
 export type NullableNode = Node | null;
 export interface IConverter {
   build (elementNode: Node, parseInfo: IParseInfo): any;
-}
-
-export interface IConverterImpl {
-  build (elementNode: Node, parseInfo: IParseInfo, previouslySeen: string[]): any;
-  buildElement (elementNode: Node, parseInfo: IParseInfo, previouslySeen: string[]): any;
 }
 
 export interface INormaliser {

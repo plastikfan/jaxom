@@ -1,6 +1,6 @@
 
 import * as types from '../types';
-import { XpathConverterImpl as Impl } from './xpath-converter.impl';
+import { XpathConverterImpl, IConverterImpl } from './xpath-converter.impl';
 import { SpecOptionService, Specs } from '../specService/spec-option-service.class';
 
 /**
@@ -27,10 +27,10 @@ export class XpathConverter implements types.IConverter {
 
     // Control freak!
     //
-    this.impl = new Impl(new SpecOptionService(spec));
+    this.impl = new XpathConverterImpl(new SpecOptionService(spec));
   }
 
-  private impl: types.IConverterImpl;
+  private impl: IConverterImpl;
 
   /**
    * @method build

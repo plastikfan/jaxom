@@ -1,10 +1,4 @@
 
-//  comment/ <reference path="./declarations.d.ts" />
-import jinxed = require('jinxed');
-
-const TestObject: any = {
-  name: 'dvorak',
-  occ: 'watchman'
-};
-
-console.log('jaxom: ', jinxed.functify(TestObject));
+export * from './types';
+export * from './specService/spec-option-service.class';
+export * from './converter/xpath-converter.class';
