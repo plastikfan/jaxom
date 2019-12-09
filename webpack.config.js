@@ -16,8 +16,13 @@ module.exports = env => {
     module: {
       rules: [
         {
-          test: /\.ts(x?)$/,
-          use: 'ts-loader'
+          test: /\.tsx?$/,
+          use: [{
+            loader: 'ts-loader',
+            options: {
+              configFile: 'tsconfig.src.json'
+            }
+          }]
         },
         {
           test: /\.json$/,

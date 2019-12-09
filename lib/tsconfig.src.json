@@ -10,9 +10,10 @@
     "strictNullChecks": true,
     "target": "es5",
     "declaration": true,
-    "declarationDir": "./typings",
+    "declarationDir": "../typings",
     "types": [
-      "mocha", "node"
+      "mocha",
+      "node"
     ],
     "lib": [
       "es5",
@@ -22,10 +23,10 @@
     ]
   },
   "include": [
-    "lib/**/*"
+    "../lib/**/*"
   ],
   "exclude": [
-    "node_modules",
-    "**/*.spec.ts"
+    "../node_modules",
+    "../**/*.spec.ts"
   ]
 }

@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "alwaysStrict": true,
+    "esModuleInterop": true,
+    "module": "commonjs",
+    "moduleResolution": "Node",
+    "noImplicitAny": true,
+    "sourceMap": true,
+    "strictNullChecks": true,
+    "target": "es5",
+    "declaration": true,
+    "declarationDir": "../typings",
+    "types": [
+      "mocha",
+      "node"
+    ],
+    "lib": [
+      "es5",
+      "es2015",
+      "es6",
+      "dom"
+    ]
+  },
+  "include": [
+    "../lib/**/*"
+  ],
+  "exclude": [
+    "../node_modules"
+  ]
+}

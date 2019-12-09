@@ -4,7 +4,7 @@ const nodeExternals = require('webpack-node-externals');
 module.exports = {
   devtool: 'source-map',
   mode: 'development',
-  entry: ['./tests/all-tests-entry.js', './lib'],
+  entry: ['./tests/all-tests-entry.js', './lib/index.ts'],
   target: 'node',
   externals: [nodeExternals()],
   module: {
@@ -13,8 +13,19 @@ module.exports = {
         test: /\.xml$/i,
         use: 'raw-loader'
       },
-      { test: /\.ts(x?)$/, loader: 'ts-loader' },
-      { test: /\.json$/, loader: 'json-loader' }
+      {
+        test: /\.tsx?$/,
+        use: [{
+          loader: 'ts-loader',
+          options: {
+            configFile: 'tsconfig.tests.json'
+          }
+        }]
+      },
+      {
+        test: /\.json$/,
+        loader: 'json-loader'
+      }
     ]
   },
   resolve: {
