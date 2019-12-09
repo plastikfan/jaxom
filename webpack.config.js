@@ -9,9 +9,7 @@ module.exports = env => {
 
   console.log('>>> Jaxom Webpack Environment mode: ' + env.mode);
   return {
-    entry: {
-      index: './lib/index.ts'
-    },
+    entry: './lib/index.ts',
     target: 'node',
     externals: [nodeExternals()],
     mode: mode,
@@ -41,9 +39,10 @@ module.exports = env => {
       ignored: /node_modules/
     },
     output: {
-      libraryTarget: 'commonjs',
+      filename: 'jaxom-bundle.js',
+      sourceMapFilename: 'jaxom-bundle.js.map',
       path: path.join(__dirname, 'dist'),
-      filename: 'jaxom-bundle.js'
+      libraryTarget: 'commonjs'
     }
   };
 };
