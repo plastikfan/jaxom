@@ -9,7 +9,7 @@ module.exports = env => {
 
   console.log('>>> Jaxom Webpack Environment mode: ' + env.mode);
   return {
-    entry: './lib/index.ts',
+    entry: ['./lib/index.ts'],
     target: 'node',
     externals: [nodeExternals()],
     mode: mode,

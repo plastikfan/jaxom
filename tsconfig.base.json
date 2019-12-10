@@ -10,7 +10,7 @@
     "strictNullChecks": true,
     "target": "es5",
     "declaration": true,
-    "declarationDir": "./typings",
+    "declarationDir": "./dist",
     "outDir": "./dist",
     "diagnostics": true,
     "lib": [
