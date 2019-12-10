@@ -12,7 +12,7 @@
     "build:p": "npm run clean && webpack -p --env.mode production",
     "build:t": "webpack --config webpack.config.test.js",
     "exec": "node ./dist/jaxom-bundle.js",
-    "lint": "(npx semistandard --verbose | npx snazzy) && npx tslint -c tslint.json --project ./lib/tsconfig.src.json",
+    "lint": "(npx semistandard --verbose | npx snazzy) && npx tslint -c tslint.json --project ./tsconfig.lint.json",
     "fix": "npx semistandard --fix",
     "watch": "npm run clean && webpack --watch --env.mode development",
     "watch:t": "npm run clean && webpack --watch --env.mode development --config webpack.config.test.js",
