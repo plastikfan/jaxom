@@ -9,21 +9,15 @@
     "sourceMap": true,
     "strictNullChecks": true,
     "target": "es5",
-    "types": [
-      "mocha", "node"
-    ],
+    "declaration": true,
+    "declarationDir": "./dist",
+    "outDir": "./dist",
+    "diagnostics": true,
     "lib": [
       "es5",
       "es2015",
       "es6",
       "dom"
     ]
-  },
-  "include": [
-    "lib/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "**/*.spec.ts"
-  ]
+  }
 }
