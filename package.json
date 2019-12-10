@@ -1,0 +1,107 @@
+{
+  "name": "jaxom",
+  "version": "0.0.1",
+  "description": "Another JSON to XML converter with inheritable attributes and custom element consolidation",
+  "main": "./dist/jaxom-bundle.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist/**/*"
+  ],
+  "scripts": {
+    "clean": "rimraf dist/*",
+    "t": "mocha ./dist/jaxom-test-bundle.js",
+    "test": "npm audit --skip-unused && npm run t",
+    "build": "npm run build:d",
+    "build:d": "npm run clean && webpack -d --env.mode development --display-error-details",
+    "build:p": "npm run clean && webpack -p --env.mode production",
+    "build:t": "webpack --config webpack.config.test.js",
+    "exec": "node ./dist/jaxom-bundle.js",
+    "lint": "(npx semistandard --verbose | npx snazzy) && npx tslint -c tslint.json --project ./tsconfig.lint.json",
+    "fix": "npx semistandard --fix",
+    "watch": "npm run clean && webpack --watch --env.mode development",
+    "watch:t": "npm run clean && webpack --watch --env.mode development --config webpack.config.test.js",
+    "audit": "npm audit --skip-unused",
+    "dep": "depcheck --ignores 'xpath,webpack-cli,sinon,@commitlint/cli,@commitlint/config-conventional,precommit-hook,shebang-loader,raw-loader'",
+    "check": "npm run audit && npm run dep && npm outdated --depth 0",
+    "validate": "npm run lint && npm run build && npm run build:t && npm test",
+    "cm": "npx git-cz",
+    "rep": "nyc report --reporter=lcov --reporter text summary",
+    "cov": "nyc mocha ./dist/jaxom-test-bundle.js",
+    "prepare": "echo '---> [STEP: prepare]:' && npm run build:p",
+    "prepublishOnly": "echo '---> [STEP: prepublishOnly]:' && npm run test && npm run lint",
+    "preversion": "echo '---> [STEP: preversion]:' && npm run lint",
+    "version": "echo '---> [STEP: version]:' && npm run fix && git add -A lib",
+    "postversion": "echo '---> [STEP: postversion]:' && git push && git push --tags"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/plastikfan/jaxom.git"
+  },
+  "keywords": [
+    "xml",
+    "json",
+    "convert",
+    "transform"
+  ],
+  "author": "plastikfan",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/plastikfan/jaxom/issues"
+  },
+  "homepage": "https://github.com/plastikfan/jaxom#readme",
+  "dependencies": {
+    "@types/ramda": "^0.26.36",
+    "@types/xregexp": "^3.0.30",
+    "jinxed": "0.0.2",
+    "moment": "^2.24.0",
+    "ramda": "^0.26.1",
+    "xmldom-ts": "^0.3.1",
+    "xpath-ts": "^1.3.13",
+    "xregexp": "^4.2.4"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^8.2.0",
+    "@commitlint/config-conventional": "^8.2.0",
+    "@types/chai": "^4.2.5",
+    "@types/dirty-chai": "^2.0.2",
+    "@types/mocha": "^5.2.7",
+    "@types/sinon": "^7.5.1",
+    "@types/sinon-chai": "^3.2.3",
+    "chai": "^4.2.0",
+    "commitizen": "^4.0.3",
+    "cz-conventional-changelog": "^3.0.2",
+    "depcheck": "^0.9.1",
+    "dirty-chai": "^2.0.1",
+    "json-loader": "^0.5.7",
+    "mocha": "^6.2.2",
+    "precommit-hook": "^3.0.0",
+    "raw-loader": "^4.0.0",
+    "rimraf": "^3.0.0",
+    "sinon": "^7.5.0",
+    "sinon-chai": "^3.3.0",
+    "snazzy": "^8.0.0",
+    "ts-loader": "^6.2.1",
+    "tslint": "^5.20.1",
+    "tslint-config-semistandard": "^8.0.1",
+    "typescript": "^3.7.2",
+    "webpack": "^4.41.2",
+    "webpack-cli": "^3.3.10",
+    "webpack-config-utils": "^2.3.1",
+    "webpack-node-externals": "^1.7.2"
+  },
+  "pre-commit": [
+    "lint",
+    "validate",
+    "test"
+  ],
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  },
+  "semistandard": {
+    "env": [
+      "mocha"
+    ]
+  }
+}
