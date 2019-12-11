@@ -1,5 +1,5 @@
 {
-  "name": "jaxom",
+  "name": "jaxom-ts",
   "version": "0.0.4",
   "description": "Another JSON to XML converter with inheritable attributes and custom element consolidation",
   "main": "./dist/jaxom-bundle.js",
@@ -38,7 +38,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/plastikfan/jaxom.git"
+    "url": "git+https://github.com/plastikfan/jaxom-ts.git"
   },
   "keywords": [
     "xml",
@@ -49,9 +49,9 @@
   "author": "plastikfan",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/plastikfan/jaxom/issues"
+    "url": "https://github.com/plastikfan/jaxom-ts/issues"
   },
-  "homepage": "https://github.com/plastikfan/jaxom#readme",
+  "homepage": "https://github.com/plastikfan/jaxom-ts#readme",
   "dependencies": {
     "@types/ramda": "^0.26.36",
     "@types/xregexp": "^3.0.30",
