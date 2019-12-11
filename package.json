@@ -31,8 +31,8 @@
     "cm": "npx git-cz",
     "rep": "nyc report --reporter=lcov --reporter text summary",
     "cov": "nyc mocha ./dist/jaxom-test-bundle.js",
-    "prepare": "echo '---> [STEP: prepare]:' && npm run build:p",
-    "prepublishOnly": "echo '---> [STEP: prepublishOnly]:' npm run __b:publish",
+    "prepare": "echo '---> [STEP: prepare]:' && npm run __b:publish",
+    "prepublishOnly": "echo '---> [STEP: prepublishOnly]:' npm run build:p",
     "preversion": "echo '---> [STEP: preversion]:' && npm run lint",
     "version": "echo '---> [STEP: version]'",
     "postversion": "echo '---> [STEP: postversion]'"
