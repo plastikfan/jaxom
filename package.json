@@ -1,6 +1,6 @@
 {
   "name": "jaxom-ts",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "Another JSON to XML converter with inheritable attributes and custom element consolidation",
   "main": "./dist/jaxom-bundle.js",
   "types": "./dist/index.d.ts",
