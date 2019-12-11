@@ -1,6 +1,6 @@
 {
   "name": "jaxom-ts",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Another JSON to XML converter with inheritable attributes and custom element consolidation",
   "main": "./dist/jaxom-bundle.js",
   "types": "./dist/index.d.ts",
@@ -16,7 +16,7 @@
     "build:p": "npm run clean && npm run __b:prod:src && npm run __b:prod:test",
     "__b:prod:src": "webpack -d --env.mode production --config webpack.config.src.js",
     "__b:prod:test": "webpack -d --env.mode production --config webpack.config.test.js",
-    "__b:publish": "webpack -d --env.mode production --config webpack.config.src.js",
+    "__b:publish": "npm run clean && webpack -d --env.mode production --config webpack.config.src.js",
     "__b:dev:src": "webpack -d --env.mode development --config webpack.config.src.js",
     "__b:dev:test": "webpack -d --env.mode development --config webpack.config.test.js",
     "exec": "node ./dist/jaxom-bundle.js",
@@ -32,7 +32,7 @@
     "rep": "nyc report --reporter=lcov --reporter text summary",
     "cov": "nyc mocha ./dist/jaxom-test-bundle.js",
     "prepare": "echo '---> [STEP: prepare]:' && npm run __b:publish",
-    "prepublishOnly": "echo '---> [STEP: prepublishOnly]:' && npm run test && npm run lint",
+    "prepublishOnly": "echo '---> [STEP: prepublishOnly]:' npm run build:p",
     "preversion": "echo '---> [STEP: preversion]:' && npm run lint",
     "version": "echo '---> [STEP: version]'",
     "postversion": "echo '---> [STEP: postversion]'"
