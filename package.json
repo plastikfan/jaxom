@@ -33,8 +33,8 @@
     "prepare": "echo '---> [STEP: prepare]:' && npm run build:p",
     "prepublishOnly": "echo '---> [STEP: prepublishOnly]:' && npm run test && npm run lint",
     "preversion": "echo '---> [STEP: preversion]:' && npm run lint",
-    "version": "echo '---> [STEP: version]:' && npm run fix && git add -A lib",
-    "postversion": "echo '---> [STEP: postversion]:' && git push && git push --tags"
+    "version": "echo '---> [STEP: version]'",
+    "postversion": "echo '---> [STEP: postversion]'"
   },
   "repository": {
     "type": "git",
