@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.base",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": [
+    "./lib/**/*"
+  ],
+  "exclude": [
+    "./node_modules"
+  ]
+}
