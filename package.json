@@ -10,7 +10,7 @@
   "scripts": {
     "clean": "rimraf dist/*",
     "t": "mocha ./dist/jaxom-test-bundle.js",
-    "test": "npm audit --skip-unused && npm run t",
+    "test": "npm run build:p && npm run t",
     "build": "npm run build:d",
     "build:d": "npm run clean && npm run __b:dev:src && npm run __b:dev:test",
     "build:p": "npm run clean && npm run __b:prod:src && npm run __b:prod:test",
