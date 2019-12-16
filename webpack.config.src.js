@@ -17,12 +17,15 @@ module.exports = env => {
       rules: [
         {
           test: /\.tsx?$/,
-          use: [{
-            loader: 'ts-loader',
-            options: {
-              configFile: 'tsconfig.src.json'
+          use: [
+            {
+              loader: 'ts-loader',
+              options: {
+                transpileOnly: false,
+                configFile: 'tsconfig.src.json'
+              }
             }
-          }]
+          ]
         },
         {
           test: /\.json$/,

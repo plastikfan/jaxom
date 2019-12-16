@@ -9,7 +9,7 @@ module.exports = env => {
   console.log('>>> Jaxom Webpack Environment mode: ' + env.mode);
 
   return {
-    devtool: 'source-map',
+    devtool: 'inline-source-map',
     mode: mode,
     entry: ['./tests/all-tests-entry.js'],
     target: 'node',
