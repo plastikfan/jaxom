@@ -1,4 +1,5 @@
 const path = require('path');
+const webpack = require('webpack');
 
 module.exports = env => {
   const { getIfUtils } = require('webpack-config-utils');
@@ -9,7 +10,6 @@ module.exports = env => {
   console.log('>>> Jaxom Webpack Environment mode: ' + env.mode);
 
   return {
-    devtool: 'source-map',
     mode: mode,
     entry: ['./tests/all-tests-entry.js'],
     target: 'node',
@@ -35,6 +35,13 @@ module.exports = env => {
         }
       ]
     },
+    plugins: [
+      new webpack.DefinePlugin({ 'process.env.NODE_ENV': '"development"' }),
+      new webpack.BannerPlugin({
+        banner: '#!/usr/bin/env node',
+        raw: true
+      })
+    ],
     resolve: {
       extensions: ['.ts', '.js', '.json']
     },
@@ -46,6 +53,7 @@ module.exports = env => {
       sourceMapFilename: 'jaxom-test-bundle.js.map',
       path: path.resolve(__dirname, 'dist'),
       libraryTarget: 'commonjs'
-    }
+    },
+    devtool: 'inline-source-map'
   };
 };
