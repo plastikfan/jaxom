@@ -10,7 +10,6 @@ module.exports = env => {
   console.log('>>> Jaxom Webpack Environment mode: ' + env.mode);
 
   return {
-    devtool: 'inline-source-map',
     mode: mode,
     entry: ['./tests/all-tests-entry.js'],
     target: 'node',
@@ -54,6 +53,7 @@ module.exports = env => {
       sourceMapFilename: 'jaxom-test-bundle.js.map',
       path: path.resolve(__dirname, 'dist'),
       libraryTarget: 'commonjs'
-    }
+    },
+    devtool: 'inline-source-map'
   };
 };
