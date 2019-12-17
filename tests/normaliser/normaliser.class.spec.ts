@@ -1,9 +1,9 @@
 /// <reference types="../../lib/declarations" />
 
 import { expect, assert, use } from 'chai';
-import dirtyChai from 'dirty-chai';
+import dirtyChai = require('dirty-chai');
 use(dirtyChai);
-import sinonChai from 'sinon-chai';
+import sinonChai = require('sinon-chai');
 use(sinonChai);
 import * as xp from 'xpath-ts';
 import * as types from '../../lib/types';

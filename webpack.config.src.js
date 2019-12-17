@@ -8,21 +8,24 @@ module.exports = env => {
   const mode = ifProduction('production', 'development');
 
   console.log('>>> Jaxom Webpack Environment mode: ' + env.mode);
+
   return {
+    mode: mode,
     entry: ['./lib/index.ts'],
     target: 'node',
     externals: [nodeExternals()],
-    mode: mode,
     module: {
       rules: [
         {
           test: /\.tsx?$/,
-          use: [{
-            loader: 'ts-loader',
-            options: {
-              configFile: 'tsconfig.src.json'
+          use: [
+            {
+              loader: 'ts-loader',
+              options: {
+                configFile: 'tsconfig.src.json'
+              }
             }
-          }]
+          ]
         },
         {
           test: /\.json$/,
