@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "clean": "rimraf dist/* && rimraf output/*",
-    "t": "mocha ./dist/jaxom-test-bundle.js",
+    "t": "mocha",
     "test": "npm run build:p && npm run t",
     "build": "npm run build:d",
     "build:d": "npm run clean && npm run __b:dev:src && npm run __b:dev:test",
