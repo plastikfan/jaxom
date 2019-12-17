@@ -21,7 +21,6 @@ module.exports = env => {
             {
               loader: 'ts-loader',
               options: {
-                transpileOnly: false,
                 configFile: 'tsconfig.src.json'
               }
             }

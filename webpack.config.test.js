@@ -1,4 +1,5 @@
 const path = require('path');
+const webpack = require('webpack');
 
 module.exports = env => {
   const { getIfUtils } = require('webpack-config-utils');
@@ -35,6 +36,13 @@ module.exports = env => {
         }
       ]
     },
+    plugins: [
+      new webpack.DefinePlugin({ 'process.env.NODE_ENV': '"development"' }),
+      new webpack.BannerPlugin({
+        banner: '#!/usr/bin/env node',
+        raw: true
+      })
+    ],
     resolve: {
       extensions: ['.ts', '.js', '.json']
     },
