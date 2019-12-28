@@ -2,11 +2,10 @@ const path = require('path');
 const webpack = require('webpack');
 
 module.exports = env => {
-  const { getIfUtils } = require('webpack-config-utils');
   const nodeExternals = require('webpack-node-externals');
+  const { getIfUtils } = require('webpack-config-utils');
   const { ifProduction } = getIfUtils(env);
   const mode = ifProduction('production', 'development');
-
   console.log('>>> Jaxom Webpack Environment mode: ' + env.mode);
 
   return {
@@ -16,10 +15,6 @@ module.exports = env => {
     externals: [nodeExternals()],
     module: {
       rules: [
-        {
-          test: /\.xml$/i,
-          use: 'raw-loader'
-        },
         {
           test: /\.tsx?$/,
           use: [{
@@ -31,12 +26,16 @@ module.exports = env => {
         },
         {
           test: /\.json$/,
-          loader: 'json-loader'
+          use: 'json-loader'
+        },
+        {
+          test: /\.xml$/i,
+          use: 'raw-loader'
         }
       ]
     },
     plugins: [
-      new webpack.DefinePlugin({ 'process.env.NODE_ENV': '"development"' }),
+      new webpack.DefinePlugin({ 'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV) }),
       new webpack.BannerPlugin({
         banner: '#!/usr/bin/env node',
         raw: true

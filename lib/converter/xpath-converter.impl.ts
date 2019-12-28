@@ -86,7 +86,8 @@ export class XpathConverterImpl implements IConverterImpl {
    */
   buildElement (elementNode: Node, parseInfo: types.IParseInfo, previouslySeen: string[]): any {
 
-    const { recurse = '', discards = [], id = '' } = this.getElementInfo(elementNode.nodeName, parseInfo);
+    const elementInfo = this.getElementInfo(elementNode.nodeName, parseInfo);
+    const { recurse = '', discards = [], id = '' } = elementInfo;
     const subject = composeElementPath(elementNode, id);
     let element: any = this.buildLocalAttributes(subject, elementNode);
     const elementLabel = this.options.fetchOption('labels/element') as string;
@@ -103,6 +104,10 @@ export class XpathConverterImpl implements IConverterImpl {
 
       if (this.isCombinable(subject, element, recurse)) {
         element = this.normaliser.combineDescendants(subject, element);
+      }
+
+      if (this.isNormalisable(subject, element, elementInfo)) {
+        element = this.normaliser.normaliseDescendants(subject, element, elementInfo);
       }
     }
 
@@ -243,8 +248,7 @@ export class XpathConverterImpl implements IConverterImpl {
         const inheritedElements = R.map(at => {
           // select element bode by id
           //
-          const inheritedElementNode: Node = selectElementNodeById(
-            nodeName, id, at, elementNode.parentNode) as Node;
+          const inheritedElementNode = selectElementNodeById(nodeName, id, at, elementNode.parentNode);
 
           if (!inheritedElementNode) {
             throw new e.JaxConfigError(`Could not find element of type: '${nodeName}', id: '${id}'='${at}'`,
@@ -302,8 +306,7 @@ export class XpathConverterImpl implements IConverterImpl {
         // Now build the singular inherited element
         //
         const inheritedElementName: string = recurseAttributes[0];
-        const inheritedElementNode = selectElementNodeById(
-          nodeName, id, inheritedElementName, elementNode.parentNode) as Node;
+        const inheritedElementNode = selectElementNodeById(nodeName, id, inheritedElementName, elementNode.parentNode);
 
         if (!inheritedElementNode) {
           throw new e.JaxConfigError(
@@ -362,48 +365,6 @@ export class XpathConverterImpl implements IConverterImpl {
       } else {
         element[descendantsLabel] = children;
       }
-
-      const elementLabel = this.options.fetchOption(`labels/element`) as string;
-      const elementInfo: types.IElementInfo = this.getElementInfo(
-        element[elementLabel], parseInfo);
-      const id: string = elementInfo?.id ?? '';
-
-      if (id !== '') {
-        if (R.hasPath(['descendants', 'by'], elementInfo)) {
-          const descendants = element[descendantsLabel];
-
-          if (R.all(R.has(id))(children)) {
-            if (R.pathEq(['descendants', 'by'], 'index', elementInfo)) {
-              if (elementInfo?.descendants?.throwIfMissing) {
-                // We need a new version of ramda's indexBy function that can take an extra
-                // parameter being a function which is invoked to handle duplicate keys. In
-                // its absence, we can find duplicates via a reduce ...
-                //
-                R.reduce((acc: any, val: any) => {
-                  if (R.includes(val[id], acc)) {
-                    throw new e.JaxSolicitedError(`Element collision found: ${functify(val)}`,
-                      subject);
-                  }
-                  return R.append(val[id], acc);
-                }, [])(descendants);
-              }
-
-              element[descendantsLabel] = R.indexBy(R.prop(id),
-                descendants);
-            } else if (R.pathEq(['descendants', 'by'], 'group', elementInfo)) {
-              element[descendantsLabel] = R.groupBy(R.prop(id),
-                descendants);
-            }
-          } else if (elementInfo?.descendants?.throwIfMissing) {
-            const missing: any = R.find(
-              R.complement(R.has(id))
-            )(children) ?? {};
-            throw new e.JaxSolicitedError(
-              `Element is missing key attribute "${id}": (${functify(missing)})`,
-                subject);
-          }
-        }
-      }
     }
 
     let elementText: string = this.composeText(elementNode);
@@ -435,10 +396,8 @@ export class XpathConverterImpl implements IConverterImpl {
       result = parseInfo.common
         ? R.mergeDeepRight(parseInfo.common, namedOrDefaultElementInfo)
         : namedOrDefaultElementInfo;
-    } else {
-      if (parseInfo.common) {
-        result = parseInfo.common;
-      }
+    } else if (parseInfo.common) {
+      result = parseInfo.common;
     }
 
     return result;
@@ -485,7 +444,6 @@ export class XpathConverterImpl implements IConverterImpl {
         throw new e.JaxInternalError('item in spec at "labels/attributes" is not an array',
           'XpathConverterImpl.isAbstract');
       }
-
     } else {
       result = R.has('abstract')(element);
     }
@@ -504,6 +462,10 @@ export class XpathConverterImpl implements IConverterImpl {
 
   public isCombinable (subject: string, element: {}, recurse: string): boolean {
     return recurse !== '' && !this.isAbstract(subject, element);
+  }
+
+  public isNormalisable (subject: string, element: {}, elementInfo: types.IElementInfo): boolean {
+    return R.hasPath(['descendants', 'by'], elementInfo);
   }
 
 } // class XpathConverterImpl

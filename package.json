@@ -1,6 +1,6 @@
 {
   "name": "jaxom-ts",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "Another JSON to XML converter with inheritable attributes and custom element consolidation",
   "main": "./dist/jaxom-bundle.js",
   "types": "./dist/index.d.ts",
@@ -73,13 +73,11 @@
   "homepage": "https://github.com/plastikfan/jaxom-ts#readme",
   "dependencies": {
     "@types/ramda": "^0.26.36",
-    "@types/xregexp": "^3.0.30",
     "jinxed": "0.0.2",
     "moment": "^2.24.0",
     "ramda": "^0.26.1",
     "xmldom-ts": "^0.3.1",
-    "xpath-ts": "^1.3.13",
-    "xregexp": "^4.2.4"
+    "xpath-ts": "^1.3.13"
   },
   "devDependencies": {
     "@commitlint/cli": "^8.2.0",
