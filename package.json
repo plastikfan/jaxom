@@ -30,7 +30,7 @@
     "validate": "npm run lint && npm run build:p && npm run t",
     "cm": "npx git-cz",
     "nyc": "nyc mocha",
-    "coveralls": "nyc report --reporter=text-lcov | coveralls",
+    "coveralls": "npm run nyc && nyc report --reporter=text-lcov | coveralls",
     "prepare": "echo '---> [STEP: prepare]:' && npm run __b:publish",
     "prepublishOnly": "echo '---> [STEP: prepublishOnly]:' npm run build:p",
     "preversion": "echo '---> [STEP: preversion]:' && npm run lint",
