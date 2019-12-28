@@ -7,6 +7,7 @@ export interface IElementInfo {
   readonly discards?: ReadonlyArray<string>;
   readonly descendants?: {
     readonly by?: string;
+    readonly id?: string;
     readonly throwIfCollision?: boolean;
     readonly throwIfMissing?: boolean;
   };
@@ -97,6 +98,7 @@ export interface IConverter {
 
 export interface INormaliser {
   combineDescendants (subject: string, parent: {}): {};
+  normaliseDescendants (subject: string, parentElement: any, elementInfo: IElementInfo): any;
 }
 
 export interface ITransformer {
