@@ -8,6 +8,7 @@ import 'xmldom-ts';
 const parser = new DOMParser();
 import * as types from '../../lib/types';
 import * as Helpers from '../test-helpers';
+import * as utils from '../../lib/utils/utils';
 
 import { XpathConverterImpl as Impl, composeElementPath }
   from '../../lib/converter/xpath-converter.impl';
@@ -284,7 +285,7 @@ describe('composeElementPath', () => {
   });
 }); // composeElementPath
 
-describe('converter.impl.getElementInfo', () => {
+describe('utils.composeElementInfo', () => {
   let converter: Impl;
   beforeEach(() => {
     converter = new Impl();
@@ -311,14 +312,14 @@ describe('converter.impl.getElementInfo', () => {
 
     context('given: named element IS present', () => {
       it('should: return named parse info', () => {
-        const result = converter.getElementInfo('Command', withoutCommonOrDefInfo);
+        const result = utils.composeElementInfo('Command', withoutCommonOrDefInfo);
         expect(result.id).to.equal('cmd');
       });
     });
 
     context('given: named element is NOT present', () => {
       it('should: return empty parse info', () => {
-        const result = converter.getElementInfo('Task', withoutCommonOrDefInfo);
+        const result = utils.composeElementInfo('Task', withoutCommonOrDefInfo);
         expect(result).to.deep.equal({});
       });
     });
@@ -343,7 +344,7 @@ describe('converter.impl.getElementInfo', () => {
 
     context('given: named element IS present', () => {
       it('should: return named info merged with common', () => {
-        const result = converter.getElementInfo('Command', withCommonInfo);
+        const result = utils.composeElementInfo('Command', withCommonInfo);
         expect(result.id).to.equal('cmd');
         expect(result.recurse).to.equal('inherits');
       });
@@ -351,7 +352,7 @@ describe('converter.impl.getElementInfo', () => {
 
     context('given: named element is NOT present', () => {
       it('should: return common info', () => {
-        const result = converter.getElementInfo('Task', withCommonInfo);
+        const result = utils.composeElementInfo('Task', withCommonInfo);
         expect(result.id).to.equal('common-id');
         expect(result.recurse).to.equal('inherits');
       });
@@ -377,7 +378,7 @@ describe('converter.impl.getElementInfo', () => {
 
     context('given: named element IS present', () => {
       it('should: return named info', () => {
-        const result = converter.getElementInfo('Command', withDefInfo);
+        const result = utils.composeElementInfo('Command', withDefInfo);
         expect(result.id).to.equal('cmd');
         expect(result.recurse).to.be.undefined();
       });
@@ -385,7 +386,7 @@ describe('converter.impl.getElementInfo', () => {
 
     context('given: named element is NOT present', () => {
       it('should: return def info', () => {
-        const result = converter.getElementInfo('Task', withDefInfo);
+        const result = utils.composeElementInfo('Task', withDefInfo);
         expect(result.id).to.equal('def-id');
         expect(result.recurse).to.equal('inherits');
       });
@@ -419,7 +420,7 @@ describe('converter.impl.getElementInfo', () => {
 
     context('given: named element IS present', () => {
       it('should: return named info', () => {
-        const result = converter.getElementInfo('Command', withCommonAndDefInfo);
+        const result = utils.composeElementInfo('Command', withCommonAndDefInfo);
         expect(result.id).to.equal('cmd');
         expect(result.recurse).to.equal('from');
         expect(result.descendants?.by).to.equal('group');
@@ -428,11 +429,11 @@ describe('converter.impl.getElementInfo', () => {
 
     context('given: named element is NOT present', () => {
       it('should: return def info', () => {
-        const result = converter.getElementInfo('Task', withCommonAndDefInfo);
+        const result = utils.composeElementInfo('Task', withCommonAndDefInfo);
         expect(result.id).to.equal('def-id');
         expect(result.recurse).to.equal('inherits');
         expect(result.descendants?.by).to.equal('index');
       });
     });
   }); // IParseInfo with common and def
-}); // converter.impl.getElementInfo
+}); // utils.composeElementInfo

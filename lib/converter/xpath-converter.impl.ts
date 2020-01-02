@@ -8,7 +8,7 @@ import * as e from '../exceptions';
 import { Transformer } from '../transformer/transformer.class';
 import { SpecOptionService } from '../specService/spec-option-service.class';
 import { Normaliser } from '../normaliser/normaliser.class';
-
+import * as utils from '../utils/utils';
 export interface IConverterImpl {
   build (elementNode: Node, parseInfo: types.IParseInfo, previouslySeen: string[]): any;
   buildElement (elementNode: Node, parseInfo: types.IParseInfo, previouslySeen: string[]): any;
@@ -62,7 +62,7 @@ export class XpathConverterImpl implements IConverterImpl {
     const abstractValue = getAttributeValue(elementNode, 'abstract');
 
     if (abstractValue && abstractValue === 'true') {
-      const { id = '' } = this.getElementInfo(elementNode.nodeName, parseInfo);
+      const { id = '' } = utils.composeElementInfo(elementNode.nodeName, parseInfo);
       const subject = composeElementPath(elementNode, id);
 
       throw new e.JaxConfigError(
@@ -86,7 +86,7 @@ export class XpathConverterImpl implements IConverterImpl {
    */
   buildElement (elementNode: Node, parseInfo: types.IParseInfo, previouslySeen: string[]): any {
 
-    const elementInfo = this.getElementInfo(elementNode.nodeName, parseInfo);
+    const elementInfo = utils.composeElementInfo(elementNode.nodeName, parseInfo);
     const { recurse = '', discards = [], id = '' } = elementInfo;
     const subject = composeElementPath(elementNode, id);
     let element: any = this.buildLocalAttributes(subject, elementNode);
@@ -102,11 +102,11 @@ export class XpathConverterImpl implements IConverterImpl {
     if (elementNode.hasChildNodes()) {
       element = this.buildChildren(subject, element, elementNode, parseInfo, previouslySeen);
 
-      if (this.isCombinable(subject, element, recurse)) {
+      if (this.isCombinable(subject, recurse, element)) {
         element = this.normaliser.combineDescendants(subject, element);
       }
 
-      if (this.isNormalisable(subject, element, elementInfo)) {
+      if (this.isNormalisable(subject, elementInfo, element)) {
         element = this.normaliser.normaliseDescendants(subject, element, elementInfo);
       }
     }
@@ -208,7 +208,7 @@ export class XpathConverterImpl implements IConverterImpl {
   private recurseThroughAttribute (subject: string, element: any, elementNode: Element,
     parseInfo: types.IParseInfo, previouslySeen: string[]): {} {
 
-    const ei = this.getElementInfo(elementNode.nodeName, parseInfo);
+    const ei = utils.composeElementInfo(elementNode.nodeName, parseInfo);
     const id: string = ei.id ?? '';
     const recurse: string = ei.recurse ?? '';
     const identifier = id ? element[id] : '';
@@ -348,10 +348,10 @@ export class XpathConverterImpl implements IConverterImpl {
     const descendantsLabel = this.options.fetchOption(`labels/descendants`) as string;
 
     if (selectionResult && selectionResult.length > 0) {
-      const getElementsFn: any = R.filter((child: any) => (child.nodeType === child.ELEMENT_NODE));
+      const getElementsFn: any = R.filter((child: Node) => (child.nodeType === child.ELEMENT_NODE));
       const elements: any = getElementsFn(selectionResult);
 
-      const children: any = R.reduce((acc, childElement: Element): any => {
+      const children: any = R.reduce((acc: Array<{}>, childElement: Element): any => {
         const child = this.buildElement(childElement, parseInfo, previouslySeen);
         return R.append(child, acc);
       }, [])(elements);
@@ -376,32 +376,6 @@ export class XpathConverterImpl implements IConverterImpl {
 
     return element;
   } // buildChildren
-
-  /**
-   * @method getElementInfo
-   * @description Retrieves the elementInfo for the name specified.
-   *
-   * @param {string} elementName
-   * @param {types.IParseInfo} parseInfo
-   * @returns {types.IElementInfo}
-   * @memberof XpathConverterImpl
-   */
-  getElementInfo (elementName: string, parseInfo: types.IParseInfo): types.IElementInfo {
-    const namedOrDefaultElementInfo: types.IElementInfo | undefined = parseInfo.elements.get(
-      elementName) ?? parseInfo.def;
-
-    let result: types.IElementInfo = {};
-
-    if (namedOrDefaultElementInfo) {
-      result = parseInfo.common
-        ? R.mergeDeepRight(parseInfo.common, namedOrDefaultElementInfo)
-        : namedOrDefaultElementInfo;
-    } else if (parseInfo.common) {
-      result = parseInfo.common;
-    }
-
-    return result;
-  }
 
   /**
    * @method composeText
@@ -432,6 +406,46 @@ export class XpathConverterImpl implements IConverterImpl {
     return text;
   } // composeText
 
+  /**
+   * @method isCombinable
+   * @description Determines if an element's descendants are combinable. This would be
+   * the case when inheritance causes the collections of attributes and descendants from base
+   * elements that would be more useful and easier to deal with by the client if they were
+   * re-organised based upon element types.
+   *
+   * @param {string} subject
+   * @param {string} recurse
+   * @param {{}} element
+   * @returns {boolean}
+   * @memberof XpathConverterImpl
+   */
+  public isCombinable (subject: string, recurse: string, element: {}): boolean {
+    return recurse !== '' && !this.isAbstract(subject, element);
+  } // isCombinable
+
+  /**
+   * @method isNormalisable
+   * @description
+   *
+   * @param {string} subject
+   * @param {types.IElementInfo} elementInfo
+   * @param {{}} element
+   * @returns {boolean}
+   * @memberof XpathConverterImpl
+   */
+  public isNormalisable (subject: string, elementInfo: types.IElementInfo, element: {}): boolean {
+    return R.hasPath(['descendants', 'by'], elementInfo);
+  } // isNormalisable
+
+  /**
+   * @method isAbstract
+   * @description Determines wether an element is marked as abstract.
+   *
+   * @param {string} subject
+   * @param {{}} element
+   * @returns {boolean}
+   * @memberof XpathConverterImpl
+   */
   public isAbstract (subject: string, element: {}): boolean {
     const attributesLabel: string = this.options.fetchOption('labels/attributes');
     let result = false;
@@ -451,6 +465,14 @@ export class XpathConverterImpl implements IConverterImpl {
     return result;
   } // isAbstract
 
+  /**
+   * @method validateInheritedElement
+   * @description Ensure that element being inherited from is marked as abstract.
+   *
+   * @param {string} subject
+   * @param {Node} inheritedNode
+   * @memberof XpathConverterImpl
+   */
   public validateInheritedElement (subject: string, inheritedNode: Node): void {
     const inheritedAbstractValue = getAttributeValue(inheritedNode, 'abstract');
     if (!inheritedAbstractValue || inheritedAbstractValue === 'false') {
@@ -459,15 +481,6 @@ export class XpathConverterImpl implements IConverterImpl {
           subject);
     }
   }
-
-  public isCombinable (subject: string, element: {}, recurse: string): boolean {
-    return recurse !== '' && !this.isAbstract(subject, element);
-  }
-
-  public isNormalisable (subject: string, element: {}, elementInfo: types.IElementInfo): boolean {
-    return R.hasPath(['descendants', 'by'], elementInfo);
-  }
-
 } // class XpathConverterImpl
 
 /**
@@ -521,6 +534,13 @@ export function composeElementPath (localNode: types.NullableNode, id: string = 
   return composeElementSegment(localNode) + composeIdQualifierPathSegment(localNode, id);
 }
 
+/**
+ * @function composeElementSegment
+ * @description creates a path segment
+ *
+ * @param {types.NullableNode} node
+ * @returns {string}
+ */
 function composeElementSegment (node: types.NullableNode): string {
   if (!node) {
     return '/';
@@ -529,8 +549,18 @@ function composeElementSegment (node: types.NullableNode): string {
   } else {
     return `${composeElementSegment(node.parentNode)}/${node.nodeName}`;
   }
-}
+} // composeElementSegment
 
+/**
+ * @function composeIdQualifierPathSegment
+ * @description creates a path segment that denotes the element id. Allows
+ * distinguishing of elements of the same type via it's id, if it has one.
+ *
+ * @export
+ * @param {types.NullableNode} localNode
+ * @param {string} id
+ * @returns {string}
+ */
 export function composeIdQualifierPathSegment (localNode: types.NullableNode, id: string): string {
   let idSegment = getAttributeValue(localNode, id) ?? '';
 
@@ -539,8 +569,16 @@ export function composeIdQualifierPathSegment (localNode: types.NullableNode, id
   }
 
   return idSegment;
-}
+} // composeIdQualifierPathSegment
 
+/**
+ * @function getAttributeValue
+ * @description gets the value of the specified attribute for a particular Node.
+ *
+ * @param {types.NullableNode} localNode
+ * @param {string} attributeName
+ * @returns {string}
+ */
 function getAttributeValue (localNode: types.NullableNode, attributeName: string): string {
   let attributeValue = '';
   if (attributeName !== '' && localNode) {
@@ -552,4 +590,4 @@ function getAttributeValue (localNode: types.NullableNode, attributeName: string
   }
 
   return attributeValue;
-}
+} // getAttributeValue
