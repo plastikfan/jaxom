@@ -1,4 +1,3 @@
-
 import { expect, assert, use } from 'chai';
 import dirtyChai = require('dirty-chai');
 use(dirtyChai);
@@ -10,6 +9,7 @@ const { functify } = require('jinxed');
 import * as types from '../../lib/types';
 import * as Helpers from '../test-helpers';
 import { XpathConverter as Jaxom } from '../../lib/converter/xpath-converter.class';
+import { Specs } from '../../lib/specService/spec-option-service.class';
 
 const testParseInfo: types.IParseInfo = {
   elements: new Map<string, types.IElementInfo>([
@@ -1120,3 +1120,12 @@ describe('xpath-converter.build', () => {
     });
   });
 }); // xpath-converter.build
+
+describe('xpath-converter', () => {
+  context('given: a custom spec', () => {
+    it('should: be constructed ok', () => {
+      const converter = new Jaxom(Specs.attributesAsArray);
+      expect(converter).to.not.be.undefined();
+    });
+  });
+}); // xpath-converter
