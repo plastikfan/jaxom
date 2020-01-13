@@ -440,7 +440,115 @@ describe('converter.impl.buildLocalAttributes', () => {
         }
       });
     }); // a spec with "attributes" label set
+
+    context('given: an abstract entity with child items', () => {
+      it('should: extract attributes as an array', () => {
+        const data = `<?xml version="1.0"?>
+          <Application name="pez">
+            <Cli>
+              <Commands>
+                <Command name="base-command" category="sync" abstract="true">
+                  <AlphaChild rank="alpha"/>
+                  <BetaChild rank="beta" label="red"/>
+                </Command>
+              </Commands>
+            </Cli>
+          </Application>`;
+
+        const document: Document = parser.parseFromString(data, 'text/xml');
+        const applicationNode: types.SelectResult = xp.select('/Application', document, true);
+
+        if (applicationNode instanceof Node) {
+          const converter = new Impl(new SpecOptionService({
+            name: 'attributes-as-array-spec-without-coercion-for-test',
+            labels: {
+              attributes: '_attributes',
+              element: '_',
+              descendants: '_children',
+              text: '_text'
+            }
+          }));
+          const commandsNode: types.SelectResult = xp.select('/Application/Cli/Commands', document, true);
+
+          if (commandsNode instanceof Node) {
+            const commands = converter.build(commandsNode, parseInfo);
+            const children: { [key: string]: any } = R.prop('_children')(commands);
+            const baseCommand = children['base-command'];
+            const attributes = baseCommand['_attributes'];
+            assertAttributesContains(attributes, ['name', 'category']);
+            assertAttributesExcludes(attributes, ['abstract']);
+          } else {
+            assert.fail('Couldn\'t get Commands node.');
+          }
+        } else {
+          assert.fail('Couldn\'t get Application node.');
+        }
+      });
+    }); // a spec with coercion disabled
+
+    context('given: entity with own children that inherits from an abstract entity with child items', () => {
+      it('should: extract attributes as an array', () => {
+        // TODO: THIS TEST SHOULD GO INTO NORMALISER SUITE
+      });
+    });
   }); // attributes as array
+
+  context('attributes as members', () => {
+    context('given: coercion disabled', () => {
+      it('should: extract attributes as an array un-coerced', () => {
+        const data = `<?xml version="1.0"?>
+          <Application name="pez">
+            <Cli>
+              <Commands>
+                <Command name="base-command" max="10" abstract="true"/>
+              </Commands>
+            </Cli>
+          </Application>`;
+
+        const parseInfo: types.IParseInfo = {
+          elements: new Map<string, types.IElementInfo>([
+            ['Commands', {
+              descendants: {
+                id: 'name',
+                by: 'index'
+              }
+            }],
+            ['Command', {
+              id: 'name',
+              recurse: 'inherits',
+              discards: ['inherits', 'abstract']
+            }]
+          ])
+        };
+
+        const document: Document = parser.parseFromString(data, 'text/xml');
+        const applicationNode: types.SelectResult = xp.select('/Application', document, true);
+
+        if (applicationNode instanceof Node) {
+          const converter = new Impl(new SpecOptionService({
+            name: 'attributes-as-array-spec-without-coercion-for-test',
+            labels: {
+              element: '_',
+              descendants: '_children',
+              text: '_text'
+            }
+          }));
+          const commandsNode: types.SelectResult = xp.select('/Application/Cli/Commands', document, true);
+          if (commandsNode instanceof Node) {
+            const commands = converter.build(commandsNode, parseInfo);
+            const children: { [key: string]: any } = R.prop('_children')(commands);
+            const baseCommand = children['base-command'];
+            const result = R.prop('max')(baseCommand);
+            expect(result).to.equal('10');
+          } else {
+            assert.fail('Couldn\'t get Commands node.');
+          }
+        } else {
+          assert.fail('Couldn\'t get Application node.');
+        }
+      });
+    });
+  });
 }); // converter.impl.buildLocalAttributes
 
 describe('composeElementPath', () => {

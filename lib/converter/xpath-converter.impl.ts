@@ -9,7 +9,7 @@ import { Transformer } from '../transformer/transformer.class';
 import { SpecOptionService } from '../specService/spec-option-service.class';
 import { Normaliser } from '../normaliser/normaliser.class';
 import * as utils from '../utils/utils';
-import { NullableNode } from '../types';
+
 export interface IConverterImpl {
   build (elementNode: Node, parseInfo: types.IParseInfo, previouslySeen: string[]): any;
   buildElement (elementNode: Node, parseInfo: types.IParseInfo, previouslySeen: string[]): any;
@@ -237,8 +237,12 @@ export class XpathConverterImpl implements IConverterImpl {
     parseInfo: types.IParseInfo, previouslySeen: string[]): {} {
 
     const ei = utils.composeElementInfo(elementNode.nodeName, parseInfo);
-    const id: string = ei.id ?? '';
-    const recurse: string = ei.recurse ?? '';
+    const { id = '', recurse = '' } = ei;
+
+    if (id === '' || recurse === '') {
+      return element;
+    }
+
     const identifier = element[id];
 
     if (identifier === '') {
@@ -274,8 +278,6 @@ export class XpathConverterImpl implements IConverterImpl {
         // Just need to map the at to a built element => array which we pass to merge
         //
         const inheritedElements = R.map(at => {
-          // select element bode by id
-          //
           const inheritedElementNode = selectElementNodeById(nodeName, id, at, elementNode.parentNode);
 
           if (!inheritedElementNode) {
@@ -385,9 +387,8 @@ export class XpathConverterImpl implements IConverterImpl {
       }, [])(elements);
 
       if (R.includes(descendantsLabel, R.keys(element) as string[])) {
-        if (!(element[descendantsLabel] instanceof Array)) {
-          throw new e.JaxConfigError('Element is not marked as abstract', subject);
-        }
+        // Prior to normalisation, descendants is an array
+        //
         const merged = R.concat(children, element[descendantsLabel]);
         element[descendantsLabel] = merged;
       } else {
@@ -480,12 +481,7 @@ export class XpathConverterImpl implements IConverterImpl {
 
     if (attributesLabel) {
       const attributes = R.view(R.lensProp(attributesLabel))(element);
-      if (attributes instanceof Array) {
-        result = R.includes('abstract')(attributes);
-      } else {
-        throw new e.JaxInternalError('item in spec at "labels/attributes" is not an array',
-          'XpathConverterImpl.isAbstract');
-      }
+      result = R.includes('abstract')(attributes as []);
     } else {
       result = R.has('abstract')(element);
     }
@@ -523,7 +519,7 @@ export class XpathConverterImpl implements IConverterImpl {
  * @returns {types.NullableNode}
  */
 function selectElementNodeById (elementName: string, id: string, name: string,
-  rootNode: (Node & ParentNode) | null): types.NullableNode {
+  rootNode: types.NullableNode): types.NullableNode {
   // Typescript warning:
   //
   // WARN: This function makes the assumption that if you're selecting an element by an identifier,
@@ -541,11 +537,12 @@ function selectElementNodeById (elementName: string, id: string, name: string,
   // an error?
   //
 
-  if (rootNode && rootNode instanceof Node) {
+  if (rootNode instanceof Node) {
     const result: types.SelectResult = xpath.select(`.//${elementName}[@${id}="${name}"]`, rootNode, true);
 
     return result instanceof Node ? result : null;
   }
+  /* istanbul ignore next */
   return null;
 } // selectElementNodeById
 
@@ -590,7 +587,7 @@ function composeElementSegment (node: types.NullableNode): string {
  * @returns {string}
  */
 export function composeIdQualifierPathSegment (localNode: types.NullableNode, id: string): string {
-  let idSegment = getAttributeValue(localNode, id) ?? '';
+  let idSegment = getAttributeValue(localNode, id);
 
   if (idSegment) {
     idSegment = `[@${id}="${idSegment}"]`;
