@@ -44,6 +44,7 @@ export class Transformer {
   public getTransform (name: types.MatcherType): ITransformFunction<any> {
     const result = this.transformers.get(name);
 
+    /* istanbul ignore next */
     if (!result) {
       throw new e.JaxInternalError(`Couldn't get transformer for matcher: ${name}`,
         'getTransform');
@@ -65,28 +66,22 @@ export class Transformer {
    * @returns
    * @memberof Transformer
    */
-  coerceAttributeValue (subject: string, matchers: any, rawValue: any, attributeName: string): {} {
+  coerceAttributeValue (subject: string, matchers: types.IMatchers, rawValue: any, attributeName: string): {} {
     let resultValue = rawValue;
 
-    if (R.is(Object)(matchers)) {
-      // insertion order of keys is preserved, because key types of symbol
-      // and string are iterated in insertion order. Iterative only whilst
-      // we don't have a successful coercion result.
-      //
-      R.keys(matchers).some((mt: types.MatcherType) => {
-        const transform = this.getTransform(R.toLower(mt) as types.MatcherType);
-        const result = transform.call(this, subject, rawValue, 'attributes');
+    // insertion order of keys is preserved, because key types of symbol
+    // and string are iterated in insertion order. Iterative only whilst
+    // we don't have a successful coercion result.
+    //
+    R.keys(matchers).some((mt: types.MatcherType) => {
+      const transform = this.getTransform(R.toLower(mt) as types.MatcherType);
+      const result = transform.call(this, subject, rawValue, 'attributes');
 
-        if (result.succeeded) {
-          resultValue = result.value;
-        }
-        return result.succeeded;
-      });
-    } else {
-      throw new e.JaxInternalError(
-        `invalid matchers: ${functify(matchers)}, for attribute: ${attributeName} / raw value: ${rawValue}`,
-          'coerceAttributeValue');
-    }
+      if (result.succeeded) {
+        resultValue = result.value;
+      }
+      return result.succeeded;
+    });
 
     return resultValue;
   }
@@ -126,18 +121,12 @@ export class Transformer {
 
       if (openIsMatch && closeIsMatch) {
         let temp = openExpr.exec(collectionValue);
+        /* istanbul ignore next */ // temp can't be null
         const capturedOpen: string = (temp) ? temp[0] : '';
-        if (capturedOpen === '') {
-          throw new e.JaxParseError(`open expression fails match for value '${collectionValue}'`,
-            subject);
-        }
 
         temp = closeExpr.exec(collectionValue);
+        /* istanbul ignore next */ // temp can't be null
         const capturedClose: string = (temp) ? temp[0] : '';
-        if (capturedClose === '') {
-          throw new e.JaxParseError(`close expression fails match for value '${collectionValue}'`,
-            subject);
-        }
 
         // Now look for the collection type which should be captured as '<type>'
         // So the default open pattern is: "!<[]>[", and close pattern is: "]"
@@ -179,7 +168,6 @@ export class Transformer {
     let result = '';
 
     if (Transformer.typeExpr.test(open)) {
-
       const match = Transformer.typeExpr.exec(open);
       const collectionType = R.view(R.lensPath(['groups', CollectionTypeLabel]))(match);
 
@@ -248,22 +236,23 @@ export class Transformer {
     //
     const transformValue: any[] = R.reduce((acc: any[], collectionPair: string) => {
       const elements: string[] = R.split(assocDelim)(collectionPair);
+      let result = acc;
       if (elements.length === 2) {
         const coercedKeyResult = this.transformAssoc(subject, assocKeyType, context, elements[0]);
         const coercedValueResult = this.transformAssoc(subject, assocValueType, context, elements[1]);
 
         if (coercedKeyResult.succeeded && coercedValueResult.succeeded) {
-          return R.append([coercedKeyResult.value, coercedValueResult.value])(acc);
+          result = R.append([coercedKeyResult.value, coercedValueResult.value])(acc);
         }
       } else {
         throw new e.JaxParseError(`Malformed map entry: ${collectionPair}`,
           subject);
       }
 
-      return acc;
+      return result;
     }, [])(sourceCollection);
 
-    let succeeded = true;
+    let succeeded = transformValue.length > 0;
     let result: any;
 
     // Create the collection wrapper. We need to apply the coercion to individual
@@ -291,12 +280,11 @@ export class Transformer {
    * @returns {ITransformResult<any>}
    * @memberof Transformer
    */
-  private transformAssoc (subject: string, assocType: any,
+  private transformAssoc (subject: string, assocType: any, // TODO(assocType): change to Array | string
     context: types.ContextType, assocValue: string): ITransformResult<any> {
 
     let coercedValue = null;
     let succeeded = false;
-
     let assocTypes = assocType;
 
     if (R.is(String)(assocType)) {
@@ -306,6 +294,9 @@ export class Transformer {
     if (R.is(Array)(assocTypes)) {
       let self = this;
       assocTypes.some((val: types.PrimitiveType) => {
+        // TODO: resolve PrimitiveType with ['number', 'boolean', 'symbol', 'string']
+        // these types are a bit confusing
+        //
         if (R.includes(val, ['number', 'boolean', 'symbol', 'string'])) {
           const transform = self.getTransform(val);
           const coercedResult = transform.call(self, subject, assocValue, context);
@@ -373,13 +364,13 @@ export class Transformer {
   private transformBoolean (subject: string, booleanValue: string | boolean,
     context: types.ContextType): ITransformResult<boolean> {
 
-    let value;
+    let value = false;
     let succeeded = false;
 
     if (R.is(Boolean)(booleanValue)) {
       succeeded = true;
       value = booleanValue as boolean;
-    } else if (R.is(String)(booleanValue)) {
+    } else {
       const lowerBooleanValue = R.toLower(booleanValue as string);
       if (R.either(R.equals('true'), R.equals('false'))(lowerBooleanValue)) {
         succeeded = true;
@@ -391,11 +382,6 @@ export class Transformer {
       } else {
         value = false;
       }
-    } else {
-      // This value is not significant and should not be used, since the transform function
-      // has failed; however, we can't leave value to be unset.
-      //
-      value = false;
     }
 
     return {
@@ -421,6 +407,7 @@ export class Transformer {
     const primitives = this.options.fetchOption(`${context}/coercion/matchers/primitives`) as [];
 
     if (R.includes(R.toLower(primitiveValue), ['primitives', 'collection'])) {
+      // FOLLOWING LINE NOT BEING TESTED, BUT ITS CONFUSING ANYWAY. FIX-UP
       throw new e.JaxConfigError(`primitives matcher cannot contain: ${primitiveValue}`,
         subject);
     }
@@ -461,17 +448,8 @@ export class Transformer {
     context: types.ContextType): ITransformResult<Date> {
 
     const format = this.options.fetchOption(`${context}/coercion/matchers/date/format`) as string;
-
-    let momentDate;
-    let succeeded;
-
-    try {
-      momentDate = moment(dateValue, format);
-      succeeded = momentDate.isValid();
-    } catch (err) {
-      succeeded = false;
-      momentDate = dateValue;
-    }
+    const momentDate = moment(dateValue, format);
+    const succeeded = momentDate.isValid();
 
     return {
       value: momentDate,
@@ -584,12 +562,11 @@ export class Transformer {
    * @memberof Transformer
    */
   extractCoreCollectionValue (open: string, close: string, collectionValue: string): string {
-    if (collectionValue.startsWith(open) && collectionValue.endsWith(close)) {
-      const coreValue = collectionValue.replace(open, '');
-      return coreValue.slice(0, coreValue.length - close.length);
-    }
-
-    return collectionValue;
+    // Assumption: the open and close have already been matched against the collection value,
+    // so collectionValue must start with open and end with close, so we don't need to check.
+    //
+    const coreValue = collectionValue.replace(open, '');
+    return coreValue.slice(0, coreValue.length - close.length);
   } // extractCoreCollectionValue
 
   /**

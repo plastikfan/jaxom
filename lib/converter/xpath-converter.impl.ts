@@ -9,6 +9,7 @@ import { Transformer } from '../transformer/transformer.class';
 import { SpecOptionService } from '../specService/spec-option-service.class';
 import { Normaliser } from '../normaliser/normaliser.class';
 import * as utils from '../utils/utils';
+
 export interface IConverterImpl {
   build (elementNode: Node, parseInfo: types.IParseInfo, previouslySeen: string[]): any;
   buildElement (elementNode: Node, parseInfo: types.IParseInfo, previouslySeen: string[]): any;
@@ -32,10 +33,6 @@ export class XpathConverterImpl implements IConverterImpl {
    * @memberof XpathConverterImpl
    */
   constructor (private options: types.ISpecService = new SpecOptionService()) {
-    if (!options) {
-      throw new Error('null spec option service not permitted');
-    }
-
     // Control freak!
     //
     this.transformer = new Transformer(options);
@@ -62,7 +59,7 @@ export class XpathConverterImpl implements IConverterImpl {
     const abstractValue = getAttributeValue(elementNode, 'abstract');
 
     if (abstractValue && abstractValue === 'true') {
-      const { id = '' } = utils.composeElementInfo(elementNode.nodeName, parseInfo);
+      const { id } = utils.composeElementInfo(elementNode.nodeName, parseInfo);
       const subject = composeElementPath(elementNode, id);
 
       throw new e.JaxConfigError(
@@ -89,7 +86,7 @@ export class XpathConverterImpl implements IConverterImpl {
     const elementInfo = utils.composeElementInfo(elementNode.nodeName, parseInfo);
     const { recurse = '', discards = [], id = '' } = elementInfo;
     const subject = composeElementPath(elementNode, id);
-    let element: any = this.buildLocalAttributes(subject, elementNode);
+    let element: any = this.buildLocalAttributes(subject, elementNode, id);
     const elementLabel = this.options.fetchOption('labels/element') as string;
 
     element[elementLabel] = elementNode.nodeName;
@@ -117,6 +114,20 @@ export class XpathConverterImpl implements IConverterImpl {
       element = R.dissoc(at, element);
     }, discards);
 
+    type AttrObjType = { [key: string]: string };
+    type AttributesType = Array<AttrObjType>;
+
+    const attributesLabel = this.options.fetchOption('labels/attributes', false) as string;
+    if (R.has(attributesLabel, element)) {
+      let attributes = R.prop(attributesLabel)(element);
+
+      attributes = R.filter((attrObj: AttrObjType): boolean => {
+        return !R.includes(R.head(R.keys(attrObj)), discards);
+      })(attributes as AttributesType);
+
+      element = R.set(R.lensProp(attributesLabel), attributes)(element);
+    }
+
     return element;
   } // buildElement
 
@@ -130,7 +141,7 @@ export class XpathConverterImpl implements IConverterImpl {
    * @returns
    * @memberof XpathConverterImpl
    */
-  private buildLocalAttributes (subject: string, localNode: Node): {} {
+  private buildLocalAttributes (subject: string, localNode: Node, id: string): {} {
     // First collect all the attributes (@*) -> create attribute nodes
     // node.nodeType = 2 (ATTRIBUTE_NODE). By implication of the xpath query
     // (ie, we're selecting all attributes) all the nodeTypes of the nodes
@@ -140,15 +151,29 @@ export class XpathConverterImpl implements IConverterImpl {
     const attributeNodes: types.SelectResult = xpath.select('@*', localNode);
     let element: any = {};
 
-    if (attributeNodes && attributeNodes instanceof Array) {
+    if (attributeNodes instanceof Array) {
       const attributesLabel = this.options.fetchOption('labels/attributes', false) as string;
-      const doCoercion: boolean = R.is(Object)(this.options.fetchOption('attributes/coercion', false));
+      const coercionOption = this.options.fetchOption('attributes/coercion', false);
+      const doCoercion: boolean = R.is(Object)(coercionOption);
       const matchers = this.options.fetchOption('attributes/coercion/matchers');
 
       if (attributesLabel && attributesLabel !== '') {
+        // Retain the "id" attribute as a member so that normalisation can proceed
+        //
+        const idAttributeNode: any = R.find((attrNode: any) => {
+          return attrNode['name'] === id;
+        })(attributeNodes);
+
+        if (idAttributeNode) {
+          let attributePair = R.props(['name', 'value'])(idAttributeNode); // => [attrKey, attrValue]
+          const attributeName = R.head(attributePair) as string;
+          const rawAttributeValue = R.last(attributePair) as string;
+          element[attributeName] = rawAttributeValue;
+        }
+
         // Build attributes as an array identified by labels.attributes
         //
-        element[attributesLabel] = R.reduce((acc: any, attrNode: any) => {
+        const attributes = R.reduce((acc: any, attrNode: any) => {
           const attributeName = attrNode['name'];
           const attributeSubject = `${subject}/[@${attributeName}]`;
           const attributeValue = doCoercion
@@ -158,14 +183,17 @@ export class XpathConverterImpl implements IConverterImpl {
           return R.append(R.objOf(attributeName, attributeValue), acc);
         }, [])(attributeNodes);
 
+        if (!R.isEmpty(attributes)) {
+          element[attributesLabel] = attributes;
+        }
       } else {
         // Build attributes as members.
         // Attribute nodes have name and value properties on them
         //
-        const coerce = (node: any) => {
+        const coerce = (attrNode: any) => {
           // coercion is active
           //
-          let attributePair = R.props(['name', 'value'])(node); // => [attrKey, attrValue]
+          let attributePair = R.props(['name', 'value'])(attrNode); // => [attrKey, attrValue]
           const attributeName = R.head(attributePair) as string;
           const attributeSubject = `${subject}/[@${attributeName}]`;
           const rawAttributeValue = R.last(attributePair) as string;
@@ -175,10 +203,10 @@ export class XpathConverterImpl implements IConverterImpl {
           attributePair[1] = coercedValue;
           return attributePair;
         };
-        const verbatim = (node: any) => {
+        const verbatim = (attrNode: any) => {
           // proceed without coercion
           //
-          return R.props(['name', 'value'])(node);
+          return R.props(['name', 'value'])(attrNode);
         };
 
         const extractPair = doCoercion ? coerce : verbatim;
@@ -209,9 +237,13 @@ export class XpathConverterImpl implements IConverterImpl {
     parseInfo: types.IParseInfo, previouslySeen: string[]): {} {
 
     const ei = utils.composeElementInfo(elementNode.nodeName, parseInfo);
-    const id: string = ei.id ?? '';
-    const recurse: string = ei.recurse ?? '';
-    const identifier = id ? element[id] : '';
+    const { id = '', recurse = '' } = ei;
+
+    if (id === '' || recurse === '') {
+      return element;
+    }
+
+    const identifier = element[id];
 
     if (identifier === '') {
       return element;
@@ -246,8 +278,6 @@ export class XpathConverterImpl implements IConverterImpl {
         // Just need to map the at to a built element => array which we pass to merge
         //
         const inheritedElements = R.map(at => {
-          // select element bode by id
-          //
           const inheritedElementNode = selectElementNodeById(nodeName, id, at, elementNode.parentNode);
 
           if (!inheritedElementNode) {
@@ -357,9 +387,8 @@ export class XpathConverterImpl implements IConverterImpl {
       }, [])(elements);
 
       if (R.includes(descendantsLabel, R.keys(element) as string[])) {
-        if (!(element[descendantsLabel] instanceof Array)) {
-          throw new e.JaxConfigError('Element is not marked as abstract', subject);
-        }
+        // Prior to normalisation, descendants is an array
+        //
         const merged = R.concat(children, element[descendantsLabel]);
         element[descendantsLabel] = merged;
       } else {
@@ -452,12 +481,7 @@ export class XpathConverterImpl implements IConverterImpl {
 
     if (attributesLabel) {
       const attributes = R.view(R.lensProp(attributesLabel))(element);
-      if (attributes instanceof Array) {
-        result = R.includes('abstract')(attributes);
-      } else {
-        throw new e.JaxInternalError('item in spec at "labels/attributes" is not an array',
-          'XpathConverterImpl.isAbstract');
-      }
+      result = R.includes('abstract')(attributes as []);
     } else {
       result = R.has('abstract')(element);
     }
@@ -495,7 +519,7 @@ export class XpathConverterImpl implements IConverterImpl {
  * @returns {types.NullableNode}
  */
 function selectElementNodeById (elementName: string, id: string, name: string,
-  rootNode: (Node & ParentNode) | null): types.NullableNode {
+  rootNode: types.NullableNode): types.NullableNode {
   // Typescript warning:
   //
   // WARN: This function makes the assumption that if you're selecting an element by an identifier,
@@ -513,11 +537,12 @@ function selectElementNodeById (elementName: string, id: string, name: string,
   // an error?
   //
 
-  if (rootNode && rootNode instanceof Node) {
+  if (rootNode instanceof Node) {
     const result: types.SelectResult = xpath.select(`.//${elementName}[@${id}="${name}"]`, rootNode, true);
 
     return result instanceof Node ? result : null;
   }
+  /* istanbul ignore next */
   return null;
 } // selectElementNodeById
 
@@ -562,7 +587,7 @@ function composeElementSegment (node: types.NullableNode): string {
  * @returns {string}
  */
 export function composeIdQualifierPathSegment (localNode: types.NullableNode, id: string): string {
-  let idSegment = getAttributeValue(localNode, id) ?? '';
+  let idSegment = getAttributeValue(localNode, id);
 
   if (idSegment) {
     idSegment = `[@${id}="${idSegment}"]`;

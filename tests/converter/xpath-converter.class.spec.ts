@@ -1,4 +1,3 @@
-
 import { expect, assert, use } from 'chai';
 import dirtyChai = require('dirty-chai');
 use(dirtyChai);
@@ -10,9 +9,15 @@ const { functify } = require('jinxed');
 import * as types from '../../lib/types';
 import * as Helpers from '../test-helpers';
 import { XpathConverter as Jaxom } from '../../lib/converter/xpath-converter.class';
+import { Specs } from '../../lib/specService/spec-option-service.class';
 
 const testParseInfo: types.IParseInfo = {
   elements: new Map<string, types.IElementInfo>([
+    ['Commands', {
+      descendants: {
+        id: 'name'
+      }
+    }],
     ['Command', {
       id: 'name',
       recurse: 'inherits'
@@ -112,38 +117,74 @@ describe('xpath-converter.build', () => {
     });
   });
 
-  context('given: a command inherits from itself', () => {
-    it('should: throw', () => {
-      const data = `<?xml version="1.0"?>
-        <Application name="pez">
-          <Cli>
-            <Commands>
-              <Command name="leaf" describe="this is a leaf command" inherits="leaf"/>
-            </Commands>
-          </Cli>
-        </Application>`;
+  // ===
 
-      const document: Document = parser.parseFromString(data, 'text/xml');
-      const commandsNode: types.SelectResult = xp.select(
-        '/Application/Cli/Commands', document, true);
-
-      if (commandsNode && commandsNode instanceof Node) {
-        const converter = new Jaxom();
-        const invalidCommandNode: types.NullableNode = Helpers.selectElementNodeById(
-          'Command', 'name', 'leaf', commandsNode);
-
-        if (invalidCommandNode) {
-          expect(() => {
-            converter.build(invalidCommandNode, testParseInfo);
-          }).to.throw(Error);
-        } else {
-          assert.fail('FAILURE! Couldn\'t get Command node.');
-        }
-      } else {
-        assert.fail('FAILURE! Couldn\'t get Commands node.');
+  context('error scenarios', () => {
+    const tests = [
+      {
+        given: 'a command inherits from itself',
+        data: `<?xml version="1.0"?>
+          <Application name="pez">
+            <Cli>
+              <Commands>
+                <Command name="leaf" describe="this is a leaf command" inherits="leaf"/>
+              </Commands>
+            </Cli>
+          </Application>`
+      },
+      {
+        given: 'a command inherits from multiple elements, one of which does not exist',
+        data: `<?xml version="1.0"?>
+          <Application name="pez">
+            <Cli>
+              <Commands>
+                <Command name="base" describe="this is a base command" abstract="true"/>
+                <Command name="leaf" describe="this is a leaf command" inherits="base,duff"/>
+              </Commands>
+            </Cli>
+          </Application>`
+      },
+      {
+        given: 'a command inherits from single element, which does not exist',
+        data: `<?xml version="1.0"?>
+          <Application name="pez">
+            <Cli>
+              <Commands>
+                <Command name="leaf" describe="this is a leaf command" inherits="duff"/>
+              </Commands>
+            </Cli>
+          </Application>`
       }
+    ];
+
+    tests.forEach(t => {
+      context(`given: ${t.given}`, () => {
+        it('should: throw', () => {
+          const document: Document = parser.parseFromString(t.data, 'text/xml');
+          const commandsNode: types.SelectResult = xp.select(
+            '/Application/Cli/Commands', document, true);
+
+          if (commandsNode instanceof Node) {
+            const converter = new Jaxom();
+            const invalidCommandNode: types.NullableNode = Helpers.selectElementNodeById(
+              'Command', 'name', 'leaf', commandsNode);
+
+            if (invalidCommandNode) {
+              expect(() => {
+                converter.build(invalidCommandNode, testParseInfo);
+              }).to.throw(Error);
+            } else {
+              assert.fail('FAILURE! Couldn\'t get Command node.');
+            }
+          } else {
+            assert.fail('FAILURE! Couldn\'t get Commands node.');
+          }
+        });
+      });
     });
-  });
+  }); // error scenarios
+
+  // ===
 
   context('given: Expression with no inheritance', () => {
     it('should: return an expression object all local attributes', () => {
@@ -770,41 +811,6 @@ describe('xpath-converter.build', () => {
     });
   });
 
-  context('given: command inherits from itself', () => {
-    it('should: throw', () => {
-      const data = `<?xml version="1.0"?>
-        <Application name="pez">
-          <Cli>
-            <Commands>
-              <Command name="leaf" inherits="leaf"
-                describe="this is a leaf command"/>
-            </Commands>
-          </Cli>
-        </Application>`;
-
-      const document: Document = parser.parseFromString(data, 'text/xml');
-      const commandsNode: types.SelectResult = xp.select(
-        '/Application/Cli/Commands', document, true);
-
-      if (commandsNode && commandsNode instanceof Node) {
-        const converter = new Jaxom();
-        const leafCommandNode: types.NullableNode = Helpers.selectElementNodeById(
-          'Command', 'name', 'leaf', commandsNode);
-
-        if (leafCommandNode) {
-          expect(() => {
-            converter.build(leafCommandNode, testParseInfo);
-          }).to.throw(Error);
-        } else {
-          assert.fail('FAILURE! Couldn\'t get Command node.');
-        }
-
-      } else {
-        assert.fail('FAILURE! Couldn\'t get Commands node.');
-      }
-    });
-  });
-
   context('given: command with single inheritance and local & inherited arguments and groups', () => {
     const data = `<?xml version="1.0"?>
       <Application name="pez">
@@ -1120,3 +1126,12 @@ describe('xpath-converter.build', () => {
     });
   });
 }); // xpath-converter.build
+
+describe('xpath-converter', () => {
+  context('given: a custom spec', () => {
+    it('should: be constructed ok', () => {
+      const converter = new Jaxom(Specs.attributesAsArray);
+      expect(converter).to.not.be.undefined();
+    });
+  });
+}); // xpath-converter

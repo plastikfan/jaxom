@@ -183,3 +183,13 @@ describe('SpecOptionService.fetchOption', () => {
     });
   });
 }); // SpecOptionService.fetchSpecOption
+
+describe('SpecOptionService.getSpec', () => {
+  context('given: a constructed SpecOptionService', () => {
+    it('should: be able to get the current spec', () => {
+      const converter = new SpecOptionService();
+      const spec: types.ISpec = converter.getSpec();
+      expect(spec).to.not.be.undefined();
+    });
+  });
+});
