@@ -40,6 +40,9 @@ export class Normaliser {
           });
 
           const reduceByChildren = R.reduce((acc: [], value: []): any => {
+            // (issue #41) TODO: Shouldn't be indexing "value" with a string, because its an array
+            // not a map/object
+            //
             const descendants = value[descendantsLabel];
             return R.is(Array, descendants) ? R.concat(acc, descendants) : R.append(value, acc);
           }, []);
@@ -119,10 +122,6 @@ export class Normaliser {
                 case 'group': {
                   normalisedDescendants = R.groupBy(R.prop(id), descendants);
                   break;
-                }
-
-                default: {
-                  return parentElement;
                 }
               }
 
