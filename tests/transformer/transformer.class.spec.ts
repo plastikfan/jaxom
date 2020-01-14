@@ -129,6 +129,26 @@ describe('Transformer for "attributes" context', () => {
     });
   });
 
+  context('given: spec with "attributes/coercion/matchers/primitives" = date and invalid date', () => {
+    it('should: return negative transform result', () => {
+      try {
+        const stub = new SpecOptionService();
+        sinon.stub(stub, 'fetchOption')
+          .withArgs('attributes/coercion/matchers/date/format').returns('YYYY-MM-DD');
+
+        const transformer = new Transformer(stub);
+        const transform: ITransformFunction<any> = transformer.getTransform('date');
+        const subject = '/SUBJECT';
+        const dateValue = 'blah';
+        const result = transform.call(transformer, subject, dateValue, 'attributes');
+
+        expect(result.succeeded).to.be.false(`succeeded RESULT: ${result.succeeded}`);
+      } catch (error) {
+        assert.fail(`transform function for type: "date" failed. (${error})`);
+      }
+    });
+  });
+
   context('given: spec with "attributes/coercion/matchers/primitives" = symbol', () => {
     it('should coerce "symbol" value ok:', () => {
       try {
@@ -149,6 +169,30 @@ describe('Transformer for "attributes" context', () => {
         expect(result.value.toString()).to.equal(symbolExpected.toString());
       } catch (error) {
         assert.fail(`transform function for type: "symbol" failed. (${error})`);
+      }
+    });
+  });
+
+  context('given: spec with "attributes/coercion/matchers/primitives" = symbol (NON-GLOBAL)', () => {
+    it('should coerce "symbol" value ok:', () => {
+      try {
+        const stub = new SpecOptionService();
+        sinon.stub(stub, 'fetchOption')
+          .withArgs('attributes/coercion/matchers/symbol/prefix').returns('$')
+          .withArgs('attributes/coercion/matchers/symbol/global').returns(false);
+
+        const transformer = new Transformer(stub);
+        const transform: ITransformFunction<any> = transformer.getTransform('symbol');
+        const subject = '/SUBJECT';
+        const symbolValue = '$excalibur';
+        const symbolExpected = Symbol(symbolValue);
+        const result = transform.call(transformer, subject, symbolValue, 'attributes');
+
+        expect(result.succeeded).to.be.true(`succeeded RESULT: ${result.succeeded}`);
+        expect(R.is(Symbol)(result.value)).to.be.true();
+        expect(result.value.toString()).to.equal(symbolExpected.toString());
+      } catch (error) {
+        assert.fail(`transform function for type: non global "symbol" failed. (${error})`);
       }
     });
   });
@@ -253,6 +297,22 @@ describe('Transformer.transformCollection for "attributes" context', () => {
         });
       });
     });
+
+    context('given: a compound value that doesn\'t match open and close patterns', () => {
+      it('should: return negative transform result', () => {
+        const missingClose = '!<[]>[foo,bar,baz';
+        try {
+          const transformer = new Transformer(new Stub(Specs.default));
+          const transform: ITransformFunction<any> = transformer.getTransform(matcher);
+          const subject = '/SUBJECT';
+          const result = transform.call(transformer, subject, missingClose, contextType);
+
+          expect(result.succeeded).to.be.false(functify(result));
+        } catch (error) {
+          assert.fail(`transformCollection for: "${missingClose}" failed. (${error})`);
+        }
+      });
+    });
   }); // Array collection
 
   context('Set collection', () => {
@@ -347,6 +407,59 @@ describe('Transformer.transformCollection for "attributes" context', () => {
         assert.fail(`transformCollection for: '${raw}' failed. (${error})`);
       }
     });
+
+    context('given: malformed map entry', () => {
+      it(`should: throw`, () => {
+        const raw = '!<Map>[foo=bar=baz]';
+        try {
+          const stub = new SpecOptionService();
+          sinon.stub(stub, 'fetchOption')
+            .withArgs('attributes/coercion/matchers/collection/delim').returns(',')
+            .withArgs('attributes/coercion/matchers/collection/open').returns('!<type>[')
+            .withArgs('attributes/coercion/matchers/collection/close').returns(']')
+            .withArgs('attributes/coercion/matchers/collection/assoc/delim').returns('=')
+            .withArgs('attributes/coercion/matchers/collection/assoc/keyType').returns('string')
+            .withArgs('attributes/coercion/matchers/collection/assoc/valueType').returns('string')
+            .withArgs('attributes/coercion/matchers/string').returns(true);
+
+          const transformer = new Transformer(stub);
+          const transform: ITransformFunction<any> = transformer.getTransform(matcher);
+          const subject = '/SUBJECT';
+
+          expect(() => {
+            transform.call(transformer, subject, raw, contextType);
+          }).to.throw();
+        } catch (error) {
+          assert.fail(`transformCollection for: '${raw}' failed. (${error})`);
+        }
+      });
+    });
+
+    context('given: invalid assoc value type', () => {
+      it(`should: return negative transform result`, () => {
+        const raw = '!<Map>[foo=not-a-number]';
+        try {
+          const stub = new SpecOptionService();
+          sinon.stub(stub, 'fetchOption')
+            .withArgs('attributes/coercion/matchers/collection/delim').returns(',')
+            .withArgs('attributes/coercion/matchers/collection/open').returns('!<type>[')
+            .withArgs('attributes/coercion/matchers/collection/close').returns(']')
+            .withArgs('attributes/coercion/matchers/collection/assoc/delim').returns('=')
+            .withArgs('attributes/coercion/matchers/collection/assoc/keyType').returns('string')
+            .withArgs('attributes/coercion/matchers/collection/assoc/valueType').returns('number')
+            .withArgs('attributes/coercion/matchers/string').returns(true);
+
+          const transformer = new Transformer(stub);
+          const transform: ITransformFunction<any> = transformer.getTransform(matcher);
+          const subject = '/SUBJECT';
+          const result = transform.call(transformer, subject, raw, contextType);
+          expect(result.succeeded).to.be.false();
+        } catch (error) {
+          assert.fail(`transformCollection for: '${raw}' failed. (${error})`);
+        }
+      });
+    });
+
   }); // Map collection
 
   context('Object instance collection', () => {

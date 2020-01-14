@@ -24,8 +24,8 @@ export interface IParseInfo {
 
 export interface IAssociativeCollection { // {DEF}
   delim?: string;
-  keyType?: string;
-  valueType?: string;
+  keyType?: string | string[];
+  valueType?: string | string[];
 }
 
 export interface ITextNodeCollection { // {DEF}
@@ -102,7 +102,7 @@ export interface INormaliser {
 }
 
 export interface ITransformer {
-  coerceAttributeValue (subject: string, matchers: any, rawValue: any, attributeName: string): {};
+  coerceAttributeValue (subject: string, matchers: IMatchers, rawValue: any, attributeName: string): {};
 }
 
 export interface ISpecService {
