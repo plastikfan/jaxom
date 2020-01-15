@@ -18,7 +18,7 @@ describe('Transformer for "attributes" context', () => {
   });
 
   const tests = [
-    // ['number]
+    // ['number']
     {
       given: 'spec with "attributes/coercion/matchers/primitives" = number',
       context: 'attributes',
@@ -65,7 +65,7 @@ describe('Transformer for "attributes" context', () => {
       raw: 'false',
       expected: false
     },
-    // ['string']
+    // string
     {
       given: 'spec with "attributes/coercion/matchers" = string(true)',
       context: 'attributes',
@@ -83,6 +83,26 @@ describe('Transformer for "attributes" context', () => {
       valueType: 'string',
       raw: 'foo',
       expected: 'foo'
+    },
+    // number
+    {
+      given: 'spec with "attributes/coercion/matchers/number"',
+      context: 'attributes',
+      path: 'attributes/coercion/matchers/number',
+      specValue: null, // THIS CAN BE ANYTHING (number matcher doesn't need a config value)
+      valueType: 'number',
+      raw: '10',
+      expected: 10
+    },
+    // boolean
+    {
+      given: 'spec with "attributes/coercion/matchers/boolean"',
+      context: 'attributes',
+      path: 'attributes/coercion/matchers/boolean',
+      specValue: null, // THIS CAN BE ANYTHING (boolean matcher doesn't need a config value)
+      valueType: 'boolean',
+      raw: true,
+      expected: true
     }
   ];
 

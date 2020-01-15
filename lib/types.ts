@@ -41,6 +41,9 @@ export interface IAttributeNodeCollection { // {DEF}
 
 export type ContextType = 'attributes' | 'textNodes';
 export type MatcherType = 'number' | 'boolean' | 'primitives' | 'collection' | 'date' | 'symbol' | 'string';
+
+// The primitive that are allowed to be defined inside the primitives matcher array
+//
 export type PrimitiveType = 'number' | 'boolean';
 
 export interface IMatchers { // {DEF}
@@ -54,6 +57,8 @@ export interface IMatchers { // {DEF}
     global?: boolean
   };
   string?: boolean;
+  number?: any; // (number matcher doesn't need a config value)
+  boolean?: any; // (boolean matcher doesn't need a config value)
 }
 
 export interface IAttributesMatchers extends IMatchers {

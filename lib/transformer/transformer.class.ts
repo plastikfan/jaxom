@@ -238,8 +238,8 @@ export class Transformer {
       const elements: string[] = R.split(assocDelim)(collectionPair);
       let result = acc;
       if (elements.length === 2) {
-        const coercedKeyResult = this.transformAssoc(subject, assocKeyType, context, elements[0]);
-        const coercedValueResult = this.transformAssoc(subject, assocValueType, context, elements[1]);
+        const coercedKeyResult = this.transformAssocValue(subject, assocKeyType, context, elements[0]);
+        const coercedValueResult = this.transformAssocValue(subject, assocValueType, context, elements[1]);
 
         if (coercedKeyResult.succeeded && coercedValueResult.succeeded) {
           result = R.append([coercedKeyResult.value, coercedValueResult.value])(acc);
@@ -269,7 +269,7 @@ export class Transformer {
   } // transformAssociativeCollection
 
   /**
-   * @method transformAssoc
+   * @method transformAssocValue
    * @description Attempts to coerce a value from an associative collection
    *
    * @private
@@ -280,7 +280,7 @@ export class Transformer {
    * @returns {ITransformResult<any>}
    * @memberof Transformer
    */
-  private transformAssoc (subject: string, assocType: any, // TODO(assocType): change to Array | string
+  private transformAssocValue (subject: string, assocType: any, // TODO(assocType): change to Array | string
     context: types.ContextType, assocValue: string): ITransformResult<any> {
 
     let coercedValue = null;
