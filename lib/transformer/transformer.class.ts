@@ -280,23 +280,20 @@ export class Transformer {
    * @returns {ITransformResult<any>}
    * @memberof Transformer
    */
-  private transformAssocValue (subject: string, assocType: any, // TODO(assocType): change to Array | string
+  private transformAssocValue (subject: string, assocType: string | string[],
     context: types.ContextType, assocValue: string): ITransformResult<any> {
 
     let coercedValue = null;
     let succeeded = false;
     let assocTypes = assocType;
 
-    if (R.is(String)(assocType)) {
+    if (typeof assocType === 'string') {
       assocTypes = [assocType];
     }
 
-    if (R.is(Array)(assocTypes)) {
+    if (assocTypes instanceof Array) {
       let self = this;
-      assocTypes.some((val: types.PrimitiveType) => {
-        // TODO: resolve PrimitiveType with ['number', 'boolean', 'symbol', 'string']
-        // these types are a bit confusing
-        //
+      assocTypes.some((val: 'number' | 'boolean' | 'symbol' | 'string') => {
         if (R.includes(val, ['number', 'boolean', 'symbol', 'string'])) {
           const transform = self.getTransform(val);
           const coercedResult = transform.call(self, subject, assocValue, context);
