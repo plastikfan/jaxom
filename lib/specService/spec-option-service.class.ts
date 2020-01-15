@@ -3,10 +3,13 @@ import * as R from 'ramda';
 import * as types from '../types';
 
 export class SpecOptionService implements types.ISpecService {
-
   constructor (private spec: types.ISpec = defaultSpec) {
-
+    this.labels = new MandatoryLabels(this);
+    this.elementLabel = this.labels.element;
+    this.descendantsLabel = this.labels.descendants;
+    this.textLabel = this.labels.text;
   }
+  private readonly labels: MandatoryLabels;
 
   // ---------------------------------------------------- ISpecService interface
 
@@ -42,6 +45,10 @@ export class SpecOptionService implements types.ISpecService {
     return result;
   }
 
+  readonly elementLabel: string;
+  readonly descendantsLabel: string;
+  readonly textLabel: string;
+
   getSpec (): types.ISpec {
     return this.spec;
   }
@@ -49,6 +56,18 @@ export class SpecOptionService implements types.ISpecService {
   // ISpecService interface ====================================================
 
 } // class SpecOptionService
+
+class MandatoryLabels {
+  constructor (options: types.ISpecService) {
+    this.element = options.fetchOption('labels/element') as string;
+    this.descendants = options.fetchOption('labels/descendants') as string;
+    this.text = options.fetchOption('labels/text') as string;
+  }
+
+  readonly element: string;
+  readonly descendants: string;
+  readonly text: string;
+}
 
 export const CollectionTypeLabel = 'type';
 export const CollectionTypePlaceHolder = `<type>`;

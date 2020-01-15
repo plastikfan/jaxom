@@ -26,7 +26,7 @@ export class XpathConverter implements types.IConverter {
     this.impl = new XpathConverterImpl(new SpecOptionService(spec));
   }
 
-  private impl: IConverterImpl;
+  private readonly impl: IConverterImpl;
 
   /**
    * @method build

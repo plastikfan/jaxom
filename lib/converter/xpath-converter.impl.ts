@@ -39,8 +39,8 @@ export class XpathConverterImpl implements IConverterImpl {
     this.normaliser = new Normaliser(options);
   }
 
-  transformer: types.ITransformer;
-  normaliser: Normaliser;
+  readonly transformer: types.ITransformer;
+  readonly normaliser: Normaliser;
 
   /**
    * @method build
@@ -87,9 +87,8 @@ export class XpathConverterImpl implements IConverterImpl {
     const { recurse = '', discards = [], id = '' } = elementInfo;
     const subject = composeElementPath(elementNode, id);
     let element: any = this.buildLocalAttributes(subject, elementNode, id);
-    const elementLabel = this.options.fetchOption('labels/element') as string;
 
-    element[elementLabel] = elementNode.nodeName;
+    element[this.options.elementLabel] = elementNode.nodeName;
 
     if ((recurse !== '') && (elementNode instanceof Element)) {
       element = this.recurseThroughAttribute(subject, element, elementNode,
@@ -298,19 +297,17 @@ export class XpathConverterImpl implements IConverterImpl {
         const doMergeElements = (a: any, b: any) => {
           let merged;
 
-          const descendantsLabel = this.options.fetchOption('labels/descendants') as string;
-
-          if (R.includes(descendantsLabel, R.keys(a) as string[])
-            && R.includes(descendantsLabel, R.keys(b) as string[])) {
+          if (R.includes(this.options.descendantsLabel, R.keys(a) as string[])
+            && R.includes(this.options.descendantsLabel, R.keys(b) as string[])) {
             // Both a and b have children, therefore we must merge in such a way as to
             // not to lose any properties of a by calling R.mergeAll
             //
-            const mergedChildren = R.concat(a[descendantsLabel], b[descendantsLabel]); // save a
+            const mergedChildren = R.concat(a[this.options.descendantsLabel], b[this.options.descendantsLabel]); // save a
             const allMergedWithoutChildrenOfA = R.mergeAll([a, b]); // This is where we lose the children of a
 
             // Restore the lost properties of a
             //
-            const childrenLens = R.lensProp(descendantsLabel);
+            const childrenLens = R.lensProp(this.options.descendantsLabel);
             merged = R.set(childrenLens, mergedChildren, allMergedWithoutChildrenOfA);
           } else {
             // There is no clash between the children of a or b, therefore we can
@@ -375,8 +372,6 @@ export class XpathConverterImpl implements IConverterImpl {
     previouslySeen: string[]): {} {
     const selectionResult: any = xpath.select('./*', elementNode);
 
-    const descendantsLabel = this.options.fetchOption(`labels/descendants`) as string;
-
     if (selectionResult && selectionResult.length > 0) {
       const getElementsFn: any = R.filter((child: Node) => (child.nodeType === child.ELEMENT_NODE));
       const elements: any = getElementsFn(selectionResult);
@@ -386,21 +381,20 @@ export class XpathConverterImpl implements IConverterImpl {
         return R.append(child, acc);
       }, [])(elements);
 
-      if (R.includes(descendantsLabel, R.keys(element) as string[])) {
+      if (R.includes(this.options.descendantsLabel, R.keys(element) as string[])) {
         // Prior to normalisation, descendants is an array
         //
-        const merged = R.concat(children, element[descendantsLabel]);
-        element[descendantsLabel] = merged;
+        const merged = R.concat(children, element[this.options.descendantsLabel]);
+        element[this.options.descendantsLabel] = merged;
       } else {
-        element[descendantsLabel] = children;
+        element[this.options.descendantsLabel] = children;
       }
     }
 
     let elementText: string = this.composeText(elementNode);
 
     if (elementText && elementText !== '') {
-      const textLabel = this.options.fetchOption(`labels/text`) as string;
-      element[textLabel] = elementText;
+      element[this.options.textLabel] = elementText;
     }
 
     return element;

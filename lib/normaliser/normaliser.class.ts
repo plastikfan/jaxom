@@ -9,8 +9,7 @@ import * as types from '../types';
  * @description: Handles normalisation characteristics of an element's direct descendants.
  */
 export class Normaliser {
-
-  constructor (private options: types.ISpecService) {}
+  constructor (private options: types.ISpecService) { }
 
   /**
    * @method combineDescendants
@@ -27,50 +26,37 @@ export class Normaliser {
    * @memberof Normaliser
    */
   combineDescendants (subject: string, parentElement: any): {} {
-    const elementLabel = this.options.fetchOption('labels/element');
+    if (R.has(this.options.descendantsLabel, parentElement)) {
+      const groupByElement = R.groupBy((child: any): any => {
+        return child[this.options.elementLabel];
+      });
 
-    if (elementLabel && R.is(String, elementLabel)) {
-      const descendantsLabel = this.options.fetchOption('labels/descendants');
+      // TODO: value: any needs reviewing
+      //
+      const reduceByChildren = R.reduce((acc: [], value: any): any => {
+        // (issue #41) TODO: Shouldn't be indexing "value" with a string, because its an array
+        // not a map/object
+        //
+        const descendants = value[this.options.descendantsLabel];
+        return R.is(Array, descendants) ? R.concat(acc, descendants) : R.append(value, acc);
+      }, []);
 
-      if (descendantsLabel && R.is(String, descendantsLabel)) {
+      let combined: any = R.omit([this.options.descendantsLabel], parentElement);
 
-        if (R.has(descendantsLabel, parentElement)) {
-          const groupByElement = R.groupBy((child: any): any => {
-            return child[elementLabel];
-          });
+      const children: [] = parentElement[this.options.descendantsLabel];
+      const renameGroupByElementChildrenObj = groupByElement(children);
+      let adaptedChildren: any = {};
 
-          const reduceByChildren = R.reduce((acc: [], value: []): any => {
-            // (issue #41) TODO: Shouldn't be indexing "value" with a string, because its an array
-            // not a map/object
-            //
-            const descendants = value[descendantsLabel];
-            return R.is(Array, descendants) ? R.concat(acc, descendants) : R.append(value, acc);
-          }, []);
+      R.forEachObjIndexed((value: [], key: string) => {
+        adaptedChildren[key] = reduceByChildren(value);
+      }, renameGroupByElementChildrenObj);
 
-          let combined: any = R.omit([descendantsLabel], parentElement);
-
-          const children: [] = parentElement[descendantsLabel];
-          const renameGroupByElementChildrenObj = groupByElement(children);
-          let adaptedChildren: any = {};
-
-          R.forEachObjIndexed((value: [], key: string) => {
-            adaptedChildren[key] = reduceByChildren(value);
-          }, renameGroupByElementChildrenObj);
-
-          // Now punch in the new children
-          //
-          combined[descendantsLabel] = adaptedChildren;
-          return combined;
-        } else {
-          return parentElement;
-        }
-      } else {
-        throw new e.JaxInternalError(`options spec missing descendants label [at: ${subject}]`,
-          'Normaliser.combineDescendants');
-      }
+      // Now punch in the new children
+      //
+      combined[this.options.descendantsLabel] = adaptedChildren;
+      return combined;
     } else {
-      throw new e.JaxInternalError(`options spec missing element label [at: ${subject}]`,
-        'Normaliser.combineDescendants');
+      return parentElement;
     }
   } // combineDescendants
 
@@ -84,69 +70,55 @@ export class Normaliser {
    * @memberof Normaliser
    */
   normaliseDescendants (subject: string, parentElement: any, elementInfo: types.IElementInfo): any {
-    const elementLabel = this.options.fetchOption('labels/element');
+    const descendants: Array<{}> = parentElement[this.options.descendantsLabel];
 
-    if (elementLabel && R.is(String, elementLabel)) {
-      const descendantsLabel = this.options.fetchOption('labels/descendants');
+    if (R.is(Array)(descendants)) { // descendants must be iterable
+      let normalisedDescendants;
+      const id: string = elementInfo?.descendants?.id ?? '';
 
-      if (descendantsLabel && R.is(String, descendantsLabel)) {
-        const descendants: Array<{}> = parentElement[descendantsLabel];
+      if (R.all(R.has(id))(descendants)) {
+        if (R.hasPath(['descendants', 'by'], elementInfo)) {
+          const lens = R.lensPath(['descendants', 'by']);
+          const descendantsBy = R.view(lens)(elementInfo) as 'index' | 'group';
 
-        if (R.is(Array)(descendants)) { // descendants must be iterable
-          let normalisedDescendants;
-          const id: string = elementInfo?.descendants?.id ?? '';
-
-          if (R.all(R.has(id))(descendants)) {
-            if (R.hasPath(['descendants', 'by'], elementInfo)) {
-              const lens = R.lensPath(['descendants', 'by']);
-              const descendantsBy = R.view(lens)(elementInfo) as 'index' | 'group';
-
-              switch (descendantsBy) {
-                case 'index': {
-                  if (elementInfo?.descendants?.throwIfMissing) {
-                    // This reduce is only required because R.indexBy doesn't offer the ability to detect
-                    // collisions (hence, that's why we're not interested in the return value.)
-                    //
-                    R.reduce((acc: any, val: any) => {
-                      if (R.includes(val[id], acc)) {
-                        throw new e.JaxSolicitedError(`Element collision found: ${functify(val)}`,
-                          subject);
-                      }
-                      return R.append(val[id], acc);
-                    }, [])(descendants);
+          switch (descendantsBy) {
+            case 'index': {
+              if (elementInfo?.descendants?.throwIfMissing) {
+                // This reduce is only required because R.indexBy doesn't offer the ability to detect
+                // collisions (hence, that's why we're not interested in the return value.)
+                //
+                R.reduce((acc: any, val: any) => {
+                  if (R.includes(val[id], acc)) {
+                    throw new e.JaxSolicitedError(`Element collision found: ${functify(val)}`,
+                      subject);
                   }
-
-                  normalisedDescendants = R.indexBy(R.prop(id), descendants);
-                  break;
-                }
-                case 'group': {
-                  normalisedDescendants = R.groupBy(R.prop(id), descendants);
-                  break;
-                }
+                  return R.append(val[id], acc);
+                }, [])(descendants);
               }
 
-              // Now punch in the new normalised descendants
-              //
-              const normalised = parentElement;
-              normalised[descendantsLabel] = normalisedDescendants;
-              return normalised;
+              normalisedDescendants = R.indexBy(R.prop(id), descendants);
+              break;
             }
-          } else if (elementInfo?.descendants?.throwIfMissing) {
-            const missing: any = R.find(
-              R.complement(R.has(id))
-            )(descendants) ?? {};
-            throw new e.JaxSolicitedError(
-              `Element is missing key attribute "${id}": (${functify(missing)})`,
-              subject);
+            case 'group': {
+              normalisedDescendants = R.groupBy(R.prop(id), descendants);
+              break;
+            }
           }
+
+          // Now punch in the new normalised descendants
+          //
+          const normalised = parentElement;
+          normalised[this.options.descendantsLabel] = normalisedDescendants;
+          return normalised;
         }
-      } else {
-        throw new e.JaxInternalError(`options spec missing descendants label [at: ${subject}]`,
-          'Normaliser.combineDescendants');
+      } else if (elementInfo?.descendants?.throwIfMissing) {
+        const missing: any = R.find(
+          R.complement(R.has(id))
+        )(descendants) ?? {};
+        throw new e.JaxSolicitedError(
+          `Element is missing key attribute "${id}": (${functify(missing)})`,
+          subject);
       }
-    } else {
-      throw new e.JaxInternalError(`options spec missing element label [at: ${subject}]`,
-        'Normaliser.combineDescendants');
     }
 
     return parentElement;

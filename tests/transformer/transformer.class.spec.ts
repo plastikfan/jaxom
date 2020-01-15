@@ -219,7 +219,9 @@ describe('Transformer for "attributes" context', () => {
 describe('Transformer.transformCollection for "attributes" context', () => {
   class Stub {
     constructor (private spec: types.ISpec) {
-      //
+      this.elementLabel = '_';
+      this.descendantsLabel = '_children';
+      this.textLabel = '_text';
     }
 
     fetchOption (path: string, fallBack: boolean = true): any {
@@ -230,7 +232,9 @@ describe('Transformer.transformCollection for "attributes" context', () => {
 
       return result;
     }
-
+    readonly elementLabel: string;
+    readonly descendantsLabel: string;
+    readonly textLabel: string;
     getSpec (): types.ISpec {
       return this.spec;
     }
