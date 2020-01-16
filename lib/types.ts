@@ -1,4 +1,6 @@
 
+import * as R from 'ramda';
+
 // Element Parse Info
 //
 export interface IElementInfo {
@@ -39,26 +41,46 @@ export interface IAttributeNodeCollection { // {DEF}
   assoc?: IAssociativeCollection;
 }
 
-export type ContextType = 'attributes' | 'textNodes';
-export type MatcherType = 'number' | 'boolean' | 'primitives' | 'collection' | 'date' | 'symbol' | 'string';
-
 // The primitive that are allowed to be defined inside the primitives matcher array
 //
-export type PrimitiveType = 'number' | 'boolean';
+// PrimitiveType should be number | boolean | symbol
+// unless we define a new type: PrimitiveValueType
+// rename PrimitiveType to PrimitiveMatcherType
+export type PrimitiveStr = 'boolean' | 'number' | 'symbol';
+// export type PrimitiveType = boolean | number | symbol;
+export const PrimitiveStrArray = ['boolean', 'number', 'symbol'];
+
+// Config Types (string) should include Token (PrimitiveStr)
+// Native types (type) should include Type suffix (PrimitiveType)
+
+// export type CoercivePrimitiveType = boolean | number | symbol;
+// export type CoercivePrimitiveStr = 'boolean' | 'number' | 'symbol';
+// export const CoercivePrimitiveStrArray = ['boolean', 'number', 'symbol'];
+
+export type MatcherStr = 'collection' | 'date' | 'primitives' | 'string' | PrimitiveStr;
+export const MatcherStrArray = R.union(PrimitiveStrArray, ['collection', 'date', 'primitives', 'string']);
+
+// COLLECTION TYPE / PRIMITIVE
+
+// MATCHER TYPE
+
+export type SpecContext = 'attributes' | 'textNodes';
+
+// export type PrimitiveValueType = boolean | number | string | symbol;
 
 export interface IMatchers { // {DEF}
-  primitives?: ReadonlyArray<PrimitiveType>;
+  boolean?: any; // (boolean matcher doesn't need a config value)
   // collection
   date?: {
     format?: string
   };
+  number?: any; // (number matcher doesn't need a config value)
+  primitives?: ReadonlyArray<PrimitiveStr>;
   symbol?: {
     prefix?: string,
     global?: boolean
   };
   string?: boolean;
-  number?: any; // (number matcher doesn't need a config value)
-  boolean?: any; // (boolean matcher doesn't need a config value)
 }
 
 export interface IAttributesMatchers extends IMatchers {
@@ -113,7 +135,7 @@ export interface INormaliser {
 }
 
 export interface ITransformer {
-  coerceAttributeValue (subject: string, matchers: IMatchers, rawValue: any, attributeName: string): {};
+  coerceMatcherValue (subject: string, matchers: IMatchers, rawValue: string, attributeName: string): {};
 }
 
 export interface ISpecService {

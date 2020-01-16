@@ -115,9 +115,9 @@ describe('Transformer for "attributes" context', () => {
             .withArgs(t.path).returns(t.specValue);
 
           const transformer = new Transformer(stub);
-          const transform: ITransformFunction<any> = transformer.getTransform(t.valueType as types.MatcherType);
+          const transform: ITransformFunction<any> = transformer.getTransform(t.valueType as types.MatcherStr);
           const subject = '/SUBJECT';
-          const result = transform.call(transformer, subject, t.raw, t.context as types.ContextType);
+          const result = transform.call(transformer, subject, t.raw, t.context as types.SpecContext);
 
           expect(result.succeeded).to.be.true(`succeeded RESULT: ${result.succeeded}`);
           expect(result.value).to.equal(t.expected);
@@ -234,6 +234,22 @@ describe('Transformer for "attributes" context', () => {
       }
     });
   });
+
+  context('given: incorrectly cased matcher name', () => {
+    it('should: throw', () => {
+      try {
+        const stub = new SpecOptionService();
+        const transformer = new Transformer(stub);
+
+        expect(() => {
+          transformer.getTransform('Number' as types.MatcherStr);
+        }).to.throw();
+      } catch (error) {
+        assert.fail(`transform function for type: "string" failed. (${error})`);
+      }
+    });
+  });
+
 }); // Transformer for "attributes" context
 
 describe('Transformer.transformCollection for "attributes" context', () => {
@@ -247,8 +263,8 @@ describe('Transformer.transformCollection for "attributes" context', () => {
     fetchOption (path: string, fallBack: boolean = true): any {
       const segments: string[] = R.split('/')(path);
       const itemLens: R.Lens = R.lensPath(segments);
-
-      const result = fallBack ? R.defaultTo(R.view(itemLens)(Specs.fallBack), R.view(itemLens)(this.spec)) : R.view(itemLens)(this.spec);
+      const result = fallBack ? R.defaultTo(R.view(itemLens)(Specs.fallBack),
+          R.view(itemLens)(this.spec)) : R.view(itemLens)(this.spec);
 
       return result;
     }
@@ -260,8 +276,8 @@ describe('Transformer.transformCollection for "attributes" context', () => {
     }
   }
 
-  const contextType: types.ContextType = 'attributes';
-  const matcher: types.MatcherType = 'collection';
+  const contextType: types.SpecContext = 'attributes';
+  const matcher: types.MatcherStr = 'collection';
 
   context('Array collection', () => {
     const tests = [
@@ -666,3 +682,14 @@ describe('Transformer.transformCollection for "attributes" context', () => {
     });
   }); // Error handling
 }); // Transformer.transformCollection for "attributes" context
+
+describe('TEXT', () => {
+  it.skip('===', () => {
+    type Alpha = 'A' | 'B' | 'C';
+    let val: Alpha;
+    const x = 'Q';
+    val = x as Alpha;
+
+    console.log(`casting ... x: ${x}`);
+  });
+});
