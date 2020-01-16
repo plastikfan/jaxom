@@ -40,7 +40,7 @@ export class XpathConverterImpl implements IConverterImpl {
   }
 
   readonly transformer: types.ITransformer;
-  readonly normaliser: Normaliser;
+  readonly normaliser: types.INormaliser;
 
   /**
    * @method build
@@ -176,7 +176,7 @@ export class XpathConverterImpl implements IConverterImpl {
           const attributeName = attrNode['name'];
           const attributeSubject = `${subject}/[@${attributeName}]`;
           const attributeValue = doCoercion
-            ? this.transformer.coerceAttributeValue(attributeSubject, matchers, attrNode['value'], attributeName)
+            ? this.transformer.coerceMatcherValue(attributeSubject, matchers, attrNode['value'], attributeName)
             : attrNode['value'];
 
           return R.append(R.objOf(attributeName, attributeValue), acc);
@@ -196,7 +196,7 @@ export class XpathConverterImpl implements IConverterImpl {
           const attributeName = R.head(attributePair) as string;
           const attributeSubject = `${subject}/[@${attributeName}]`;
           const rawAttributeValue = R.last(attributePair) as string;
-          const coercedValue = this.transformer.coerceAttributeValue(attributeSubject, matchers,
+          const coercedValue = this.transformer.coerceMatcherValue(attributeSubject, matchers,
             rawAttributeValue, attributeName);
 
           attributePair[1] = coercedValue;

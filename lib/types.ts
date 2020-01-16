@@ -1,4 +1,6 @@
 
+import * as R from 'ramda';
+
 // Element Parse Info
 //
 export interface IElementInfo {
@@ -39,16 +41,37 @@ export interface IAttributeNodeCollection { // {DEF}
   assoc?: IAssociativeCollection;
 }
 
-export type ContextType = 'attributes' | 'textNodes';
-export type MatcherType = 'number' | 'boolean' | 'primitives' | 'collection' | 'date' | 'symbol' | 'string';
-export type PrimitiveType = 'number' | 'boolean';
+// Coercion definitions are for those primitive types that require a coercion from
+// raw string value. 'date' is not part of this list because there is no reasonable
+// default for a date (eg what format should be used) and as such is not deemed a
+// simple type. Also, of note, these types can be configured as part of the 'primitives'
+// collection as opposed to be defined as a separate matcher in themselves.
+//
+export type CoercivePrimitiveStr = 'boolean' | 'number' | 'symbol';
+export const CoercivePrimitiveStrArray = ['boolean', 'number', 'symbol'];
+
+// Primitive definitions that represent any simple singular values that can also be
+// used as the type of key in associative collections.
+//
+export type PrimitiveStr = 'string' | CoercivePrimitiveStr;
+export const PrimitiveStrArray = R.union(CoercivePrimitiveStrArray, ['string']);
+
+// Matcher definitions represents all matchers that can be configured in the spec. So
+// this comprises of all primitive types and compound values.
+//
+export type MatcherStr = 'collection' | 'date' | 'primitives' | PrimitiveStr;
+export const MatcherStrArray = R.union(PrimitiveStrArray, ['collection', 'date', 'primitives']);
+
+export type SpecContext = 'attributes' | 'textNodes';
 
 export interface IMatchers { // {DEF}
-  primitives?: ReadonlyArray<PrimitiveType>;
+  boolean?: any; // (boolean matcher doesn't need a config value)
   // collection
   date?: {
     format?: string
   };
+  number?: any; // (number matcher doesn't need a config value)
+  primitives?: ReadonlyArray<CoercivePrimitiveStr>;
   symbol?: {
     prefix?: string,
     global?: boolean
@@ -108,7 +131,7 @@ export interface INormaliser {
 }
 
 export interface ITransformer {
-  coerceAttributeValue (subject: string, matchers: IMatchers, rawValue: any, attributeName: string): {};
+  coerceMatcherValue (subject: string, matchers: IMatchers, rawValue: string, attributeName: string): {};
 }
 
 export interface ISpecService {

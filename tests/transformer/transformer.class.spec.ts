@@ -18,7 +18,7 @@ describe('Transformer for "attributes" context', () => {
   });
 
   const tests = [
-    // ['number]
+    // ['number']
     {
       given: 'spec with "attributes/coercion/matchers/primitives" = number',
       context: 'attributes',
@@ -65,7 +65,7 @@ describe('Transformer for "attributes" context', () => {
       raw: 'false',
       expected: false
     },
-    // ['string']
+    // string
     {
       given: 'spec with "attributes/coercion/matchers" = string(true)',
       context: 'attributes',
@@ -83,6 +83,26 @@ describe('Transformer for "attributes" context', () => {
       valueType: 'string',
       raw: 'foo',
       expected: 'foo'
+    },
+    // number
+    {
+      given: 'spec with "attributes/coercion/matchers/number"',
+      context: 'attributes',
+      path: 'attributes/coercion/matchers/number',
+      specValue: null, // THIS CAN BE ANYTHING (number matcher doesn't need a config value)
+      valueType: 'number',
+      raw: '10',
+      expected: 10
+    },
+    // boolean
+    {
+      given: 'spec with "attributes/coercion/matchers/boolean"',
+      context: 'attributes',
+      path: 'attributes/coercion/matchers/boolean',
+      specValue: null, // THIS CAN BE ANYTHING (boolean matcher doesn't need a config value)
+      valueType: 'boolean',
+      raw: true,
+      expected: true
     }
   ];
 
@@ -95,9 +115,9 @@ describe('Transformer for "attributes" context', () => {
             .withArgs(t.path).returns(t.specValue);
 
           const transformer = new Transformer(stub);
-          const transform: ITransformFunction<any> = transformer.getTransform(t.valueType as types.MatcherType);
+          const transform: ITransformFunction<any> = transformer.getTransform(t.valueType as types.MatcherStr);
           const subject = '/SUBJECT';
-          const result = transform.call(transformer, subject, t.raw, t.context as types.ContextType);
+          const result = transform.call(transformer, subject, t.raw, t.context as types.SpecContext);
 
           expect(result.succeeded).to.be.true(`succeeded RESULT: ${result.succeeded}`);
           expect(result.value).to.equal(t.expected);
@@ -125,6 +145,27 @@ describe('Transformer for "attributes" context', () => {
         expect(result.value.format('YYYY-MM-DD')).to.equal('2016-06-23');
       } catch (error) {
         assert.fail(`transform function for type: "date" failed. (${error})`);
+      }
+    });
+  });
+
+  context('=== given: spec where "attributes/coercion/matchers/string" is missing', () => {
+    it('should: still coerce as a string value', () => {
+      try {
+        const stub = new SpecOptionService();
+        sinon.stub(stub, 'fetchOption')
+          .withArgs('attributes/coercion/matchers/string').returns(undefined);
+
+        const transformer = new Transformer(stub);
+        const transform: ITransformFunction<any> = transformer.getTransform('string');
+        const subject = '/SUBJECT';
+        const strValue = 'chop-sticks';
+        const result = transform.call(transformer, subject, strValue, 'attributes');
+
+        expect(result.succeeded).to.be.true(`succeeded RESULT: ${result.succeeded}`);
+        expect(result.value).to.equal('chop-sticks');
+      } catch (error) {
+        assert.fail(`transform function for type: "string" failed. (${error})`);
       }
     });
   });
@@ -204,16 +245,33 @@ describe('Transformer for "attributes" context', () => {
         sinon.stub(stub, 'fetchOption')
           .withArgs('attributes/coercion/matchers/string').returns(false);
         const transformer = new Transformer(stub);
+        const subject = '/SUBJECT';
 
         expect(() => {
           const transform: ITransformFunction<any> = transformer.getTransform('string');
-          transform.call(transformer, 'foo', 'attributes');
+          transform.call(transformer, subject, 'foo', 'attributes');
         }).to.throw();
       } catch (error) {
         assert.fail(`transform function for type: "string" failed. (${error})`);
       }
     });
   });
+
+  context('given: incorrectly cased matcher name', () => {
+    it('should: throw', () => {
+      try {
+        const stub = new SpecOptionService();
+        const transformer = new Transformer(stub);
+
+        expect(() => {
+          transformer.getTransform('Number' as types.MatcherStr);
+        }).to.throw();
+      } catch (error) {
+        assert.fail(`transform function for type: "string" failed. (${error})`);
+      }
+    });
+  });
+
 }); // Transformer for "attributes" context
 
 describe('Transformer.transformCollection for "attributes" context', () => {
@@ -227,8 +285,8 @@ describe('Transformer.transformCollection for "attributes" context', () => {
     fetchOption (path: string, fallBack: boolean = true): any {
       const segments: string[] = R.split('/')(path);
       const itemLens: R.Lens = R.lensPath(segments);
-
-      const result = fallBack ? R.defaultTo(R.view(itemLens)(Specs.fallBack), R.view(itemLens)(this.spec)) : R.view(itemLens)(this.spec);
+      const result = fallBack ? R.defaultTo(R.view(itemLens)(Specs.fallBack),
+          R.view(itemLens)(this.spec)) : R.view(itemLens)(this.spec);
 
       return result;
     }
@@ -240,8 +298,8 @@ describe('Transformer.transformCollection for "attributes" context', () => {
     }
   }
 
-  const contextType: types.ContextType = 'attributes';
-  const matcher: types.MatcherType = 'collection';
+  const contextType: types.SpecContext = 'attributes';
+  const matcher: types.MatcherStr = 'collection';
 
   context('Array collection', () => {
     const tests = [
