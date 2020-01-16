@@ -149,6 +149,27 @@ describe('Transformer for "attributes" context', () => {
     });
   });
 
+  context('=== given: spec where "attributes/coercion/matchers/string" is missing', () => {
+    it('should: still coerce as a string value', () => {
+      try {
+        const stub = new SpecOptionService();
+        sinon.stub(stub, 'fetchOption')
+          .withArgs('attributes/coercion/matchers/string').returns(undefined);
+
+        const transformer = new Transformer(stub);
+        const transform: ITransformFunction<any> = transformer.getTransform('string');
+        const subject = '/SUBJECT';
+        const strValue = 'chop-sticks';
+        const result = transform.call(transformer, subject, strValue, 'attributes');
+
+        expect(result.succeeded).to.be.true(`succeeded RESULT: ${result.succeeded}`);
+        expect(result.value).to.equal('chop-sticks');
+      } catch (error) {
+        assert.fail(`transform function for type: "string" failed. (${error})`);
+      }
+    });
+  });
+
   context('given: spec with "attributes/coercion/matchers/primitives" = date and invalid date', () => {
     it('should: return negative transform result', () => {
       try {
@@ -224,10 +245,11 @@ describe('Transformer for "attributes" context', () => {
         sinon.stub(stub, 'fetchOption')
           .withArgs('attributes/coercion/matchers/string').returns(false);
         const transformer = new Transformer(stub);
+        const subject = '/SUBJECT';
 
         expect(() => {
           const transform: ITransformFunction<any> = transformer.getTransform('string');
-          transform.call(transformer, 'foo', 'attributes');
+          transform.call(transformer, subject, 'foo', 'attributes');
         }).to.throw();
       } catch (error) {
         assert.fail(`transform function for type: "string" failed. (${error})`);
@@ -682,14 +704,3 @@ describe('Transformer.transformCollection for "attributes" context', () => {
     });
   }); // Error handling
 }); // Transformer.transformCollection for "attributes" context
-
-describe('TEXT', () => {
-  it.skip('===', () => {
-    type Alpha = 'A' | 'B' | 'C';
-    let val: Alpha;
-    const x = 'Q';
-    val = x as Alpha;
-
-    console.log(`casting ... x: ${x}`);
-  });
-});

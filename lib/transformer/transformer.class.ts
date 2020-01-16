@@ -50,7 +50,7 @@ export class Transformer {
         'getTransform');
     }
     return result;
-  }
+  } // getTransform
 
   // ---------------------------------------------------- ITransformer interface
 
@@ -84,7 +84,7 @@ export class Transformer {
     });
 
     return resultValue;
-  }
+  } // coerceMatcherValue
 
   // ITransformer interface ====================================================
 
@@ -231,10 +231,10 @@ export class Transformer {
       `${context}/coercion/matchers/collection/assoc/delim`) as string;
 
     const assocKeyType = this.options.fetchOption(
-      `${context}/coercion/matchers/collection/assoc/keyType`) as string; // SHOULD BE A PRIMITIVE TYPE (MATCHER) COLLECTION TYPE
+      `${context}/coercion/matchers/collection/assoc/keyType`) as string;
 
     const assocValueType = this.options.fetchOption(
-      `${context}/coercion/matchers/collection/assoc/valueType`) as string;  // SHOULD BE A PRIMITIVE TYPE (MATCHER)
+      `${context}/coercion/matchers/collection/assoc/valueType`) as string;
 
     // Split out the values into an array of pairs
     //
@@ -278,7 +278,10 @@ export class Transformer {
    *
    * @private
    * @param {string} subject: Identifies the current xml entity
-   * @param {*} assocType
+   * @param {string | string[]} assocType: The textual specifier of the type(s) to be tried. When
+   * this function is invoked as part of primitive processing, the configured type can be an array
+   * of types. When invoked from other contexts (eg key/value items in an associate collection), the
+   * type descriptor here will simply be a string.
    * @param {types.SpecContext} context
    * @param {string} assocValue
    * @returns {ITransformResult<any>}
@@ -286,8 +289,6 @@ export class Transformer {
    */
   private transformAssocValue (subject: string, assocType: string | string[],
     context: types.SpecContext, assocValue: string): ITransformResult<any> {
-
-    // assocType SHOULD BE A PRIMITIVE TYPE mot a matcher type
 
     let coercedValue = null;
     let succeeded = false;
@@ -297,27 +298,38 @@ export class Transformer {
       assocTypes = [assocType];
     }
 
-    if (assocTypes instanceof Array) {
-      let self = this;
-      assocTypes.some((val: 'number' | 'boolean' | 'symbol' | 'string') => {
-        if (R.includes(val, ['number', 'boolean', 'symbol', 'string'])) {
-          const transform = self.getTransform(val);
-          const coercedResult = transform.call(self, subject, assocValue, context);
-
-          if (coercedResult.succeeded) {
-            succeeded = coercedResult.succeeded;
-            coercedValue = coercedResult.value;
-          }
-
-          return coercedResult.succeeded;
-        } else {
-          throw new e.JaxConfigError(`Invalid value type for associative collection found: ${val}`,
-            subject);
-        }
-      });
+    // If invoked from processing associative key/value pairs that are configured as a
+    // string, we do not need to attempt coercion. We can't leave it to the string transform
+    // because this is overkill, and we should not be subject to having a string matcher set
+    // to 'false', which is meant for a different purpose altogether. So we check for this and
+    // bypass the coercion attempt.
+    //
+    if (assocType === 'string') {
+      coercedValue = assocValue;
+      succeeded = true;
     } else {
-      throw new e.JaxConfigError(`Invalid associative value type: ${functify(assocTypes)}`,
-        subject);
+      if (assocTypes instanceof Array) {
+        let self = this;
+        assocTypes.some((val: types.PrimitiveStr) => {
+          if (R.includes(val, types.PrimitiveStrArray)) {
+            const transform = self.getTransform(val);
+            const coercedResult = transform.call(self, subject, assocValue, context);
+
+            if (coercedResult.succeeded) {
+              succeeded = coercedResult.succeeded;
+              coercedValue = coercedResult.value;
+            }
+
+            return coercedResult.succeeded;
+          } else {
+            throw new e.JaxConfigError(`Invalid value type for associative collection found: ${val}`,
+              subject);
+          }
+        });
+      } else {
+        throw new e.JaxConfigError(`Invalid associative value type: ${functify(assocTypes)}`,
+          subject);
+      }
     }
 
     return {
@@ -399,7 +411,7 @@ export class Transformer {
    *
    * @private
    * @param {string} subject: Identifies the current xml entity
-   * @param {types.PrimitiveStr} primitiveValue
+   * @param {string} primitiveValue: the raw primitive text value to be transformed
    * @param {types.SpecContext} context
    * @returns {ITransformResult<any>}
    * @memberof Transformer
@@ -412,9 +424,9 @@ export class Transformer {
     let coercedValue = null;
     let succeeded = false;
 
-    primitives.some((val: types.PrimitiveStr) => {
+    primitives.some((val: types.CoercivePrimitiveStr) => {
       const validatedPrimitiveStr = R.toLower(val);
-      if (R.includes(validatedPrimitiveStr, types.PrimitiveStrArray)) {
+      if (R.includes(validatedPrimitiveStr, types.CoercivePrimitiveStrArray)) {
         const transform = this.getTransform(val);
         const coercedResult = transform(subject, primitiveValue, context);
         succeeded = coercedResult.succeeded;
@@ -431,7 +443,7 @@ export class Transformer {
       succeeded: succeeded,
       value: coercedValue
     };
-  } // transformPrimitives
+  } // transformPrimitiveValue
 
   /**
    * @method transformDate
@@ -489,21 +501,22 @@ export class Transformer {
   /**
    * @method transformString
    * @description: Simply returns the value directly from the source. This transform
-   *    can be explicitly defined to force an exception to be thrown if other defined
-   *    transforms also fail. To achieve this, just define the "string" matcher in the
-   *    spec with a value of false.
+   * can be explicitly defined to force an exception to be thrown if other defined
+   * transforms also fail. To achieve this, just define the "string" matcher in the
+   * spec with a value of false. If the string matcher is missing from the spec then
+   * we just default to accepting the raw value as the coercion result.
    *
    * @param {string} subject: Identifies the current xml entity
    * @param {string} stringValue
    * @param {contextType} context
-   * @returns: { value: the transformed string, succeeded: flag to indicate transform result }
+   * @returns: { value: the raw string verbatim, succeeded: flag to indicate transform result }
    * @memberof Transformer
    */
   transformString (subject: string, stringValue: string, context: types.SpecContext)
     : ITransformResult<string> {
-    const stringCoercionAcceptable = this.options.fetchOption(
-      `${context}/coercion/matchers/string`) as boolean;
+    const optionStr = this.options.fetchOption(`${context}/coercion/matchers/string`);
 
+    const stringCoercionAcceptable: boolean = optionStr === undefined ? true : optionStr as boolean;
     if (!stringCoercionAcceptable) {
       throw new e.JaxSolicitedError(`matching failed, terminated by string matcher.`,
         subject);
