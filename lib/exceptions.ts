@@ -36,3 +36,11 @@ export class JaxSolicitedError extends Error {
     Object.setPrototypeOf(this, JaxSolicitedError.prototype);
   }
 }
+
+export class JaxSpecValidationError extends Error {
+  constructor (reason: string, specName: string, val: string, configPath: string) {
+    super(`spec named: ${specName} failed validation at: "${configPath}", with: "${val}" (${reason})`);
+
+    Object.setPrototypeOf(this, JaxSpecValidationError.prototype);
+  }
+}
