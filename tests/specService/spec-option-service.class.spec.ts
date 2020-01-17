@@ -193,3 +193,31 @@ describe('SpecOptionService.getSpec', () => {
     });
   });
 });
+
+describe('SpecOptionService.validateSpec', () => {
+  context('given: invalid spec with identical collection/delim & collection/assoc/delim delimiters', () => {
+    it('should: throw', () => {
+      const invalidSpec: types.ISpec = Object.freeze({
+        name: 'invalid-spec-with-identical-delimiters',
+        attributes: {
+          trim: true,
+          coercion: {
+            matchers: {
+              collection: {
+                delim: '=',
+                assoc: {
+                  delim: '='
+                }
+              }
+            }
+          }
+        }
+      });
+
+      expect(() => {
+        // tslint:disable-next-line: no-unused-expression
+        new SpecOptionService(invalidSpec);
+      }).to.throw();
+    });
+  });
+});

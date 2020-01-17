@@ -1,6 +1,7 @@
 
 import * as R from 'ramda';
 import * as types from '../types';
+import * as e from '../exceptions';
 
 export class SpecOptionService implements types.ISpecService {
   constructor (private spec: types.ISpec = defaultSpec) {
@@ -8,6 +9,8 @@ export class SpecOptionService implements types.ISpecService {
     this.elementLabel = this.labels.element;
     this.descendantsLabel = this.labels.descendants;
     this.textLabel = this.labels.text;
+
+    this.validateSpec();
   }
   private readonly labels: MandatoryLabels;
 
@@ -20,7 +23,7 @@ export class SpecOptionService implements types.ISpecService {
    * spec (with caveats see fallBack parameter). The path specified must be treated
    * as absolute and relates to the base spec.
    *
-   * @private
+   * @public
    * @param {string} path delimited string containing the segments used to build a lens
    * for inspecting the spec.
    * @param {boolean} [fallBack=true] The setting of this value depends from where it is
@@ -55,6 +58,19 @@ export class SpecOptionService implements types.ISpecService {
 
   // ISpecService interface ====================================================
 
+  private validateSpec (): void {
+    const delim: string = this.fetchOption('attributes/coercion/matchers/collection/delim');
+    const assocDelim: string = this.fetchOption('attributes/coercion/matchers/collection/assoc/delim');
+
+    if (delim === assocDelim) {
+      throw new e.JaxSpecValidationError(
+        'delim at "attributes/coercion/matchers/collection/delim" should be different',
+        this.spec.name,
+        delim,
+        'attributes/coercion/matchers/collection/assoc/delim'
+      );
+    }
+  }
 } // class SpecOptionService
 
 class MandatoryLabels {
