@@ -29,6 +29,25 @@ export class Transformer {
     ['symbol', this.transformSymbol]
   ]);
 
+  // TODO: define a generic to represent these functions
+  //
+  private static collections = new Map<string, any>([
+    ['[]', (c: []): [] => { return c; }],
+    ['int8array', (c: Iterable<number>): Int8Array => { return Int8Array.from(c); } ],
+    ['uint8array', (c: Iterable<number>): Uint8Array => { return Uint8Array.from(c); }],
+    ['uint8clampedarray', (c: Iterable<number>): Uint8ClampedArray => { return Uint8ClampedArray.from(c); }],
+    ['int16array', (c: Iterable<number>): Int16Array => { return Int16Array.from(c); }],
+    ['uint16array', (c: Iterable<number>): Uint16Array => { return Uint16Array.from(c); }],
+    ['int32array', (c: Iterable<number>): Int32Array => { return Int32Array.from(c); }],
+    ['uint32array', (c: Iterable<number>): Uint32Array => { return Uint32Array.from(c); }],
+    ['float32array', (c: Iterable<number>): Float32Array => { return Float32Array.from(c); }],
+    ['float64array', (c: Iterable<number>): Float64Array => { return Float64Array.from(c); }],
+    ['set', (c: Iterable<number>): Set<number> => { return new Set<number>(c); }],
+    // ['weakset', (c: any): WeakSet<any> => { return new WeakSet(c); }],
+    ['map', (c: any): any => { return new Map(c); }]
+    // ['weakmap', (c: any): WeakMap<any, any> => { return new WeakMap(c); }]
+  ]);
+
   private static readonly typeExpr = /\<(?<type>[\w\[\]]+)\>/;
 
   /**
@@ -139,7 +158,7 @@ export class Transformer {
         const arrayElements: any[] = coreValue.split(delim);
 
         return this.isUnaryCollection(collectionType)
-          ? this.transformUnaryCollection(subject, context, arrayElements)
+          ? this.transformUnaryCollection(subject, context, collectionType, arrayElements)
           : this.transformAssociativeCollection(subject, context, collectionType, arrayElements);
       }
     }
@@ -195,12 +214,19 @@ export class Transformer {
    * @memberof Transformer
    */
   private transformUnaryCollection (subject: string, context: types.SpecContext,
-    sourceCollection: any[]): ITransformResult<any[]> { // any[]
+    collectionType: string, sourceCollection: any[]): ITransformResult<any[]> { // any[]
     // What can be inside primitives? The only thing we should allow are simple primitives.
-    // This is because it is difficult to provide sensible defaults for eg date format.
+    // This is because it is difficult to provide sensible defaults for date, eg format.
     //
+    // const typed = this.createTypedCollection(R.toLower(collectionType), []);
+
+    // R.reduce((acc, item) => {
+
+    //   return null;
+    // }, typed)(sourceCollection);
+
     const value: any[] = R.map((val: any) => {
-      //
+      // WE NEED TO CREATE THE PROPER COLLECTION
       const itemResult = this.transformPrimitiveValue(subject, val, context);
       return (itemResult.succeeded) ? itemResult.value : val;
     })(sourceCollection);
@@ -536,27 +562,12 @@ export class Transformer {
    * @returns {*}
    * @memberof Transformer
    */
-  createTypedCollection (t: string, collectionElements: any): any {
+  private createTypedCollection (t: string, collectionElements: any): any {
     let collection: any;
 
-    switch (t) {
-      case 'int8array': collection = Int8Array.from(collectionElements); break;
-      case 'uint8array': collection = Uint8Array.from(collectionElements); break;
-      case 'uint8clampedarray': collection = Uint8ClampedArray.from(collectionElements); break;
-      case 'int16array': collection = Int16Array.from(collectionElements); break;
-      case 'uint16array': collection = Uint16Array.from(collectionElements); break;
-      case 'int32array': collection = Int32Array.from(collectionElements); break;
-      case 'uint32array': collection = Uint32Array.from(collectionElements); break;
-      case 'float32array': collection = Float32Array.from(collectionElements); break;
-      case 'float64array': collection = Float64Array.from(collectionElements); break;
-      case 'set': collection = new Set(collectionElements); break;
-      case 'weakset': collection = new WeakSet(collectionElements); break;
-      case 'map': collection = new Map(collectionElements); break;
-      case 'weakmap': collection = new WeakMap(collectionElements); break;
-
-      default:
-        collection = Array.from(collectionElements);
-    }
+    collection = Transformer.collections.has(R.toLower(t))
+      ? Transformer.collections.get(R.toLower(t))(collectionElements)
+      : Array.from(collectionElements);
 
     return collection;
   } // createTypedCollection
@@ -601,7 +612,7 @@ export class Transformer {
    */
   isUnaryCollection (definedType: string): boolean {
     return R.includes(R.toLower(definedType), ['[]', 'int8array', 'uint8array', 'uint8clampedarray', 'int16array',
-      'int16array', 'int32array', 'uint32array', 'float32array', 'float64array', 'set']);
+      'uint16array', 'int32array', 'uint32array', 'float32array', 'float64array', 'set']);
   }
 } // Transformer class
 

@@ -704,3 +704,96 @@ describe('Transformer.transformCollection for "attributes" context', () => {
     });
   }); // Error handling
 }); // Transformer.transformCollection for "attributes" context
+
+describe('Transformer.getTransform', () => {
+  const tests = [
+    {
+      collectionType: 'Int8Array',
+      value: '!<Int8Array>[1,2,3,4]'
+    },
+    {
+      collectionType: 'Uint8Array',
+      value: '!<Uint8Array>[1,2,3,4]'
+    },
+    {
+      collectionType: 'Uint8ClampedArray',
+      value: '!<Uint8ClampedArray>[1,2,3,4]'
+    },
+    {
+      collectionType: 'Int16Array',
+      value: '!<Int16Array>[1,2,3,4]'
+    },
+    {
+      collectionType: 'Uint16Array',
+      value: '!<Uint16Array>[1,2,3,4]'
+    },
+    {
+      collectionType: 'Int32Array',
+      value: '!<Int32Array>[1,2,3,4]'
+    },
+    {
+      collectionType: 'Uint32Array',
+      value: '!<Uint32Array>[1,2,3,4]'
+    },
+    {
+      collectionType: 'Float32Array',
+      value: '!<Float32Array>[1,2,3,4]'
+    },
+    {
+      collectionType: 'Float64Array',
+      value: '!<Float64Array>[1,2,3,4]'
+    },
+    {
+      collectionType: 'Set',
+      value: '!<Set>[1,2,3,4]'
+    },
+    // {
+    //   collectionType: 'WeakSet',
+    //   value: '!<WeakSet>[1,2,3,4]'
+    // }
+    {
+      collectionType: 'Map',
+      value: '!<Map>[a=one,b=two,c=three,d=four]'
+    }
+    // {
+    //   collectionType: 'WeakMap',
+    //   value: '!<WeakMap>[a=one,b=two,c=three,d=four]'
+    // }
+  ];
+
+  tests.forEach((t) => {
+    context(`given: "${t.collectionType}" defined as the collection type`, () => {
+      it(`should: return ${t.collectionType} collection ok`, () => {
+        const open = `!<${t.collectionType}>[`;
+        const spec: types.ISpec = {
+          name: 'collection-spec-with-custom-open-pattern',
+          attributes: {
+            coercion: {
+              matchers: {
+                collection: {
+                  open: open
+                }
+              }
+            }
+          }
+        };
+
+        const options = new SpecOptionService(spec);
+        const transformer = new Transformer(options);
+        const transform: ITransformFunction<any> = transformer.getTransform('collection');
+        const subject = '/SUBJECT';
+        transform.call(transformer, subject, t.value, 'attributes');
+      });
+    });
+  });
+});
+
+// describe('type test', () => {
+//   it('guards', () => {
+//     const collectionType: typeof Int8Array | typeof Uint8Array = Uint8Array;
+//     const instance = new collectionType([1,2,3]);
+//     console.log(`>>> collectionType: ${collectionType}`);
+//     console.log(`>>> instance: ${functify(instance)}`);
+//     console.log(`>>> first: ${functify(instance[0])}`);
+//   });
+// });
