@@ -303,7 +303,7 @@ describe('Transformer.transformCollection for "attributes" context', () => {
 
   context('Array collection', () => {
     const tests = [
-      // []
+      // [] (array of strings)
       {
         should: 'coerce as a single item array',
         raw: '!<[]>[foo]',
@@ -315,6 +315,11 @@ describe('Transformer.transformCollection for "attributes" context', () => {
         expected: ['foo', 'bar', 'baz']
       },
       {
+        should: 'coerce as a multiple item mix-type array',
+        raw: '!<[]>[one,42,true,foo]',
+        expected: ['one', 42, true, 'foo']
+      },
+      {
         should: 'coerce as a multiple item numeric array',
         raw: '!<[]>[1,2,3,4]',
         expected: [1, 2, 3, 4]
@@ -323,22 +328,6 @@ describe('Transformer.transformCollection for "attributes" context', () => {
         should: 'coerce as a multiple item boolean array',
         raw: '!<[]>[true,false,true,false]',
         expected: [true, false, true, false]
-      },
-      {
-        should: 'coerce as a multiple item mix-type array',
-        raw: '!<[]>[one,42,true,foo]',
-        expected: ['one', 42, true, 'foo']
-      },
-      // TypedArrays
-      {
-        should: 'coerce as a multiple item Int8Array array',
-        raw: '!<Int8Array>[1,2,3,4]',
-        expected: [1, 2, 3, 4]
-      },
-      {
-        should: 'coerce as a multiple item Uint8Array array',
-        raw: '!<Uint8Array>[1,2,3,4]',
-        expected: [1, 2, 3, 4]
       }
     ];
 
@@ -398,7 +387,7 @@ describe('Transformer.transformCollection for "attributes" context', () => {
         const result = transform.call(transformer, subject, raw, contextType);
         // const expected = new Set([1, 2, 3, 4]);
         // const expected = ['1', '2', '3', '4'];
-        const expected = [1, 2, 3, 4];
+        const expected = ['1', '2', '3', '4'];
         const resultAsArray = Array.from(result.value);
 
         expect(result.succeeded).to.be.true(functify(result));
@@ -786,4 +775,4 @@ describe('Transformer.getTransform', () => {
       });
     });
   });
-});
+});  // Transformer.getTransform

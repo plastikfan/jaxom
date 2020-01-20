@@ -34,7 +34,6 @@ export class Transformer {
   // use the transformPrimitive / transformNumber functions to perform the type conversion.
   //
   private numericArrayCollections = new Map<string, (c: Iterable<number>, s: string, sc: types.SpecContext) => ArrayCollectionType>([
-    ['[]', (c: [], s: string, sc: types.SpecContext): [] => { return c; }],
     ['int8array', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Int8Array, c, s, sc)],
     ['uint8array', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Uint8Array, c, s, sc)],
     ['uint8clampedarray', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Uint8ClampedArray, c, s, sc)],
@@ -154,9 +153,17 @@ export class Transformer {
         const coreValue: string = this.extractCoreCollectionValue(capturedOpen, capturedClose, collectionValue);
         const collectionElements: any[] = coreValue.split(delim);
 
-        return this.isUnaryCollection(collectionType)
-          ? this.transformUnaryCollection(subject, context, collectionType, collectionElements)
-          : this.transformAssociativeCollection(subject, context, collectionType, collectionElements);
+        let collection;
+
+        if (collectionType === '[]') {
+          collection = this.transformMixedCollection(subject, context, collectionElements);
+        } else if (this.isUnaryCollection(collectionType)) {
+          collection = this.transformUnaryCollection(subject, context, collectionType, collectionElements);
+        } else {
+          collection = this.transformAssociativeCollection(subject, context, collectionType, collectionElements);
+        }
+
+        return collection;
       }
     }
 
@@ -206,6 +213,9 @@ export class Transformer {
    * @private
    * @param {string} subject: Identifies the current xml entity
    * @param {types.SpecContext} context
+   * @param {string}: type of collection to create
+   * @param {string[]}: for mixed collection types, this array contains the types which should
+   * be attempted to coerce values as.
    * @param {any[]} sourceCollection
    * @returns {ITransformResult<any[]>}
    * @memberof Transformer
@@ -213,13 +223,13 @@ export class Transformer {
   private transformUnaryCollection (subject: string, context: types.SpecContext,
     collectionType: string, sourceCollection: any[]): ITransformResult<any[]> {
 
-    this.createTypedCollection(subject, R.toLower(collectionType), sourceCollection, context);
+    const value = this.createTypedCollection(subject, R.toLower(collectionType), sourceCollection, context);
 
-    const value: any[] = R.map((val: any) => {
-      // WE NEED TO CREATE THE PROPER COLLECTION
-      const itemResult = this.transformPrimitiveValue(subject, val, context);
-      return (itemResult.succeeded) ? itemResult.value : val;
-    })(sourceCollection);
+    // const value: any[] = R.map((val: any) => {
+    //   // WE NEED TO CREATE THE PROPER COLLECTION
+    //   const itemResult = this.transformPrimitiveValue(subject, val, context);
+    //   return (itemResult.succeeded) ? itemResult.value : val;
+    // })(sourceCollection);
 
     return {
       value: value,
@@ -433,11 +443,11 @@ export class Transformer {
    * @memberof Transformer
    */
   private transformPrimitiveValue (subject: string, primitiveValue: string,
-    context: types.SpecContext): ITransformResult<any> {
+    context: types.SpecContext): ITransformResult<types.CoercivePrimitiveType> {
 
     const primitives = this.options.fetchOption(`${context}/coercion/matchers/primitives`) as [];
 
-    let coercedValue = null;
+    let coercedValue = 0;
     let succeeded = false;
 
     primitives.some((val: types.CoercivePrimitiveStr) => {
@@ -460,6 +470,46 @@ export class Transformer {
       value: coercedValue
     };
   } // transformPrimitiveValue
+
+  /**
+   * @method transformElementValue
+   * @description Transforms a single element value
+   *
+   * @private
+   * @param {string} subject
+   * @param {types.CoercivePrimitiveType} elementValue
+   * @param {types.SpecContext} context
+   * @returns {ITransformResult<types.CoercivePrimitiveType>}
+   * @memberof Transformer
+   */
+  private transformElementValue (subject: string, elementValue: types.CoercivePrimitiveType,
+    context: types.SpecContext): ITransformResult<types.CoercivePrimitiveType> {
+
+    const elementTypes = this.options.fetchOption(`${context}/coercion/matchers/collection/elementTypes`) as [];
+
+    let coercedValue = elementValue;
+    let succeeded = false;
+
+    elementTypes.some((val: types.CoercivePrimitiveStr) => {
+      const validatedElementStr = R.toLower(val);
+      if (R.includes(validatedElementStr, types.CoercivePrimitiveStrArray)) {
+        const transform = this.getTransform(val);
+        const coercedResult = transform(subject, elementValue, context);
+        succeeded = coercedResult.succeeded;
+
+        if (succeeded) {
+          coercedValue = coercedResult.value;
+        }
+      }
+
+      return succeeded;
+    });
+
+    return {
+      succeeded: succeeded,
+      value: coercedValue
+    };
+  } // transformElementValue
 
   /**
    * @method transformDate
@@ -578,7 +628,7 @@ export class Transformer {
    * @returns {string}
    * @memberof Transformer
    */
-  extractCoreCollectionValue (open: string, close: string, collectionValue: string): string {
+  private extractCoreCollectionValue (open: string, close: string, collectionValue: string): string {
     // Assumption: the open and close have already been matched against the collection value,
     // so collectionValue must start with open and end with close, so we don't need to check.
     //
@@ -593,7 +643,7 @@ export class Transformer {
    * @param {String} inputString: input to escape.
    * @returns: escaped String.
    */
-  escapeRegExp (inputString: string): string {
+  private escapeRegExp (inputString: string): string {
     return inputString.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
   }
 
@@ -603,19 +653,30 @@ export class Transformer {
    * @param {string} definedType
    * @returns {boolean}
    */
-  isUnaryCollection (definedType: string): boolean {
-    return R.includes(R.toLower(definedType), ['[]', 'int8array', 'uint8array', 'uint8clampedarray', 'int16array',
+  private isUnaryCollection (definedType: string): boolean {
+    return R.includes(R.toLower(definedType), ['int8array', 'uint8array', 'uint8clampedarray', 'int16array',
       'uint16array', 'int32array', 'uint32array', 'float32array', 'float64array', 'set']);
   }
 
-  // Whilst creating the collection., we need to ensure that each element is actually numeric. Since
-  // the user may accidentally add a non numeric element to the array, it would be bad to silently
-  // convert this value to 0, as is the case by default. There is no sensible scenario in which a user
-  // may request that a compound value declared to be created with a typed collection, should specify a
-  // non numeric value so let's just throw in all cases; and it doesn't even make sense to make this
-  // behaviour to be configurable via a spec or IElementInfo setting.
-  //
-  create<CT> (collectionClass: IFrom<CT>, c: Iterable<number>, s: string, sc: types.SpecContext): CT {
+  /**
+   * @method create
+   * @description Creates the typed collection. Whilst creating the collection, we need to ensure that
+   *  each element is actually numeric. Since the user may accidentally add a non numeric element to the
+   *  array, it would be bad to silently convert this value to 0, as is the case by default. There is no
+   *  sensible scenario in which a user may request that a compound value declared to be created with a
+   *  typed collection, should specify a non numeric value so let's just throw in all cases; and it
+   *  doesn't even make sense to make this behaviour to be configurable via a spec or IElementInfo setting.
+   *
+   * @private
+   * @template CT the type of collection to create
+   * @param {IFrom<CT>} collectionClass
+   * @param {Iterable<number>} c: the collection being converted
+   * @param {string} s: the subject
+   * @param {types.SpecContext} sc: the context
+   * @returns {CT}
+   * @memberof Transformer
+   */
+  private create<CT> (collectionClass: IFrom<CT>, c: Iterable<number>, s: string, sc: types.SpecContext): CT {
     const collection = collectionClass.from(c, (v: any, i: number): number => {
       if (Number.isNaN(v)) {
         const message = `[${s}]: Can't add non numeric ${sc} item: "${v}", to collection: "${collectionClass.name}".`;
@@ -625,6 +686,34 @@ export class Transformer {
     });
 
     return collection;
+  }
+
+  /**
+   * @method transformMixedCollection
+   * @description Creates a mixed type collection. Each element is coerced by trying each transform
+   * defined in ../coercion/matchers/collection/elementTypes.
+   *
+   * @private
+   * @param {string} subject
+   * @param {types.SpecContext} context
+   * @param {any[]} c: the collection instance to convert
+   * @returns {ITransformResult<types.CoercivePrimitiveType[]>}
+   * @memberof Transformer
+   */
+  private transformMixedCollection (subject: string, context: types.SpecContext, c: any[])
+    : ITransformResult<types.CoercivePrimitiveType[]> {
+
+    const succeeded = true;
+
+    const value = Array.from(c, (val: any, i: number): any => {
+      const transformResult = this.transformElementValue(subject, val, context);
+      return transformResult.succeeded ? transformResult.value : val;
+    });
+
+    return {
+      value: value,
+      succeeded: succeeded
+    };
   }
 } // Transformer class
 
