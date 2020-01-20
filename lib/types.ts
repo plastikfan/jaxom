@@ -49,12 +49,14 @@ export interface IAttributeNodeCollection { // {DEF}
 //
 export type CoercivePrimitiveStr = 'boolean' | 'number' | 'symbol';
 export const CoercivePrimitiveStrArray = ['boolean', 'number', 'symbol'];
+export type CoercivePrimitiveType = boolean | number | symbol;
 
 // Primitive definitions that represent any simple singular values that can also be
 // used as the type of key in associative collections.
 //
 export type PrimitiveStr = 'string' | CoercivePrimitiveStr;
 export const PrimitiveStrArray = R.union(CoercivePrimitiveStrArray, ['string']);
+export type PrimitiveType = string | CoercivePrimitiveType;
 
 // Matcher definitions represents all matchers that can be configured in the spec. So
 // this comprises of all primitive types and compound values.

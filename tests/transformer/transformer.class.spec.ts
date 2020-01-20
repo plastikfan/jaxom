@@ -787,13 +787,3 @@ describe('Transformer.getTransform', () => {
     });
   });
 });
-
-// describe('type test', () => {
-//   it('guards', () => {
-//     const collectionType: typeof Int8Array | typeof Uint8Array = Uint8Array;
-//     const instance = new collectionType([1,2,3]);
-//     console.log(`>>> collectionType: ${collectionType}`);
-//     console.log(`>>> instance: ${functify(instance)}`);
-//     console.log(`>>> first: ${functify(instance[0])}`);
-//   });
-// });

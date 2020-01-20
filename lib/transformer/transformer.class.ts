@@ -29,24 +29,24 @@ export class Transformer {
     ['symbol', this.transformSymbol]
   ]);
 
-  // TODO: define a generic to represent these functions
+  // The invocation of these functions is the point at which type conversion of each array element
+  // occurs from the original type to numeric type. This is the reason why we don't have to explicity
+  // use the transformPrimitive / transformNumber functions to perform the type conversion.
   //
-  private static collections = new Map<string, any>([
-    ['[]', (c: []): [] => { return c; }],
-    ['int8array', (c: Iterable<number>): Int8Array => { return Int8Array.from(c); } ],
-    ['uint8array', (c: Iterable<number>): Uint8Array => { return Uint8Array.from(c); }],
-    ['uint8clampedarray', (c: Iterable<number>): Uint8ClampedArray => { return Uint8ClampedArray.from(c); }],
-    ['int16array', (c: Iterable<number>): Int16Array => { return Int16Array.from(c); }],
-    ['uint16array', (c: Iterable<number>): Uint16Array => { return Uint16Array.from(c); }],
-    ['int32array', (c: Iterable<number>): Int32Array => { return Int32Array.from(c); }],
-    ['uint32array', (c: Iterable<number>): Uint32Array => { return Uint32Array.from(c); }],
-    ['float32array', (c: Iterable<number>): Float32Array => { return Float32Array.from(c); }],
-    ['float64array', (c: Iterable<number>): Float64Array => { return Float64Array.from(c); }],
-    ['set', (c: Iterable<number>): Set<number> => { return new Set<number>(c); }],
-    // ['weakset', (c: any): WeakSet<any> => { return new WeakSet(c); }],
-    ['map', (c: any): any => { return new Map(c); }]
-    // ['weakmap', (c: any): WeakMap<any, any> => { return new WeakMap(c); }]
+  private numericArrayCollections = new Map<string, (c: Iterable<number>, s: string, sc: types.SpecContext) => ArrayCollectionType>([
+    ['[]', (c: [], s: string, sc: types.SpecContext): [] => { return c; }],
+    ['int8array', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Int8Array, c, s, sc)],
+    ['uint8array', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Uint8Array, c, s, sc)],
+    ['uint8clampedarray', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Uint8ClampedArray, c, s, sc)],
+    ['int16array', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Int16Array, c, s, sc)],
+    ['uint16array', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Uint16Array, c, s, sc)],
+    ['int32array', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Int32Array, c, s, sc)],
+    ['uint32array', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Uint32Array, c, s, sc)],
+    ['float32array', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Float32Array, c, s, sc)],
+    ['float64array', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Float64Array, c, s, sc)]
   ]);
+
+  // private static
 
   private static readonly typeExpr = /\<(?<type>[\w\[\]]+)\>/;
 
@@ -119,7 +119,7 @@ export class Transformer {
    * @memberof Transformer
    */
   private transformCollection (subject: string, collectionValue: string,
-    context: types.SpecContext): ITransformResult<any[]> {
+    context: types.SpecContext): ITransformResult<any> { // any collection!
     let succeeded = false;
     let value: any = null;
 
@@ -140,26 +140,23 @@ export class Transformer {
 
       if (openIsMatch && closeIsMatch) {
         let temp = openExpr.exec(collectionValue);
-        /* istanbul ignore next */ // temp can't be null
-        const capturedOpen: string = (temp) ? temp[0] : '';
+        const capturedOpen: string = temp![0];
 
         temp = closeExpr.exec(collectionValue);
-        /* istanbul ignore next */ // temp can't be null
-        const capturedClose: string = (temp) ? temp[0] : '';
+        const capturedClose: string = temp![0];
 
         // Now look for the collection type which should be captured as '<type>'
         // So the default open pattern is: "!<[]>[", and close pattern is: "]"
         //
         // This allows values like
         // "!<[]>[1,2,3,4]" => [1,2,3,4]
-        // "!<[Int8Array]>[1,2,3,4]" => [1,2,3,4]
         //
         const coreValue: string = this.extractCoreCollectionValue(capturedOpen, capturedClose, collectionValue);
-        const arrayElements: any[] = coreValue.split(delim);
+        const collectionElements: any[] = coreValue.split(delim);
 
         return this.isUnaryCollection(collectionType)
-          ? this.transformUnaryCollection(subject, context, collectionType, arrayElements)
-          : this.transformAssociativeCollection(subject, context, collectionType, arrayElements);
+          ? this.transformUnaryCollection(subject, context, collectionType, collectionElements)
+          : this.transformAssociativeCollection(subject, context, collectionType, collectionElements);
       }
     }
 
@@ -214,16 +211,9 @@ export class Transformer {
    * @memberof Transformer
    */
   private transformUnaryCollection (subject: string, context: types.SpecContext,
-    collectionType: string, sourceCollection: any[]): ITransformResult<any[]> { // any[]
-    // What can be inside primitives? The only thing we should allow are simple primitives.
-    // This is because it is difficult to provide sensible defaults for date, eg format.
-    //
-    // const typed = this.createTypedCollection(R.toLower(collectionType), []);
+    collectionType: string, sourceCollection: any[]): ITransformResult<any[]> {
 
-    // R.reduce((acc, item) => {
-
-    //   return null;
-    // }, typed)(sourceCollection);
+    this.createTypedCollection(subject, R.toLower(collectionType), sourceCollection, context);
 
     const value: any[] = R.map((val: any) => {
       // WE NEED TO CREATE THE PROPER COLLECTION
@@ -290,7 +280,7 @@ export class Transformer {
     //
     result = R.includes(R.toLower(collectionType), ['object', '{}'])
       ? R.fromPairs(transformValue)
-      : this.createTypedCollection(R.toLower(collectionType), transformValue);
+      : this.createTypedCollection(subject, R.toLower(collectionType), transformValue, context);
 
     return {
       value: result,
@@ -562,13 +552,16 @@ export class Transformer {
    * @returns {*}
    * @memberof Transformer
    */
-  private createTypedCollection (t: string, collectionElements: any): any {
+  private createTypedCollection (subject: string, t: string, collectionElements: any[], context: types.SpecContext): any { // return type is some sort of union type of collections
     let collection: any;
 
-    collection = Transformer.collections.has(R.toLower(t))
-      ? Transformer.collections.get(R.toLower(t))(collectionElements)
-      : Array.from(collectionElements);
-
+    if (R.toLower(t) === 'map') {
+      collection = new Map(collectionElements);
+    } else if (R.toLower(t) === 'set') {
+      collection = new Set(collectionElements);
+    } else if (this.numericArrayCollections.has(R.toLower(t))) {
+      collection = this.numericArrayCollections.get(R.toLower(t))!(collectionElements, subject, context);
+    }
     return collection;
   } // createTypedCollection
 
@@ -614,6 +607,25 @@ export class Transformer {
     return R.includes(R.toLower(definedType), ['[]', 'int8array', 'uint8array', 'uint8clampedarray', 'int16array',
       'uint16array', 'int32array', 'uint32array', 'float32array', 'float64array', 'set']);
   }
+
+  // Whilst creating the collection., we need to ensure that each element is actually numeric. Since
+  // the user may accidentally add a non numeric element to the array, it would be bad to silently
+  // convert this value to 0, as is the case by default. There is no sensible scenario in which a user
+  // may request that a compound value declared to be created with a typed collection, should specify a
+  // non numeric value so let's just throw in all cases; and it doesn't even make sense to make this
+  // behaviour to be configurable via a spec or IElementInfo setting.
+  //
+  create<CT> (collectionClass: IFrom<CT>, c: Iterable<number>, s: string, sc: types.SpecContext): CT {
+    const collection = collectionClass.from(c, (v: any, i: number): number => {
+      if (Number.isNaN(v)) {
+        const message = `[${s}]: Can't add non numeric ${sc} item: "${v}", to collection: "${collectionClass.name}".`;
+        throw new TypeError(message);
+      }
+      return v;
+    });
+
+    return collection;
+  }
 } // Transformer class
 
 /**
@@ -648,4 +660,18 @@ export interface ITransformResult<T> {
  */
 export interface ITransformFunction<T> {
   (subject: string, rawValue: T, c: types.SpecContext): ITransformResult<T>;
+}
+
+interface IFrom<CT> { // definitions taken from iterable.d.ts
+  new(elements: Iterable<number>): CT;
+  from (arrayLike: Iterable<number>, mapfn?: (v: number, k: number) => number, thisArg?: any): CT;
+}
+
+type ArrayCollectionType = [] | Int8Array | Uint8Array | Uint8ClampedArray | Int16Array |
+  Uint16Array | Int32Array | Uint32Array | Float32Array | Float64Array;
+
+// Extend the Function interface to enable proper reporting of collection in "create<CT>"
+//
+interface Function {
+  name: string;
 }
