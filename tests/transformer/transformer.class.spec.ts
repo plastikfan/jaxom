@@ -149,7 +149,23 @@ describe('Transformer for "attributes" context', () => {
     });
   });
 
-  context('=== given: spec where "attributes/coercion/matchers/string" is missing', () => {
+  context('given: spec with invalid primitives', () => {
+    it('should: throw', () => {
+      const stub = new SpecOptionService();
+      sinon.stub(stub, 'fetchOption')
+        .withArgs('attributes/coercion/matchers/primitives').returns(['duff']);
+
+      const transformer = new Transformer(stub);
+      const transform: ITransformFunction<any> = transformer.getTransform('primitives');
+      const subject = '/SUBJECT';
+      const strValue = 'chop-sticks';
+      expect(() => {
+        transform.call(transformer, subject, strValue, 'attributes');
+      }).to.throw();
+    });
+  });
+
+  context('given: spec where "attributes/coercion/matchers/string" is missing', () => {
     it('should: still coerce as a string value', () => {
       try {
         const stub = new SpecOptionService();
@@ -479,6 +495,26 @@ describe('Transformer.transformCollection for "attributes" context', () => {
       });
     });
 
+    context('given: spec with invalid elementTypes', () => {
+      it('should: throw', () => {
+        const stub = new SpecOptionService();
+        sinon.stub(stub, 'fetchOption')
+          .withArgs('attributes/coercion/matchers/collection/delim').returns(',')
+          .withArgs('attributes/coercion/matchers/collection/open').returns('!<type>[')
+          .withArgs('attributes/coercion/matchers/collection/close').returns(']')
+          .withArgs('attributes/coercion/matchers/collection/elementTypes').returns(['duff']);
+
+        const transformer = new Transformer(stub);
+        const transform: ITransformFunction<any> = transformer.getTransform('collection');
+        const subject = '/SUBJECT';
+        const strValue = '!<[]>[1,2,3,4]';
+
+        expect(() => {
+          transform.call(transformer, subject, strValue, 'attributes');
+        }).to.throw();
+      });
+    });
+
     context('given: invalid assoc value type', () => {
       it(`should: return negative transform result`, () => {
         const raw = '!<Map>[foo=not-a-number]';
@@ -614,9 +650,8 @@ describe('Transformer.transformCollection for "attributes" context', () => {
 
   context('Error handling', () => {
     context('given: invalid assoc.keyType', () => {
-      const raw = '!<Object>[1=15,2=30,3=40,4=g,deuce=adv]';
-
       it(`should: throw`, () => {
+        const raw = '!<Object>[1=15,2=30,3=40,4=g,deuce=adv]';
         const stub = new SpecOptionService();
         sinon.stub(stub, 'fetchOption')
           .withArgs('attributes/coercion/matchers/collection/delim').returns(',')
@@ -638,9 +673,8 @@ describe('Transformer.transformCollection for "attributes" context', () => {
     });
 
     context('given: invalid "collection" assoc.keyType', () => {
-      const raw = '!<Object>[1=15,2=30,3=40,4=g,deuce=adv]';
-
       it(`should: throw`, () => {
+        const raw = '!<Object>[1=15,2=30,3=40,4=g,deuce=adv]';
         const stub = new SpecOptionService();
         sinon.stub(stub, 'fetchOption')
           .withArgs('attributes/coercion/matchers/collection/delim').returns(',')
@@ -662,9 +696,8 @@ describe('Transformer.transformCollection for "attributes" context', () => {
     });
 
     context('given: invalid assoc.valueType', () => {
-      const raw = '!<Object>[1=15,2=30,3=40,4=g,deuce=adv]';
-
       it(`should: throw`, () => {
+        const raw = '!<Object>[1=15,2=30,3=40,4=g,deuce=adv]';
         const stub = new SpecOptionService();
         sinon.stub(stub, 'fetchOption')
           .withArgs('attributes/coercion/matchers/collection/delim').returns(',')
@@ -707,10 +740,58 @@ describe('Transformer.transformCollection for "attributes" context', () => {
         }).to.throw();
       });
     });
+
+    context('given: malformed object entry', () => {
+      it(`should: throw`, () => {
+        const raw = '!<Object>[1=15,2=30,3=40,4=g,deuce=adv=game]'; // <-- !!
+
+        const stub = new SpecOptionService();
+        sinon.stub(stub, 'fetchOption')
+          .withArgs('attributes/coercion/matchers/collection/delim').returns(',')
+          .withArgs('attributes/coercion/matchers/collection/open').returns('!<type>[')
+          .withArgs('attributes/coercion/matchers/collection/close').returns(']')
+          .withArgs('attributes/coercion/matchers/collection/assoc/delim').returns('=')
+          .withArgs('attributes/coercion/matchers/collection/assoc/keyType').returns(['number', 'string'])
+          .withArgs('attributes/coercion/matchers/collection/assoc/valueType').returns(['number', 'string'])
+          .withArgs('attributes/coercion/matchers/string').returns(true);
+
+        const transformer = new Transformer(stub);
+        const transform: ITransformFunction<any> = transformer.getTransform(matcher);
+        const subject = '/SUBJECT';
+
+        expect(() => {
+          transform.call(transformer, subject, raw, contextType);
+        }).to.throw();
+      });
+    });
+
+    context('given: invalid key coercion, valid value coercion', () => {
+      it(`should: throw`, () => {
+        const raw = '!<Object>[1=15,2=30,3=40,4=g,deuce=adv]'; // <-- !!
+
+        const stub = new SpecOptionService();
+        sinon.stub(stub, 'fetchOption')
+          .withArgs('attributes/coercion/matchers/collection/delim').returns(',')
+          .withArgs('attributes/coercion/matchers/collection/open').returns('!<type>[')
+          .withArgs('attributes/coercion/matchers/collection/close').returns(']')
+          .withArgs('attributes/coercion/matchers/collection/assoc/delim').returns('=')
+          .withArgs('attributes/coercion/matchers/collection/assoc/keyType').returns('number')
+          .withArgs('attributes/coercion/matchers/collection/assoc/valueType').returns(['number', 'string'])
+          .withArgs('attributes/coercion/matchers/string').returns(true);
+
+        const transformer = new Transformer(stub);
+        const transform: ITransformFunction<any> = transformer.getTransform(matcher);
+        const subject = '/SUBJECT';
+
+        expect(() => {
+          transform.call(transformer, subject, raw, contextType);
+        }).to.throw();
+      });
+    });
   }); // Error handling
 }); // Transformer.transformCollection for "attributes" context
 
-describe('Transformer.getTransform', () => {
+describe('Transformer.getTransform for typed collection', () => {
   const tests = [
     {
       collectionType: 'Int8Array',
@@ -791,4 +872,31 @@ describe('Transformer.getTransform', () => {
       });
     });
   });
-});  // Transformer.getTransform
+
+  context('given: non-numeric value defined in a numeric typed array', () => {
+    it('should: throw', () => {
+      const value = '!<Int8Array>[bad-robot,2,3,4]'; // <-- !!
+      const spec: types.ISpec = {
+        name: 'collection-spec-with-custom-open-pattern',
+        attributes: {
+          coercion: {
+            matchers: {
+              collection: {
+                open: '!<Int8Array>['
+              }
+            }
+          }
+        }
+      };
+
+      const options = new SpecOptionService(spec);
+      const transformer = new Transformer(options);
+      const transform: ITransformFunction<any> = transformer.getTransform('collection');
+      const subject = '/SUBJECT';
+
+      expect(() => {
+        transform.call(transformer, subject, value, 'attributes');
+      }).to.throw();
+    });
+  });
+});  // Transformer.getTransform for typed collection

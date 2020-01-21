@@ -41,6 +41,8 @@ export type PrimitiveStr = 'string' | CoercivePrimitiveStr;
 export const PrimitiveStrArray = R.union(CoercivePrimitiveStrArray, ['string']);
 export type PrimitiveType = string | CoercivePrimitiveType;
 
+export type ObjectType = Object | {};
+
 // Matcher definitions represents all matchers that can be configured in the spec. So
 // this comprises of all primitive types and compound values.
 //
