@@ -367,10 +367,6 @@ describe('Transformer.transformCollection for "attributes" context', () => {
   }); // Array collection
 
   context('Set collection', () => {
-    // TODO: This test has exposed a bug in the extraction of collection items. When
-    // values are extracted and coercion is active, they should be extracted as native type,
-    // not just strings.
-    //
     it(`should: coerce as a multiple item Set`, () => {
       const raw = '!<Set>[1,2,3,4]';
       try {
@@ -379,20 +375,17 @@ describe('Transformer.transformCollection for "attributes" context', () => {
           .withArgs('attributes/coercion/matchers/collection/delim').returns(',')
           .withArgs('attributes/coercion/matchers/collection/open').returns('!<type>[')
           .withArgs('attributes/coercion/matchers/collection/close').returns(']')
+          .withArgs('attributes/coercion/matchers/collection/elementTypes').returns(['number', 'boolean'])
           .withArgs('attributes/coercion/matchers/primitives').returns(['number', 'boolean']);
 
         const transformer = new Transformer(stub);
         const transform: ITransformFunction<any> = transformer.getTransform(matcher);
         const subject = '/SUBJECT';
         const result = transform.call(transformer, subject, raw, contextType);
-        // const expected = new Set([1, 2, 3, 4]);
-        // const expected = ['1', '2', '3', '4'];
-        const expected = ['1', '2', '3', '4'];
-        const resultAsArray = Array.from(result.value);
+        const expected = new Set([1, 2, 3, 4]);
 
         expect(result.succeeded).to.be.true(functify(result));
-        expect(resultAsArray.length).to.equal(4);
-        expect(resultAsArray).to.deep.equal(expected, functify(result));
+        expect(result.value).to.deep.equal(expected, functify(result));
       } catch (error) {
         assert.fail(`transformCollection for: '${raw}' failed. (${error})`);
       }
@@ -680,6 +673,29 @@ describe('Transformer.transformCollection for "attributes" context', () => {
           .withArgs('attributes/coercion/matchers/collection/assoc/delim').returns('=')
           .withArgs('attributes/coercion/matchers/collection/assoc/keyType').returns('string')
           .withArgs('attributes/coercion/matchers/collection/assoc/valueType').returns(['duff', 'number', 'string']) // <-- !!
+          .withArgs('attributes/coercion/matchers/string').returns(true);
+
+        const transformer = new Transformer(stub);
+        const transform: ITransformFunction<any> = transformer.getTransform(matcher);
+        const subject = '/SUBJECT';
+
+        expect(() => {
+          transform.call(transformer, subject, raw, contextType);
+        }).to.throw();
+      });
+    });
+
+    context('given: unknown collection type', () => {
+      it(`should: throw`, () => {
+        const raw = '!<duff>[foo=bar]';
+        const stub = new SpecOptionService();
+        sinon.stub(stub, 'fetchOption')
+          .withArgs('attributes/coercion/matchers/collection/delim').returns(',')
+          .withArgs('attributes/coercion/matchers/collection/open').returns('!<type>[')
+          .withArgs('attributes/coercion/matchers/collection/close').returns(']')
+          .withArgs('attributes/coercion/matchers/collection/assoc/delim').returns('=')
+          .withArgs('attributes/coercion/matchers/collection/assoc/keyType').returns('string')
+          .withArgs('attributes/coercion/matchers/collection/assoc/valueType').returns('string')
           .withArgs('attributes/coercion/matchers/string').returns(true);
 
         const transformer = new Transformer(stub);
