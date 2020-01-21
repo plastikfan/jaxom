@@ -12,6 +12,8 @@ import { XpathConverterImpl as Impl } from '../../lib/converter/xpath-converter.
 import { functify } from 'jinxed';
 const parser = new DOMParser();
 
+type IndexableObjByStr = { [key: string]: any };
+
 describe('Normaliser.combine', () => {
   const testParseInfo: types.IParseInfo = {
     elements: new Map<string, types.IElementInfo>([
@@ -106,6 +108,219 @@ describe('Normaliser.combine', () => {
           }).to.throw();
         } else {
           assert.fail("Couldn't get test command");
+        }
+      });
+    });
+  });
+
+  context('inherit from another element which also contains its own child elements', () => {
+    context(`given: normalisation at parent not active (parent=command)`, () => {
+      it('should: not normalise children', () => {
+        const data = `<?xml version="1.0"?>
+          <Application name="pez">
+            <Cli>
+              <Commands>
+                <Command name="base-command" abstract="true">
+                  <AlphaChild rank="alpha"/>
+                </Command>
+                <Command name="list-command" inherits="base-command">
+                  <BetaChild rank="beta"/>
+                </Command>
+              </Commands>
+            </Cli>
+          </Application>`;
+        const document: Document = parser.parseFromString(data, 'text/xml');
+        const commandNode = xp.select(
+          '/Application/Cli/Commands/Command[@name="list-command"]',
+            document, true) as Node;
+
+        const parseInfo: types.IParseInfo = {
+          // There is no common id attribute between Command and AlphaChild/BetaChild, so
+          // neither of these should be normalised; children entries are just an array.
+          //
+          elements: new Map<string, types.IElementInfo>([
+            ['Command', {
+              id: 'name',
+              recurse: 'inherits'
+            }]
+          ]),
+          common: {
+            discards: ['inherits', 'abstract']
+          },
+          def: {
+            descendants: {
+              by: 'index'
+            }
+          }
+        };
+
+        if (commandNode instanceof Node) {
+          const converter = new Impl();
+          const command = converter.build(commandNode, parseInfo);
+
+          // const K = {
+          //   name: 'list-command',
+          //   _: 'Command',
+          //   _children: {
+          //     BetaChild: [{ rank: 'beta', _: 'BetaChild' }],
+          //     AlphaChild: [{ rank: 'alpha', _: 'AlphaChild' }]
+          //   }
+          // };
+
+          const children: IndexableObjByStr = R.prop('_children')(command);
+
+          expect(R.is(Object)(children)).to.be.true();
+
+          const alphaChild = children.AlphaChild;
+          expect(R.is(Array)(alphaChild)).to.be.true();
+
+          expect(R.find((ch: IndexableObjByStr): boolean => {
+            return ch.rank === 'alpha';
+          })(alphaChild)).to.not.be.undefined();
+
+          const betaChild = children.BetaChild;
+          expect(R.is(Array)(betaChild)).to.be.true();
+
+          expect(R.find((ch: IndexableObjByStr): boolean => {
+            return ch.rank === 'beta';
+          })(betaChild)).to.not.be.undefined();
+
+        } else {
+          assert.fail("Couldn't get list-command command");
+        }
+      });
+    }); // normalisation at parent not active (parent=command)
+
+    context(`given: partial normalisation at parent not active (parent=command)`, () => {
+      // PARTIAL NORMALISATION CAN'T WORK. The children property can either be a map or
+      // an array not both, so only full normalisation is valid
+      //
+      it('should: not normalise', () => {
+        const data = `<?xml version="1.0"?>
+          <Application name="pez">
+            <Cli>
+              <Commands>
+                <Command name="base-command" abstract="true">
+                  <AlphaChild rank="alpha"/>
+                </Command>
+                <Command name="list-command" inherits="base-command">
+                  <BetaChild rank="beta" ref="two"/>
+                </Command>
+              </Commands>
+            </Cli>
+          </Application>`;
+
+        const parseInfo: types.IParseInfo = {
+          elements: new Map<string, types.IElementInfo>([
+            ['Command', {
+              id: 'name',
+              recurse: 'inherits',
+              descendants: {
+                id: 'ref',
+                by: 'index'
+              }
+            }],
+            ['BetaChild', {
+              id: 'ref'
+            }]
+          ]),
+          common: {
+            discards: ['inherits', 'abstract']
+          },
+          def: {
+            descendants: {
+              by: 'index'
+            }
+          }
+        };
+        const document: Document = parser.parseFromString(data, 'text/xml');
+        const commandNode = xp.select(
+          '/Application/Cli/Commands/Command[@name="list-command"]',
+            document, true) as Node;
+
+        if (commandNode instanceof Node) {
+          const converter = new Impl();
+          const command = converter.build(commandNode, parseInfo);
+
+          const children: IndexableObjByStr = R.prop('_children')(command);
+          expect(R.is(Object)(children)).to.be.true(); // Object means NOT NORMALISED
+        } else {
+          assert.fail("Couldn't get list-command command");
+        }
+      });
+    }); // partial normalisation at parent not active (parent=command)
+
+    context(`given: normalisation at parent active (parent=command)`, () => {
+      it('should: normalise inherited children', () => {
+        const data = `<?xml version="1.0"?>
+          <Application name="pez">
+            <Cli>
+              <Commands>
+                <Command name="base-command" abstract="true">
+                  <AlphaChild rank="alpha"/>
+                  <GammaChild rank="gamma"/>
+                </Command>
+                <Command name="list-command" inherits="base-command">
+                  <BetaChild rank="beta"/>
+                  <DeltaChild rank="delta"/>
+                </Command>
+              </Commands>
+            </Cli>
+          </Application>`;
+        const document: Document = parser.parseFromString(data, 'text/xml');
+        const commandNode = xp.select(
+          '/Application/Cli/Commands/Command[@name="list-command"]',
+            document, true) as Node;
+
+        // const _command = {
+        //   name: 'list-command',
+        //   _: 'Command',
+        //   _children: {
+        //     BetaChild: [{ rank: 'beta', _: 'BetaChild' }],
+        //     DeltaChild: [{ rank: 'delta', _: 'DeltaChild' }],
+        //     AlphaChild: [{ rank: 'alpha', _: 'AlphaChild' }],
+        //     GammaChild: [{ rank: 'gamma', _: 'GammaChild' }]
+        //   }
+        // };
+
+        const parseInfo: types.IParseInfo = {
+          elements: new Map<string, types.IElementInfo>([
+            ['Command', {
+              id: 'name',
+              descendants: {
+                id: 'rank',
+                by: 'index'
+              }
+            }]
+          ]),
+          common: {
+            recurse: 'inherits',
+            discards: ['inherits', 'abstract']
+          },
+          def: {
+            id: 'rank'
+          }
+        };
+
+        if (commandNode instanceof Node) {
+          const converter = new Impl();
+          const command = converter.build(commandNode, parseInfo);
+
+          const children: IndexableObjByStr = R.prop('_children')(command);
+          expect(R.is(Object)(children)).to.be.true();
+
+          expect(R.is(Array)(children.AlphaChild)).to.be.true();
+          expect(R.find((ch: IndexableObjByStr): boolean => {
+            return ch.rank === 'alpha';
+          })(children.AlphaChild)).to.not.be.undefined();
+
+          expect(R.is(Array)(children.BetaChild)).to.be.true();
+          expect(R.find((ch: IndexableObjByStr): boolean => {
+            return ch.rank === 'beta';
+          })(children.BetaChild)).to.not.be.undefined();
+
+        } else {
+          assert.fail("Couldn't get list-command command");
         }
       });
     });

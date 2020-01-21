@@ -368,7 +368,7 @@ export class XpathConverterImpl implements IConverterImpl {
    *
    * @memberof XpathConverterImpl
    */
-  buildChildren (subject: string, element: any, elementNode: Node, parseInfo: types.IParseInfo,
+  public buildChildren (subject: string, element: any, elementNode: Node, parseInfo: types.IParseInfo,
     previouslySeen: string[]): {} {
     const selectionResult: any = xpath.select('./*', elementNode);
 
@@ -384,7 +384,7 @@ export class XpathConverterImpl implements IConverterImpl {
       if (R.includes(this.options.descendantsLabel, R.keys(element) as string[])) {
         // Prior to normalisation, descendants is an array
         //
-        const merged = R.concat(children, element[this.options.descendantsLabel]);
+        const merged = this.normaliser.mergeDescendants(children, element[this.options.descendantsLabel]);
         element[this.options.descendantsLabel] = merged;
       } else {
         element[this.options.descendantsLabel] = children;

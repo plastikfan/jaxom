@@ -31,17 +31,12 @@ export class Normaliser {
         return child[this.options.elementLabel];
       });
 
-      // TODO: value: any needs reviewing
-      //
       const reduceByChildren = R.reduce((acc: [], value: any): any => {
-        // (issue #41) TODO: Shouldn't be indexing "value" with a string, because its an array
-        // not a map/object
-        //
         const descendants = value[this.options.descendantsLabel];
         return R.is(Array, descendants) ? R.concat(acc, descendants) : R.append(value, acc);
       }, []);
 
-      let combined: any = R.omit([this.options.descendantsLabel], parentElement);
+      const combined: any = R.omit([this.options.descendantsLabel], parentElement);
 
       const children: [] = parentElement[this.options.descendantsLabel];
       const renameGroupByElementChildrenObj = groupByElement(children);
@@ -123,4 +118,36 @@ export class Normaliser {
 
     return parentElement;
   } // normaliseDescendants
+
+  /**
+   * @method mergeDescendants
+   * @description This method is required by the converter when an element inherits others
+   * which may in turn have there own children (not attributes). When this happens, the
+   * inherited element(s) may already be in normalised form (an object with a key (the id) which
+   * maps to the child element) and so can not be combined with local's (the element currently
+   * being built) child elements because they haven't been normalised yet and are represented
+   * as an object not an array. The solution is denormalise the inherited elements which will
+   * then subsequently be renormalised along with the local's children at the same time. The
+   * denormalisation happens by iterating the inherited children (object) and attaching those
+   * children to the local element's children array.
+   *
+   * @param {[]} local
+   * @param {types.Descendants} inherited
+   * @returns {any[]}
+   * @memberof Normaliser
+   */
+  public mergeDescendants (local: [], inherited: types.Descendants): any[] {
+    // local descendants has not been normalised yet so it's safe to assume its an array
+    //
+    if (R.is(Object)(inherited)) {
+      // denormalise inherited
+      //
+      return R.reduce((acc: any[], pair: [string, string]): any[] => {
+        const pairValue = pair[1];
+        return R.append(pairValue, acc);
+      }, local)(R.toPairs(inherited));
+    }
+
+    return R.concat(local, R.prop(this.options.descendantsLabel)(inherited));
+  }
 } // Normaliser
