@@ -24,23 +24,6 @@ export interface IParseInfo {
 // Spec
 //
 
-export interface IAssociativeCollection { // {DEF}
-  delim?: string;
-  keyType?: string | string[];
-  valueType?: string | string[];
-}
-
-export interface ITextNodeCollection { // {DEF}
-  assoc?: IAssociativeCollection;
-}
-
-export interface IAttributeNodeCollection { // {DEF}
-  delim?: string;
-  open?: string;
-  close?: string;
-  assoc?: IAssociativeCollection;
-}
-
 // Coercion definitions are for those primitive types that require a coercion from
 // raw string value. 'date' is not part of this list because there is no reasonable
 // default for a date (eg what format should be used) and as such is not deemed a
@@ -49,20 +32,40 @@ export interface IAttributeNodeCollection { // {DEF}
 //
 export type CoercivePrimitiveStr = 'boolean' | 'number' | 'symbol';
 export const CoercivePrimitiveStrArray = ['boolean', 'number', 'symbol'];
+export type CoercivePrimitiveType = boolean | number | symbol;
 
 // Primitive definitions that represent any simple singular values that can also be
 // used as the type of key in associative collections.
 //
 export type PrimitiveStr = 'string' | CoercivePrimitiveStr;
 export const PrimitiveStrArray = R.union(CoercivePrimitiveStrArray, ['string']);
+export type PrimitiveType = string | CoercivePrimitiveType;
+
+export type ObjectType = Object | {};
 
 // Matcher definitions represents all matchers that can be configured in the spec. So
 // this comprises of all primitive types and compound values.
 //
 export type MatcherStr = 'collection' | 'date' | 'primitives' | PrimitiveStr;
 export const MatcherStrArray = R.union(PrimitiveStrArray, ['collection', 'date', 'primitives']);
+export interface IAssociativeCollection { // {DEF}
+  delim?: string;
+  keyType?: string | string[];
+  valueType?: string | string[];
+}
 
-export type SpecContext = 'attributes' | 'textNodes';
+export interface ITextNodeCollection { // {DEF}
+  assoc?: IAssociativeCollection;
+  elementTypes?: ReadonlyArray<CoercivePrimitiveStr>;
+}
+
+export interface IAttributeNodeCollection { // {DEF}
+  delim?: string;
+  open?: string;
+  close?: string;
+  assoc?: IAssociativeCollection;
+  elementTypes?: ReadonlyArray<CoercivePrimitiveStr>;
+}
 
 export interface IMatchers { // {DEF}
   boolean?: any; // (boolean matcher doesn't need a config value)
@@ -117,6 +120,8 @@ export interface ISpec {
     coercion?: ICoercionEntity<ITextNodesMatchers>
   };
 }
+
+export type SpecContext = 'attributes' | 'textNodes';
 
 export type SelectResult = string | number | boolean | Node | Node[];
 export type SelectNodeResult = Node | Node[];

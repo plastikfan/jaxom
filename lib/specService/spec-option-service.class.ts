@@ -111,6 +111,7 @@ const defaultSpec: types.ISpec = Object.freeze({
       matchers: {
         primitives: ['number', 'boolean'],
         collection: {
+          elementTypes: ['number', 'boolean'],
           delim: ',',
           open: '!<type>[',
           close: ']',
@@ -129,6 +130,7 @@ const defaultSpec: types.ISpec = Object.freeze({
     coercion: {
       matchers: {
         collection: {
+          elementTypes: ['number', 'boolean'],
           // The following properties are not appropriate for textNodes, because the
           // constituents are already natively split: "delim", "open", "close"
           //
@@ -162,6 +164,7 @@ const fallBackSpec: types.ISpec = Object.freeze({
       matchers: {
         primitives: ['number', 'boolean'],
         collection: {
+          elementTypes: ['number', 'boolean'],
           delim: ',',
           open: '!<type>[',
           close: ']',
@@ -187,6 +190,7 @@ const fallBackSpec: types.ISpec = Object.freeze({
     coercion: {
       matchers: {
         collection: {
+          elementTypes: ['number', 'boolean'],
           // The following properties are not appropriate for textNodes, because the
           // constituents are already natively split: "delim", "open", "close"
           //
