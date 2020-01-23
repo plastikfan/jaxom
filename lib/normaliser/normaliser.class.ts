@@ -26,37 +26,8 @@ export class Normaliser {
    * @returns {{}}
    * @memberof Normaliser
    */
-  public combineDescendants (subject: string, parentElement: any): {} {
-    if (R.has(this.options.descendantsLabel, parentElement)) {
-      const groupByElement = R.groupBy((child: any): any => {
-        return child[this.options.elementLabel];
-      });
 
-      const reduceByChildren = R.reduce((acc: [], value: any): any => {
-        const descendants = value[this.options.descendantsLabel];
-        return R.is(Array, descendants) ? R.concat(acc, descendants) : R.append(value, acc);
-      }, []);
-
-      const combined: any = R.omit([this.options.descendantsLabel], parentElement);
-
-      const children: [] = parentElement[this.options.descendantsLabel];
-      const renameGroupByElementChildrenObj = groupByElement(children);
-      let adaptedChildren: any = {};
-
-      R.forEachObjIndexed((value: [], key: string) => {
-        adaptedChildren[key] = reduceByChildren(value);
-      }, renameGroupByElementChildrenObj);
-
-      // Now punch in the new children
-      //
-      combined[this.options.descendantsLabel] = adaptedChildren;
-      return combined;
-    } else {
-      return parentElement;
-    }
-  } // combineDescendants
-
-  public combineDescendantsEnhanced (subject: string, parentElement: any,
+  public combineDescendants (subject: string, parentElement: any,
     parseInfo: types.IParseInfo): any {
 
     if (R.has(this.options.descendantsLabel, parentElement)) {

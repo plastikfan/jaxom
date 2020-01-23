@@ -901,7 +901,7 @@ describe('Normaliser.combineDescendants', () => {
         inherits: 'duo-command'
       };
 
-      const combined = normaliser.combineDescendantsEnhanced(subject, command, parseInfo);
+      const combined = normaliser.combineDescendants(subject, command, parseInfo);
       expect(combined).to.deep.equal({
         name: 'test',
         _: 'Command',
@@ -949,7 +949,7 @@ describe('Normaliser.combineDescendants', () => {
         inherits: 'duo-command'
       };
 
-      const combined = normaliser.combineDescendantsEnhanced(subject, command, parseInfo);
+      const combined = normaliser.combineDescendants(subject, command, parseInfo);
       expect(combined).to.deep.equal({
         name: 'test',
         _: 'Command',
@@ -997,7 +997,7 @@ describe('Normaliser.combineDescendants', () => {
         inherits: 'duo-command'
       };
 
-      const combined = normaliser.combineDescendantsEnhanced(subject, command, parseInfo);
+      const combined = normaliser.combineDescendants(subject, command, parseInfo);
       expect(combined).to.deep.equal(command);
     });
   }); // un-normalised built entity, where inherited children are of different types
@@ -1036,7 +1036,7 @@ describe('Normaliser.combineDescendants', () => {
         inherits: 'duo-command'
       };
 
-      const combined = normaliser.combineDescendantsEnhanced(subject, command, parseInfo);
+      const combined = normaliser.combineDescendants(subject, command, parseInfo);
       expect(combined).to.deep.equal({
         name: 'test',
         _: 'Command',
@@ -1127,7 +1127,7 @@ describe('Normaliser.combineDescendants', () => {
         inherits: 'duo-command'
       };
 
-      const combined = normaliser.combineDescendantsEnhanced(subject, command, mixedInfo);
+      const combined = normaliser.combineDescendants(subject, command, mixedInfo);
       expect(combined).to.deep.equal({
         name: 'test',
         _: 'Command',

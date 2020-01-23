@@ -99,7 +99,7 @@ export class XpathConverterImpl implements IConverterImpl {
       element = this.buildChildren(subject, element, elementNode, parseInfo, previouslySeen);
 
       if (this.isCombinable(subject, recurse, element)) {
-        element = this.normaliser.combineDescendantsEnhanced(
+        element = this.normaliser.combineDescendants(
           subject,
           element,
           parseInfo
