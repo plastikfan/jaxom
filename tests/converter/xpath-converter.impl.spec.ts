@@ -372,28 +372,21 @@ describe('converter.impl.buildLocalAttributes', () => {
           </Application>`;
 
         const document: Document = parser.parseFromString(data, 'text/xml');
-        const applicationNode: types.SelectResult = xp.select('/Application', document, true);
+        const directoryNode: types.SelectResult = xp.select(
+          '/Application/Directory[@name="archive"]', document, true);
 
-        if (applicationNode instanceof Node) {
+        if (directoryNode instanceof Node) {
           const converter = new Impl(new SpecOptionService(Specs.attributesAsArray));
-          const directoryNode: types.NullableNode = Helpers.selectElementNodeById(
-            'Directory', 'name', 'archive', applicationNode);
+          const directory = converter.build(directoryNode, testParseInfo);
 
-          if (directoryNode) {
-            const directory = converter.build(directoryNode, testParseInfo);
+          expect(R.has('_attributes')(directory));
+          const attributes: string[] = R.prop('_attributes')(directory);
+          const attributeKeys: string[] = R.reduce((acc: [], val: string): any => {
+            return R.concat(acc, R.keys(val));
+          }, [])(attributes);
 
-            expect(R.has('_attributes')(directory));
-            const attributes: string[] = R.prop('_attributes')(directory);
-            const attributeKeys: string[] = R.reduce((acc: [], val: string): any => {
-              return R.concat(acc, R.keys(val));
-            }, [])(attributes);
-
-            expect(R.all(at => R.includes(at, attributeKeys))(
-              ['name', 'field', 'date-modified', 'tags', 'category', 'format'])).to.be.true();
-
-          } else {
-            assert.fail('Couldn\'t get Application node.');
-          }
+          expect(R.all(at => R.includes(at, attributeKeys))(
+            ['name', 'field', 'date-modified', 'tags', 'category', 'format'])).to.be.true();
         } else {
           assert.fail('Couldn\'t get Application node.');
         }
