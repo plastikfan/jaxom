@@ -2,6 +2,7 @@ import { functify } from 'jinxed';
 import * as R from 'ramda';
 import * as e from '../exceptions';
 import * as types from '../types';
+import * as utils from '../utils/utils';
 
 /**
  * @export
@@ -25,7 +26,7 @@ export class Normaliser {
    * @returns {{}}
    * @memberof Normaliser
    */
-  combineDescendants (subject: string, parentElement: any): {} {
+  public combineDescendants (subject: string, parentElement: any): {} {
     if (R.has(this.options.descendantsLabel, parentElement)) {
       const groupByElement = R.groupBy((child: any): any => {
         return child[this.options.elementLabel];
@@ -55,6 +56,81 @@ export class Normaliser {
     }
   } // combineDescendants
 
+  public combineDescendantsEnhanced (subject: string, parentElement: any,
+    parseInfo: types.IParseInfo): any {
+
+    if (R.has(this.options.descendantsLabel, parentElement)) {
+      const self = this;
+      const children: [] = parentElement[this.options.descendantsLabel];
+
+      const combined = R.reduce((acc: any[], current: any): any => {
+        // All elements el & value have elementLabel property
+        //
+        const foundIndex = R.findIndex((el: any): boolean => {
+          return (
+            el[self.options.elementLabel] === current[self.options.elementLabel]
+          );
+        })(acc);
+
+        if (foundIndex === -1) {
+          return R.append(current, acc);
+        }
+
+        // "found" here, is a reference obtained by the [] operator and therefore not
+        // a copy, so any changes to it are persistent in the accumulator.
+        //
+        const found: any = acc[foundIndex];
+        const foundElementInfo = utils.composeElementInfo(
+          found[self.options.elementLabel], parseInfo);
+        const id = foundElementInfo.descendants?.id;
+
+        if (id) {
+          const allContainId = R.all((o: any): boolean => id in o);
+
+          const currentChildren: any[] = R.is(Array)(current[self.options.descendantsLabel])
+            ? current[self.options.descendantsLabel]
+            : R.values(current[self.options.descendantsLabel]);
+
+          const foundChildren: any[] = R.is(Array)(found[self.options.descendantsLabel])
+            ? found[self.options.descendantsLabel]
+            : R.values(found[self.options.descendantsLabel]);
+
+          // Are the types of children the same?
+          //
+          if (R.is(Array)(current[self.options.descendantsLabel]) ===
+            R.is(Array)(found[self.options.descendantsLabel])) {
+
+            const pluckIds = R.pluck(id);
+            // First make sure that there is no clash between any of the ids.
+            //
+            if (allContainId(currentChildren) && allContainId(foundChildren)) {
+              if (R.intersection(pluckIds(currentChildren), pluckIds(foundChildren)).length === 0) {
+                // merge the descendants
+                //
+                const mergedChildren = R.is(Array)(found[self.options.descendantsLabel])
+                  ? R.union(foundChildren, currentChildren)
+                  : R.mergeDeepLeft(found[self.options.descendantsLabel],
+                    current[self.options.descendantsLabel]);
+                found[self.options.descendantsLabel] = mergedChildren;
+                return acc;
+              }
+            }
+          }
+        }
+
+        // If we return here, we simply add "current" unmodified
+        //
+        return R.append(current, acc);
+      }, [])(children);
+
+      // Now punch in the new children
+      //
+      parentElement[this.options.descendantsLabel] = combined;
+    }
+
+    return parentElement;
+  }
+
   /**
    * @method normaliseDescendants
    *
@@ -64,7 +140,7 @@ export class Normaliser {
    * @returns {*} The parentElement with descendants that have been normalised
    * @memberof Normaliser
    */
-  normaliseDescendants (subject: string, parentElement: any, elementInfo: types.IElementInfo): any {
+  public normaliseDescendants (subject: string, parentElement: any, elementInfo: types.IElementInfo): any {
     const descendants: Array<{}> = parentElement[this.options.descendantsLabel];
 
     if (R.is(Array)(descendants)) { // descendants must be iterable

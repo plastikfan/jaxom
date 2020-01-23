@@ -130,11 +130,15 @@ export interface IConverter {
   build (elementNode: Node, parseInfo: IParseInfo): any;
 }
 
+export type IndexableObjByStr = { [key: string]: any };
 export type Descendants = any[] | { [key: string]: any };
 export interface INormaliser {
   combineDescendants (subject: string, parent: {}): {};
   normaliseDescendants (subject: string, parentElement: any, elementInfo: IElementInfo): any;
   mergeDescendants (local: [], inherited: Descendants): any[];
+
+  combineDescendantsEnhanced (subject: string, parentElement: any,
+    parseInfo: IParseInfo): any;
 }
 
 export interface ITransformer {
