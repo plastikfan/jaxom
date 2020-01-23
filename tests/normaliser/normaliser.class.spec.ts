@@ -1,3 +1,4 @@
+import { Normaliser } from './../../lib/normaliser/normaliser.class';
 /// <reference types="../../lib/declarations" />
 
 import { expect, assert, use } from 'chai';
@@ -8,8 +9,10 @@ use(sinonChai);
 import * as R from 'ramda';
 import * as xp from 'xpath-ts';
 import * as types from '../../lib/types';
-import { XpathConverterImpl as Impl } from '../../lib/converter/xpath-converter.impl';
 import { functify } from 'jinxed';
+import { XpathConverterImpl as Impl } from '../../lib/converter/xpath-converter.impl';
+import { SpecOptionService } from '../../lib/specService/spec-option-service.class';
+
 const parser = new DOMParser();
 
 describe('Normaliser.combine', () => {
@@ -112,7 +115,7 @@ describe('Normaliser.combine', () => {
   });
 }); // Normaliser.combine
 
-describe('Normaliser.normalise', () => {
+describe('build => Normaliser.normalise', () => {
   const byIndexParseInfo: types.IParseInfo = {
     elements: new Map<string, types.IElementInfo>([
       ['Arguments', {
@@ -479,6 +482,213 @@ describe('Normaliser.normalise', () => {
         });
       });
     });
+
+    context('inherit from another element which also contains its own child elements', () => {
+      context(`given: normalisation at parent not active (parent=command)`, () => {
+        it('should: not normalise children', () => {
+          const data = `<?xml version="1.0"?>
+          <Application name="pez">
+            <Cli>
+              <Commands>
+                <Command name="base-command" abstract="true">
+                  <AlphaChild rank="alpha"/>
+                </Command>
+                <Command name="list-command" inherits="base-command">
+                  <BetaChild rank="beta"/>
+                </Command>
+              </Commands>
+            </Cli>
+          </Application>`;
+          const document: Document = parser.parseFromString(data, 'text/xml');
+          const commandNode = xp.select(
+            '/Application/Cli/Commands/Command[@name="list-command"]',
+              document, true) as Node;
+
+          const parseInfo: types.IParseInfo = {
+            // There is no common id attribute between Command and AlphaChild/BetaChild, so
+            // neither of these should be normalised; children entries are just an array.
+            //
+            elements: new Map<string, types.IElementInfo>([
+              ['Command', {
+                id: 'name',
+                recurse: 'inherits'
+              }]
+            ]),
+            common: {
+              discards: ['inherits', 'abstract']
+            },
+            def: {
+              descendants: {
+                by: 'index'
+              }
+            }
+          };
+
+          if (commandNode instanceof Node) {
+            const converter = new Impl();
+            const command = converter.build(commandNode, parseInfo);
+
+            expect(command).to.deep.equal({
+              name: 'list-command',
+              _: 'Command',
+              _children: [
+                { rank: 'beta', _: 'BetaChild' },
+                { rank: 'alpha', _: 'AlphaChild' }
+              ]
+            });
+          } else {
+            assert.fail("Couldn't get list-command command");
+          }
+        });
+      }); // normalisation at parent not active (parent=command)
+
+      context(`given: normalisation at parent active (parent=command)`, () => {
+        it('should: normalise inherited children', () => {
+          const data = `<?xml version="1.0"?>
+          <Application name="pez">
+            <Cli>
+              <Commands>
+                <Command name="base-command" abstract="true">
+                  <AlphaChild rank="alpha"/>
+                  <GammaChild rank="gamma"/>
+                </Command>
+                <Command name="list-command" inherits="base-command">
+                  <BetaChild rank="beta"/>
+                  <DeltaChild rank="delta"/>
+                </Command>
+              </Commands>
+            </Cli>
+          </Application>`;
+          const document: Document = parser.parseFromString(data, 'text/xml');
+          const commandNode = xp.select(
+            '/Application/Cli/Commands/Command[@name="list-command"]',
+            document, true) as Node;
+
+          const parseInfo: types.IParseInfo = {
+            elements: new Map<string, types.IElementInfo>([
+              ['Command', {
+                id: 'name',
+                descendants: {
+                  id: 'rank',
+                  by: 'index'
+                }
+              }]
+            ]),
+            common: {
+              recurse: 'inherits',
+              discards: ['inherits', 'abstract']
+            },
+            def: {
+              id: 'rank'
+            }
+          };
+
+          if (commandNode instanceof Node) {
+            const converter = new Impl();
+            const command = converter.build(commandNode, parseInfo);
+            expect(command).to.deep.equal({
+              name: 'list-command',
+              _: 'Command',
+              _children: {
+                beta: { rank: 'beta', _: 'BetaChild' },
+                delta: { rank: 'delta', _: 'DeltaChild' },
+                alpha: { rank: 'alpha', _: 'AlphaChild' },
+                gamma: { rank: 'gamma', _: 'GammaChild' }
+              }
+            });
+          } else {
+            assert.fail("Couldn't get list-command command");
+          }
+        });
+      });
+    });
+
+    context('given: grand-parent / parent / child inheritance chain, with common id with inheritance', () => {
+      // multi-level normalisation
+      it('should: normalise at 2 levels with inheritance', () => {
+        const data = `<?xml version="1.0"?>
+          <Application name="pez">
+            <Cli>
+              <GrandParent rank="master">
+                <Widget rank="parent-one" abstract="true">
+                  <Bucket rank="p-alpha"/>
+                  <Bucket rank="p-beta"/>
+                  <Bucket rank="p-gamma"/>
+                </Widget>
+                <Widget rank="child-one" inherits="parent-one">
+                  <Spade rank="c-alpha"/>
+                  <Spade rank="c-beta"/>
+                  <Spade rank="c-gamma"/>
+                </Widget>
+              </GrandParent>
+            </Cli>
+          </Application>`;
+
+        const parseInfo: types.IParseInfo = {
+          elements: new Map<string, types.IElementInfo>([
+            ['GrandParent', {
+              descendants: {
+                id: 'rank',
+                by: 'index',
+                throwIfCollision: true,
+                throwIfMissing: true
+              }
+            }],
+            ['Widget', {
+              descendants: {
+                id: 'rank',
+                by: 'index',
+                throwIfCollision: true,
+                throwIfMissing: true
+              }
+            }]
+          ]),
+          common: {
+            id: 'rank',
+            recurse: 'inherits',
+            discards: ['inherits', 'abstract']
+          }
+        };
+
+        const document: Document = parser.parseFromString(data, 'text/xml');
+        const grandParentNode = xp.select(
+          '/Application/Cli/GrandParent[@rank="master"]', document, true);
+
+        if (grandParentNode instanceof Node) {
+          const converter = new Impl();
+          const grandParent = converter.build(grandParentNode, parseInfo);
+          expect(grandParent).to.deep.equal({
+            rank: 'master',
+            _: 'GrandParent',
+            _children: {
+              'parent-one': {
+                rank: 'parent-one',
+                _: 'Widget',
+                _children: {
+                  'p-alpha': { rank: 'p-alpha', _: 'Bucket' },
+                  'p-beta': { rank: 'p-beta', _: 'Bucket' },
+                  'p-gamma': { rank: 'p-gamma', _: 'Bucket' }
+                }
+              },
+              'child-one': {
+                rank: 'child-one',
+                _: 'Widget',
+                _children: {
+                  'c-alpha': { rank: 'c-alpha', _: 'Spade' },
+                  'c-beta': { rank: 'c-beta', _: 'Spade' },
+                  'c-gamma': { rank: 'c-gamma', _: 'Spade' },
+                  'p-alpha': { rank: 'p-alpha', _: 'Bucket' },
+                  'p-beta': { rank: 'p-beta', _: 'Bucket' },
+                  'p-gamma': { rank: 'p-gamma', _: 'Bucket' }
+                }
+              }
+            }
+          });
+        } else {
+          assert.fail("Couldn't get master GrandParent");
+        }
+      });
+    });
   }); // Normaliser.normalise no throw
 
   context('error handling', () => {
@@ -625,4 +835,321 @@ describe('Normaliser.normalise', () => {
       });
     });
   }); // error handling
-}); // Normaliser.normalise
+}); // build => Normaliser.normalise
+
+describe('Normaliser.combineDescendants', () => {
+  const subject = '/SUBJECT';
+  let normaliser: Normaliser;
+
+  beforeEach(() => {
+    const options = new SpecOptionService();
+    normaliser = new Normaliser(options);
+  });
+
+  const parseInfo: types.IParseInfo = {
+    elements: new Map<string, types.IElementInfo>([
+      ['Commands', {
+        descendants: {
+          id: 'name',
+          by: 'index',
+          throwIfCollision: false,
+          throwIfMissing: false
+        }
+      }],
+      ['Command', {
+        id: 'name',
+        recurse: 'inherits',
+        discards: ['inherits', 'abstract']
+      }],
+      ['Arguments', {
+        descendants: {
+          id: 'name',
+          by: 'index',
+          throwIfCollision: false,
+          throwIfMissing: false
+        }
+      }],
+      ['ArgumentRef', {
+        id: 'name'
+      }]
+    ])
+  };
+
+  context('given: un-normalised built entity, where inherited children are arrays', () => {
+    it('should: combine children of inherited elements via id', () => {
+      const command = {
+        name: 'test',
+        _: 'Command',
+        _children: [
+          {
+            _: 'Arguments',
+            _children: {
+              config: { name: 'config', _: 'ArgumentRef' },
+              expr: { name: 'expr', _: 'ArgumentRef' },
+              input: { name: 'input', _: 'ArgumentRef' }
+            }
+          },
+          {
+            _: 'Arguments',
+            _children: {
+              from: { name: 'from', _: 'ArgumentRef' },
+              to: { name: 'to', _: 'ArgumentRef' }
+            }
+          }
+        ],
+        describe: 'Test regular expression definitions',
+        inherits: 'duo-command'
+      };
+
+      const combined = normaliser.combineDescendants(subject, command, parseInfo);
+      expect(combined).to.deep.equal({
+        name: 'test',
+        _: 'Command',
+        _children: [
+          {
+            _: 'Arguments',
+            _children: {
+              config: { name: 'config', _: 'ArgumentRef' },
+              expr: { name: 'expr', _: 'ArgumentRef' },
+              input: { name: 'input', _: 'ArgumentRef' },
+              from: { name: 'from', _: 'ArgumentRef' },
+              to: { name: 'to', _: 'ArgumentRef' }
+            }
+          }
+        ],
+        describe: 'Test regular expression definitions',
+        inherits: 'duo-command'
+      });
+    });
+  }); // un-normalised built entity, where inherited children are arrays
+
+  context('given: un-normalised built entity, where inherited children are map objects', () => {
+    it('should: combine children of inherited elements via id', () => {
+      const command = {
+        name: 'test',
+        _: 'Command',
+        _children: [
+          {
+            _: 'Arguments',
+            _children: [
+              { name: 'config', _: 'ArgumentRef' },
+              { name: 'expr', _: 'ArgumentRef' },
+              { name: 'input', _: 'ArgumentRef' }
+            ]
+          },
+          {
+            _: 'Arguments',
+            _children: [
+              { name: 'from', _: 'ArgumentRef' },
+              { name: 'to', _: 'ArgumentRef' }
+            ]
+          }
+        ],
+        describe: 'Test regular expression definitions',
+        inherits: 'duo-command'
+      };
+
+      const combined = normaliser.combineDescendants(subject, command, parseInfo);
+      expect(combined).to.deep.equal({
+        name: 'test',
+        _: 'Command',
+        _children: [
+          {
+            _: 'Arguments',
+            _children: [
+              { name: 'config', _: 'ArgumentRef' },
+              { name: 'expr', _: 'ArgumentRef' },
+              { name: 'input', _: 'ArgumentRef' },
+              { name: 'from', _: 'ArgumentRef' },
+              { name: 'to', _: 'ArgumentRef' }
+            ]
+          }
+        ],
+        describe: 'Test regular expression definitions',
+        inherits: 'duo-command'
+      });
+    });
+  }); // un-normalised built entity, where inherited children are map objects
+
+  context('given: un-normalised built entity, where inherited children are of different types', () => {
+    it('should: NOT combine children of inherited elements via id', () => {
+      const command = {
+        name: 'test',
+        _: 'Command',
+        _children: [
+          {
+            _: 'Arguments',
+            _children: [ // <-- [*]
+              { name: 'config', _: 'ArgumentRef' },
+              { name: 'expr', _: 'ArgumentRef' },
+              { name: 'input', _: 'ArgumentRef' }
+            ]
+          },
+          {
+            _: 'Arguments',
+            _children: {  // <-- different type from [*]
+              from: { name: 'from', _: 'ArgumentRef' },
+              to: { name: 'to', _: 'ArgumentRef' }
+            }
+          }
+        ],
+        describe: 'Test regular expression definitions',
+        inherits: 'duo-command'
+      };
+
+      const combined = normaliser.combineDescendants(subject, command, parseInfo);
+      expect(combined).to.deep.equal(command);
+    });
+  }); // un-normalised built entity, where inherited children are of different types
+
+  context('given: un-normalised built entity, with multiple inheritance', () => {
+    it('should: combine children of inherited elements via id', () => {
+      const command = {
+        name: 'test',
+        _: 'Command',
+        _children: [
+          {
+            _: 'Arguments',
+            _children: {
+              config: { name: 'config', _: 'ArgumentRef' },
+              expr: { name: 'expr', _: 'ArgumentRef' },
+              input: { name: 'input', _: 'ArgumentRef' }
+            }
+          },
+          {
+            _: 'Arguments',
+            _children: {
+              colour: { name: 'colour', _: 'ArgumentRef' },
+              size: { name: 'size', _: 'ArgumentRef' },
+              style: { name: 'style', _: 'ArgumentRef' }
+            }
+          },
+          {
+            _: 'Arguments',
+            _children: {
+              from: { name: 'from', _: 'ArgumentRef' },
+              to: { name: 'to', _: 'ArgumentRef' }
+            }
+          }
+        ],
+        describe: 'Command inheriting from multiple sources, (multiple groups of Arguments)',
+        inherits: 'duo-command'
+      };
+
+      const combined = normaliser.combineDescendants(subject, command, parseInfo);
+      expect(combined).to.deep.equal({
+        name: 'test',
+        _: 'Command',
+        _children: [
+          {
+            _: 'Arguments',
+            _children: {
+              config: { name: 'config', _: 'ArgumentRef' },
+              expr: { name: 'expr', _: 'ArgumentRef' },
+              input: { name: 'input', _: 'ArgumentRef' },
+              colour: { name: 'colour', _: 'ArgumentRef' },
+              size: { name: 'size', _: 'ArgumentRef' },
+              style: { name: 'style', _: 'ArgumentRef' },
+              from: { name: 'from', _: 'ArgumentRef' },
+              to: { name: 'to', _: 'ArgumentRef' }
+            }
+          }
+        ],
+        describe: 'Command inheriting from multiple sources, (multiple groups of Arguments)',
+        inherits: 'duo-command'
+      });
+    });
+  }); // un-normalised built entity, with multiple inheritance
+
+  context('given: un-normalised built entity, with mixed child element types', () => {
+    it('should: combine children of inherited elements via id', () => {
+      const mixedInfo: types.IParseInfo = {
+        elements: new Map<string, types.IElementInfo>([
+          ['Commands', {
+            descendants: {
+              id: 'name',
+              by: 'index',
+              throwIfCollision: false,
+              throwIfMissing: false
+            }
+          }],
+          ['Command', {
+            id: 'name',
+            recurse: 'inherits',
+            discards: ['inherits', 'abstract']
+          }],
+          ['Arguments', {
+            descendants: {
+              id: 'name',
+              by: 'index',
+              throwIfCollision: false,
+              throwIfMissing: false
+            }
+          }],
+          ['ArgumentRef', {
+            id: 'name'
+          }],
+          ['Widget', {
+            id: 'name'
+          }]
+        ])
+      };
+
+      const command = {
+        name: 'test',
+        _: 'Command',
+        _children: [
+          {
+            _: 'Arguments',
+            _children: {
+              config: { name: 'config', _: 'ArgumentRef' },
+              expr: { name: 'expr', _: 'ArgumentRef' },
+              input: { name: 'input', _: 'ArgumentRef' }
+            }
+          },
+          {
+            _: 'Arguments',
+            _children: {
+              colour: { name: 'colour', _: 'Widget' },
+              size: { name: 'size', _: 'Widget' },
+              style: { name: 'style', _: 'Widget' }
+            }
+          },
+          {
+            _: 'Arguments',
+            _children: {
+              from: { name: 'from', _: 'ArgumentRef' },
+              to: { name: 'to', _: 'ArgumentRef' }
+            }
+          }
+        ],
+        describe: 'Command inheriting from multiple sources, (mixed element types)',
+        inherits: 'duo-command'
+      };
+
+      const combined = normaliser.combineDescendants(subject, command, mixedInfo);
+      expect(combined).to.deep.equal({
+        name: 'test',
+        _: 'Command',
+        _children: [
+          {
+            _: 'Arguments',
+            _children: {
+              config: { name: 'config', _: 'ArgumentRef' },
+              expr: { name: 'expr', _: 'ArgumentRef' },
+              input: { name: 'input', _: 'ArgumentRef' },
+              colour: { name: 'colour', _: 'Widget' },
+              size: { name: 'size', _: 'Widget' },
+              style: { name: 'style', _: 'Widget' },
+              from: { name: 'from', _: 'ArgumentRef' },
+              to: { name: 'to', _: 'ArgumentRef' }
+            }
+          }
+        ],
+        describe:
+          'Command inheriting from multiple sources, (mixed element types)',
+        inherits: 'duo-command'
+      });
+    });
+  }); // un-normalised built entity, with mixed child element types'
+}); // Normaliser.combineDescendants

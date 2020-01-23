@@ -846,41 +846,100 @@ describe('xpath-converter.build', () => {
         </Cli>
       </Application>`;
 
+    const parseInfo: types.IParseInfo = {
+      elements: new Map<string, types.IElementInfo>([
+        ['Commands', {
+          descendants: {
+            id: 'name',
+            by: 'index',
+            throwIfCollision: false,
+            throwIfMissing: false
+          }
+        }],
+        ['Command', {
+          id: 'name',
+          recurse: 'inherits',
+          discards: ['inherits', 'abstract']
+        }],
+        ['Arguments', {
+          descendants: {
+            id: 'name',
+            by: 'index',
+            throwIfCollision: false,
+            throwIfMissing: false
+          }
+        }],
+        ['ArgumentRef', {
+          id: 'name'
+        }]
+      ])
+    };
+
     const document: Document = parser.parseFromString(data, 'text/xml');
-    const commandsNode: types.SelectResult = xp.select('/Application/Cli/Commands', document, true);
+    const converter = new Jaxom();
+    const testCommandNode: types.SelectResult = xp.select('/Application/Cli/Commands/Command[@name="test"]',
+      document, true);
 
-    if (commandsNode && commandsNode instanceof Node) {
-      const converter = new Jaxom();
-      const testCommandNode: types.NullableNode = Helpers.selectElementNodeById(
-        'Command', 'name', 'test', commandsNode);
+    if (testCommandNode instanceof Node) {
+      it('should: return a command object with all children attached', () => {
+        const command: any = converter.build(testCommandNode, testParseInfo);
+        const result = Helpers.logIfFailedStringify(R.where({
+          'name': R.equals('test'),
+          'describe': R.equals('Test regular expression definitions'),
+          '_': R.equals('Command'),
+          '_children': R.is(Object)
+        })(command), command);
 
-      if (testCommandNode) {
-        it('should: return a command object with all children attached', () => {
-          const command: any = converter.build(testCommandNode, testParseInfo);
-          const result = Helpers.logIfFailedStringify(R.where({
-            'name': R.equals('test'),
-            'describe': R.equals('Test regular expression definitions'),
-            '_': R.equals('Command'),
-            '_children': R.is(Object)
-          })(command), command);
+        expect(result).to.be.true(functify(command));
+      });
 
-          expect(result).to.be.true(functify(command));
+      it('should: return a command object where no of children is ??4??', () => {
+        const command: any = converter.build(testCommandNode, parseInfo);
+        expect(command).to.deep.equal({
+          name: 'test',
+          _: 'Command',
+          _children: [
+            {
+              _: 'Arguments',
+              _children: {
+                config: { name: 'config', _: 'ArgumentRef' },
+                expr: { name: 'expr', _: 'ArgumentRef' },
+                input: { name: 'input', _: 'ArgumentRef' },
+                from: { name: 'from', _: 'ArgumentRef' },
+                to: { name: 'to', _: 'ArgumentRef' }
+              }
+            },
+            {
+              _: 'ArgumentGroups',
+              _children: [
+                {
+                  _: 'Implies',
+                  _children: [
+                    { name: 'input', _: 'ArgumentRef' },
+                    { name: 'expr', _: 'ArgumentRef' },
+                    { name: 'input', _: 'ArgumentRef' }
+                  ]
+                }
+              ]
+            },
+            {
+              _: 'ArgumentGroups',
+              _children: [
+                {
+                  _: 'Implies',
+                  _children: [
+                    { name: 'from', _: 'ArgumentRef' },
+                    { name: 'to', _: 'ArgumentRef' }
+                  ]
+                }
+              ]
+            }
+          ],
+          describe: 'Test regular expression definitions'
         });
-
-        it('should: return a command object where no of children is ??4??', () => {
-          const command: any = converter.build(testCommandNode, testParseInfo);
-          const children = command['_children'];
-          const argumentsArray = children['Arguments'];
-          const argumentGroupsArray = children['ArgumentGroups'];
-
-          expect(argumentsArray.length).to.equal(5);
-          expect(argumentGroupsArray.length).to.equal(2);
-        });
-      } else {
-        assert.fail('Couldn\'t get Command node.');
-      }
+      });
     } else {
-      assert.fail('Couldn\'t get Commands node.');
+      assert.fail('Couldn\'t get Command node.');
     }
   });
 
@@ -890,20 +949,20 @@ describe('xpath-converter.build', () => {
         <Cli>
           <Commands>
             <Command name="uni-command" abstract="true">
-              <Arguments>
+              <Arguments label="uni-arguments">
                 <ArgumentRef name="path"/>
                 <ArgumentRef name="filesys"/>
                 <ArgumentRef name="tree"/>
               </Arguments>
             </Command>
             <Command name="duo-command" inherits="uni-command" abstract="true">
-              <Arguments>
+              <Arguments label="duo-arguments">
                 <ArgumentRef name="from"/>
                 <ArgumentRef name="to"/>
               </Arguments>
             </Command>
             <Command name="test" describe="Test regular expression definitions" inherits="duo-command">
-              <Arguments>
+              <Arguments label="test-local-arguments">
                 <ArgumentRef name="config"/>
                 <ArgumentRef name="expr"/>
                 <ArgumentRef name="input"/>
@@ -913,48 +972,70 @@ describe('xpath-converter.build', () => {
         </Cli>
       </Application>`;
 
-    const document: Document = parser.parseFromString(data, 'text/xml');
-    const commandsNode: types.SelectResult = xp.select('/Application/Cli/Commands', document, true);
-
-    if (commandsNode && commandsNode instanceof Node) {
-      const converter = new Jaxom();
-      const testCommandNode: types.NullableNode = Helpers.selectElementNodeById(
-        'Command', 'name', 'test', commandsNode);
-
-      if (testCommandNode && testCommandNode instanceof Node) {
-        it('should: return a command object with all children attached', () => {
-          const command: any = converter.build(testCommandNode, testParseInfo);
-
-          if (command) {
-            const result = Helpers.logIfFailedStringify(R.where({
-              'name': R.equals('test'),
-              'describe': R.equals('Test regular expression definitions'),
-              '_': R.equals('Command'),
-              '_children': R.is(Object)
-            })(command), command);
-
-            expect(result).to.be.true(functify(command));
-          } else {
-            assert.fail('Couldn\'t get Command node.');
+    const info: types.IParseInfo = {
+      elements: new Map<string, types.IElementInfo>([
+        ['Commands', {
+          descendants: {
+            id: 'name'
           }
-        });
-
-        it('should: return a command object where no of children is 8', () => {
-          const command: any = converter.build(testCommandNode, testParseInfo);
-
-          if (command) {
-            const children = command['_children'];
-            expect(children['Arguments'].length).to.equal(8);
-          } else {
-            assert.fail('Couldn\'t get Command node.');
+        }],
+        ['Command', {
+          id: 'name',
+          recurse: 'inherits'
+        }],
+        ['Arguments', {
+          descendants: {
+            id: 'name'
           }
+        }],
+        ['Argument', {
+          id: 'ref'
+        }]
+      ]),
+      common: {
+        discards: ['inherits', 'abstract'],
+        descendants: {
+          by: 'index',
+          throwIfCollision: false,
+          throwIfMissing: false
+        }
+      }
+    };
+
+    it('should: return a command object with all children attached', () => {
+      const document: Document = parser.parseFromString(data, 'text/xml');
+      const testCommandNode: types.SelectResult = xp.select(
+        '/Application/Cli/Commands/Command[@name="test"]', document, true);
+
+      if (testCommandNode instanceof Node) {
+        const converter = new Jaxom();
+        const command: any = converter.build(testCommandNode, info);
+
+        expect(command).to.deep.equal({
+          name: 'test',
+          _: 'Command',
+          _children: [
+            {
+              label: 'test-local-arguments',
+              _: 'Arguments',
+              _children: {
+                config: { name: 'config', _: 'ArgumentRef' },
+                expr: { name: 'expr', _: 'ArgumentRef' },
+                input: { name: 'input', _: 'ArgumentRef' },
+                from: { name: 'from', _: 'ArgumentRef' },
+                to: { name: 'to', _: 'ArgumentRef' },
+                path: { name: 'path', _: 'ArgumentRef' },
+                filesys: { name: 'filesys', _: 'ArgumentRef' },
+                tree: { name: 'tree', _: 'ArgumentRef' }
+              }
+            }
+          ],
+          describe: 'Test regular expression definitions'
         });
       } else {
         assert.fail('Couldn\'t get Command node.');
       }
-    } else {
-      assert.fail('Couldn\'t get Commands node.');
-    }
+    }); // return a command object with all children attached
   });
 
   context('given: command with dual inheritance and local & inherited arguments', () => {
@@ -1005,14 +1086,6 @@ describe('xpath-converter.build', () => {
           })(command), command);
 
           expect(result).to.be.true(functify(command));
-        });
-
-        it('return a command object with all 8 children attached', () => {
-          const command: any = converter.build(testCommandNode, testParseInfo);
-          const children = command['_children'];
-          const argumentsArray = children['Arguments'];
-
-          expect(argumentsArray.length).to.equal(8);
         });
       } else {
         assert.fail('Couldn\'t get Command node.');
