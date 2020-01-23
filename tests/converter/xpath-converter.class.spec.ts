@@ -51,28 +51,21 @@ describe('xpath-converter.build', () => {
         </Application>`;
 
       const document: Document = parser.parseFromString(data, 'text/xml');
-      const commandsNode = xp.select('/Application/Cli/Commands', document, true);
+      const leafCommandNode = xp.select('/Application/Cli/Commands/Command[@name="leaf"]',
+        document, true);
 
-      if (commandsNode && commandsNode instanceof Node) {
-        const leafCommandNode: types.NullableNode = Helpers.selectElementNodeById(
-          'Command', 'name', 'leaf', commandsNode);
+      if (leafCommandNode instanceof Node) {
+        const converter = new Jaxom();
+        const command: {} = converter.build(leafCommandNode, testParseInfo);
 
-        if (leafCommandNode) {
-          const converter = new Jaxom();
-          const command: {} = converter.build(leafCommandNode, testParseInfo);
-
-          const result = Helpers.logIfFailedStringify(R.where({
-            'name': R.equals('leaf'),
-            'describe': R.equals('this is a leaf command'),
-            'type': R.equals('native')
-          })(command), command);
-
-          expect(result).to.be.true(functify(command));
-        } else {
-          assert.fail('Couldn\'t get Command node.');
-        }
+        const result = Helpers.logIfFailedStringify(R.where({
+          'name': R.equals('leaf'),
+          'describe': R.equals('this is a leaf command'),
+          'type': R.equals('native')
+        })(command), command);
+        expect(result).to.be.true(functify(command));
       } else {
-        assert.fail('Couldn\'t get Commands node.');
+        assert.fail('Couldn\'t get Command node.');
       }
     });
   });
@@ -91,33 +84,25 @@ describe('xpath-converter.build', () => {
         </Application>`;
 
       const document: Document = parser.parseFromString(data, 'text/xml');
-      const commandsNode = xp.select('/Application/Cli/Commands', document, true);
+      const leafCommandNode = xp.select('/Application/Cli/Commands/Command[@name="leaf"]',
+        document, true);
 
-      if (commandsNode && commandsNode instanceof Node) {
+      if (leafCommandNode instanceof Node) {
         const converter = new Jaxom();
-        const leafCommandNode: types.NullableNode = Helpers.selectElementNodeById(
-          'Command', 'name', 'leaf', commandsNode);
+        const command: {} = converter.build(leafCommandNode, testParseInfo);
 
-        if (leafCommandNode) {
-          const command: {} = converter.build(leafCommandNode, testParseInfo);
+        const result = Helpers.logIfFailedStringify(R.where({
+          'name': R.equals('leaf'),
+          'describe': R.equals('this is a leaf command'),
+          'type': R.equals('native')
+        })(command), command);
 
-          const result = Helpers.logIfFailedStringify(R.where({
-            'name': R.equals('leaf'),
-            'describe': R.equals('this is a leaf command'),
-            'type': R.equals('native')
-          })(command), command);
-
-          expect(result).to.be.true(functify(command));
-        } else {
-          assert.fail('Couldn\'t get Command node.');
-        }
+        expect(result).to.be.true(functify(command));
       } else {
-        assert.fail('Couldn\'t get Commands node.');
+        assert.fail('Couldn\'t get Command node.');
       }
     });
   });
-
-  // ===
 
   context('error scenarios', () => {
     const tests = [
@@ -161,30 +146,22 @@ describe('xpath-converter.build', () => {
       context(`given: ${t.given}`, () => {
         it('should: throw', () => {
           const document: Document = parser.parseFromString(t.data, 'text/xml');
-          const commandsNode: types.SelectResult = xp.select(
-            '/Application/Cli/Commands', document, true);
+          const invalidCommandNode: types.SelectResult = xp.select(
+            '/Application/Cli/Commands/Command[@name="leaf"]', document, true);
 
-          if (commandsNode instanceof Node) {
+          if (invalidCommandNode instanceof Node) {
             const converter = new Jaxom();
-            const invalidCommandNode: types.NullableNode = Helpers.selectElementNodeById(
-              'Command', 'name', 'leaf', commandsNode);
 
-            if (invalidCommandNode) {
-              expect(() => {
-                converter.build(invalidCommandNode, testParseInfo);
-              }).to.throw(Error);
-            } else {
-              assert.fail('FAILURE! Couldn\'t get Command node.');
-            }
+            expect(() => {
+              converter.build(invalidCommandNode, testParseInfo);
+            }).to.throw(Error);
           } else {
-            assert.fail('FAILURE! Couldn\'t get Commands node.');
+            assert.fail('FAILURE! Couldn\'t get Command node.');
           }
         });
       });
     });
   }); // error scenarios
-
-  // ===
 
   context('given: Expression with no inheritance', () => {
     it('should: return an expression object all local attributes', () => {
@@ -198,39 +175,34 @@ describe('xpath-converter.build', () => {
         </Application>`;
 
       const document: Document = parser.parseFromString(data, 'text/xml');
-      const expressionsNode: types.SelectResult = xp.select(
-        '/Application/Expressions', document, true);
+      const expressionNode: types.SelectResult = xp.select(
+        '/Application/Expressions/Expression[@name="person\'s-name-expression"]',
+          document, true);
 
-      if (expressionsNode && expressionsNode instanceof Node) {
+      if (expressionNode instanceof Node) {
         const converter = new Jaxom();
-        const expressionNode: types.NullableNode = Helpers.selectElementNodeById(
-          'Expression', 'name', 'person\'s-name-expression', expressionsNode);
 
-        if (expressionNode) {
-          const element: {} = converter.build(expressionNode, {
-            elements: new Map<string, types.IElementInfo>([
-              ['Expression', {
-                id: 'name',
-                descendants: {
-                  by: 'index',
-                  throwIfCollision: false,
-                  throwIfMissing: false
-                }
-              }]
-            ])
-          });
+        const element: {} = converter.build(expressionNode, {
+          elements: new Map<string, types.IElementInfo>([
+            ['Expression', {
+              id: 'name',
+              descendants: {
+                by: 'index',
+                throwIfCollision: false,
+                throwIfMissing: false
+              }
+            }]
+          ])
+        });
 
-          const result = Helpers.logIfFailedStringify(R.where({
-            'name': R.equals(`person's-name-expression`),
-            'eg': R.equals('Mick Mars')
-          })(element), element);
+        const result = Helpers.logIfFailedStringify(R.where({
+          'name': R.equals(`person's-name-expression`),
+          'eg': R.equals('Mick Mars')
+        })(element), element);
 
-          expect(result).to.be.true(functify(element));
-        } else {
-          assert.fail('Couldn\'t get Expression node.');
-        }
+        expect(result).to.be.true(functify(element));
       } else {
-        assert.fail('Couldn\'t get Expressions node.');
+        assert.fail('Couldn\'t get Expression node.');
       }
     });
   });
@@ -247,39 +219,33 @@ describe('xpath-converter.build', () => {
         </Application>`;
 
       const document: Document = parser.parseFromString(data, 'text/xml');
-      const sourcesNode: types.SelectResult = xp.select(
-        '/Application/Sources', document, true);
+      const sourceNode: types.SelectResult = xp.select(
+        '/Application/Sources/Source[@name="some-json-source"]', document, true);
 
-      if (sourcesNode && sourcesNode instanceof Node) {
+      if (sourceNode instanceof Node) {
         const converter = new Jaxom();
-        const sourceNode: types.NullableNode = Helpers.selectElementNodeById(
-          'Source', 'name', 'some-json-source', sourcesNode);
 
-        if (sourceNode) {
-          let source: {} = converter.build(sourceNode, {
-            elements: new Map<string, types.IElementInfo>([
-              ['Source', {
-                id: 'name',
-                descendants: {
-                  by: 'index',
-                  throwIfCollision: false,
-                  throwIfMissing: false
-                }
-              }]
-            ])
-          });
+        const source: {} = converter.build(sourceNode, {
+          elements: new Map<string, types.IElementInfo>([
+            ['Source', {
+              id: 'name',
+              descendants: {
+                by: 'index',
+                throwIfCollision: false,
+                throwIfMissing: false
+              }
+            }]
+          ])
+        });
 
-          const result = Helpers.logIfFailedStringify(R.where({
-            'name': R.equals('some-json-source'),
-            'provider': R.equals('json-provider')
-          })(source), source);
+        const result = Helpers.logIfFailedStringify(R.where({
+          'name': R.equals('some-json-source'),
+          'provider': R.equals('json-provider')
+        })(source), source);
 
-          expect(result).to.be.true(functify(source));
-        } else {
-          assert.fail('Couldn\'t get Source node.');
-        }
+        expect(result).to.be.true(functify(source));
       } else {
-        assert.fail('Couldn\'t get Sources node.');
+        assert.fail('Couldn\'t get Source node.');
       }
     });
   });
@@ -298,40 +264,34 @@ describe('xpath-converter.build', () => {
         </Application>`;
 
       const document: Document = parser.parseFromString(data, 'text/xml');
-      const argumentsNode: types.SelectResult = xp.select(
-        '/Application/Cli/Arguments', document, true);
+      const argumentNode: types.SelectResult = xp.select(
+        '/Application/Cli/Arguments/Argument[@name="filesys"]', document, true);
 
-      if (argumentsNode && argumentsNode instanceof Node) {
+      if (argumentNode instanceof Node) {
         const converter = new Jaxom();
-        const argumentNode: types.NullableNode = Helpers.selectElementNodeById(
-          'Argument', 'name', 'filesys', argumentsNode);
 
-        if (argumentNode) {
-          const source: {} = converter.build(argumentNode, {
-            elements: new Map<string, types.IElementInfo>([
-              ['Source', {
-                id: 'name',
-                descendants: {
-                  by: 'index',
-                  throwIfCollision: false,
-                  throwIfMissing: false
-                }
-              }]
-            ])
-          });
+        const source: {} = converter.build(argumentNode, {
+          elements: new Map<string, types.IElementInfo>([
+            ['Source', {
+              id: 'name',
+              descendants: {
+                by: 'index',
+                throwIfCollision: false,
+                throwIfMissing: false
+              }
+            }]
+          ])
+        });
 
-          const result = Helpers.logIfFailedStringify(R.where({
-            'name': R.equals('filesys'),
-            'alias': R.equals('fs'),
-            'optional': R.equals(true)
-          })(source), source);
+        const result = Helpers.logIfFailedStringify(R.where({
+          'name': R.equals('filesys'),
+          'alias': R.equals('fs'),
+          'optional': R.equals(true)
+        })(source), source);
 
-          expect(result).to.be.true(functify(source));
-        } else {
-          assert.fail('Couldn\'t get Argument node.');
-        }
+        expect(result).to.be.true(functify(source));
       } else {
-        assert.fail('Couldn\'t get Arguments node.');
+        assert.fail('Couldn\'t get Argument node.');
       }
     });
   });
@@ -350,39 +310,33 @@ describe('xpath-converter.build', () => {
         </Application>`;
 
       const document: Document = parser.parseFromString(data, 'text/xml');
-      const treesNode: types.SelectResult = xp.select(
-        '/Application/FileSystems/FileSystem[@name="staging"]/Trees', document, true);
+      const treeNode: types.SelectResult = xp.select(
+        '/Application/FileSystems/FileSystem[@name="staging"]/Trees/Tree[@alias="skipa"]', document, true);
 
-      if (treesNode && treesNode instanceof Node) {
+      if (treeNode instanceof Node) {
         const converter = new Jaxom();
-        const treeNode: types.NullableNode = Helpers.selectElementNodeById(
-          'Tree', 'alias', 'skipa', treesNode);
 
-        if (treeNode) {
-          const tree: {} = converter.build(treeNode, {
-            elements: new Map<string, types.IElementInfo>([
-              ['Tree', {
-                id: 'alias',
-                descendants: {
-                  by: 'index',
-                  throwIfCollision: false,
-                  throwIfMissing: false
-                }
-              }]
-            ])
-          });
+        const tree: {} = converter.build(treeNode, {
+          elements: new Map<string, types.IElementInfo>([
+            ['Tree', {
+              id: 'alias',
+              descendants: {
+                by: 'index',
+                throwIfCollision: false,
+                throwIfMissing: false
+              }
+            }]
+          ])
+        });
 
-          const result = Helpers.logIfFailedStringify(R.where({
-            'alias': R.equals('skipa'),
-            'root': R.equals('/Volumes/Epsilon/Skipa')
-          })(tree), tree);
+        const result = Helpers.logIfFailedStringify(R.where({
+          'alias': R.equals('skipa'),
+          'root': R.equals('/Volumes/Epsilon/Skipa')
+        })(tree), tree);
 
-          expect(result).to.be.true(functify(tree));
-        } else {
-          assert.fail('Couldn\'t get Tree node.');
-        }
+        expect(result).to.be.true(functify(tree));
       } else {
-        assert.fail('Couldn\'t get Trees node.');
+        assert.fail('Couldn\'t get Tree node.');
       }
     });
   });
@@ -402,29 +356,22 @@ describe('xpath-converter.build', () => {
           </Application>`;
 
         const document: Document = parser.parseFromString(data, 'text/xml');
-        const commandsNode: types.SelectResult = xp.select(
-          '/Application/Cli/Commands', document, true);
+        const leafCommandNode: types.SelectResult = xp.select(
+          '/Application/Cli/Commands/Command[@name="leaf"]', document, true);
 
-        if (commandsNode && commandsNode instanceof Node) {
+        if (leafCommandNode instanceof Node) {
           const converter = new Jaxom();
-          const leafCommandNode: types.NullableNode = Helpers.selectElementNodeById(
-            'Command', 'name', 'leaf', commandsNode);
 
-          if (leafCommandNode) {
-            const command: {} = converter.build(leafCommandNode, testParseInfo);
+          const command: {} = converter.build(leafCommandNode, testParseInfo);
+          const result = Helpers.logIfFailedStringify(R.where({
+            'name': R.equals('leaf'),
+            'describe': R.equals('this is a leaf command'),
+            'type': R.equals('native')
+          })(command), command);
 
-            const result = Helpers.logIfFailedStringify(R.where({
-              'name': R.equals('leaf'),
-              'describe': R.equals('this is a leaf command'),
-              'type': R.equals('native')
-            })(command), command);
-
-            expect(result).to.be.true(functify(command));
-          } else {
-            assert.fail('Couldn\'t get Command node.');
-          }
+          expect(result).to.be.true(functify(command));
         } else {
-          assert.fail('Couldn\'t get Commands node.');
+          assert.fail('Couldn\'t get Command node.');
         }
       });
     });
@@ -443,29 +390,22 @@ describe('xpath-converter.build', () => {
           </Application>`;
 
         const document: Document = parser.parseFromString(data, 'text/xml');
-        const commandsNode: types.SelectResult = xp.select(
-          '/Application/Cli/Commands', document, true);
+        const leafCommandNode: types.SelectResult = xp.select(
+          '/Application/Cli/Commands/Command[@name="leaf"]', document, true);
 
-        if (commandsNode && commandsNode instanceof Node) {
+        if (leafCommandNode instanceof Node) {
           const converter = new Jaxom();
-          const leafCommandNode: types.NullableNode = Helpers.selectElementNodeById(
-            'Command', 'name', 'leaf', commandsNode);
+          const command: {} = converter.build(leafCommandNode, testParseInfo);
 
-          if (leafCommandNode) {
-            const command: {} = converter.build(leafCommandNode, testParseInfo);
+          const result = Helpers.logIfFailedStringify(R.where({
+            'name': R.equals('leaf'),
+            'describe': R.equals('this is a leaf command'),
+            'type': R.equals('native')
+          })(command), command);
 
-            const result = Helpers.logIfFailedStringify(R.where({
-              'name': R.equals('leaf'),
-              'describe': R.equals('this is a leaf command'),
-              'type': R.equals('native')
-            })(command), command);
-
-            expect(result).to.be.true(functify(command));
-          } else {
-            assert.fail('Couldn\'t get Command node.');
-          }
+          expect(result).to.be.true(functify(command));
         } else {
-          assert.fail('Couldn\'t get Commands node.');
+          assert.fail('Couldn\'t get Command node.');
         }
       });
     });
@@ -484,30 +424,24 @@ describe('xpath-converter.build', () => {
           </Application>`;
 
         const document: Document = parser.parseFromString(data, 'text/xml');
-        const commandsNode: types.SelectResult = xp.select(
-          '/Application/Cli/Commands', document, true);
+        const leafCommandNode: types.SelectResult = xp.select(
+          '/Application/Cli/Commands/Command[@name="leaf"]', document, true);
 
-        if (commandsNode && commandsNode instanceof Node) {
+        if (leafCommandNode instanceof Node) {
           const converter = new Jaxom();
-          const leafCommandNode: types.NullableNode = Helpers.selectElementNodeById(
-            'Command', 'name', 'leaf', commandsNode);
+          const command: {} = converter.build(leafCommandNode, testParseInfo);
 
-          if (leafCommandNode) {
-            const command: {} = converter.build(leafCommandNode, testParseInfo);
+          const result = Helpers.logIfFailedStringify(R.where({
+            'name': R.equals('leaf'),
+            'describe': R.equals('this is a leaf command'),
+            'type': R.equals('native'),
+            'filter': R.equals('beta')
+          })(command), command);
 
-            const result = Helpers.logIfFailedStringify(R.where({
-              'name': R.equals('leaf'),
-              'describe': R.equals('this is a leaf command'),
-              'type': R.equals('native'),
-              'filter': R.equals('beta')
-            })(command), command);
+          expect(result).to.be.true(functify(command));
 
-            expect(result).to.be.true(functify(command));
-          } else {
-            assert.fail('Couldn\'t get Command node.');
-          }
         } else {
-          assert.fail('Couldn\'t get Commands node.');
+          assert.fail('Couldn\'t get Command node.');
         }
       });
     });
@@ -527,29 +461,23 @@ describe('xpath-converter.build', () => {
         </Application>`;
 
       const document: Document = parser.parseFromString(data, 'text/xml');
-      const commandsNode: types.SelectResult = xp.select('/Application/Cli/Commands', document, true);
+      const leafCommandNode: types.SelectResult = xp.select(
+        '/Application/Cli/Commands/Command[@name="leaf"]', document, true);
 
-      if (commandsNode && commandsNode instanceof Node) {
+      if (leafCommandNode instanceof Node) {
         const converter = new Jaxom();
-        const leafCommandNode: types.NullableNode = Helpers.selectElementNodeById(
-          'Command', 'name', 'leaf', commandsNode);
 
-        if (leafCommandNode) {
-          const command: {} = converter.build(leafCommandNode, testParseInfo);
+        const command: {} = converter.build(leafCommandNode, testParseInfo);
+        const result = Helpers.logIfFailedStringify(R.where({
+          'name': R.equals('leaf'),
+          'describe': R.equals('this is a leaf command'),
+          'type': R.equals('native'),
+          'filter': R.equals('beta')
+        })(command), command);
 
-          const result = Helpers.logIfFailedStringify(R.where({
-            'name': R.equals('leaf'),
-            'describe': R.equals('this is a leaf command'),
-            'type': R.equals('native'),
-            'filter': R.equals('beta')
-          })(command), command);
-
-          expect(result).to.be.true(functify(command));
-        } else {
-          assert.fail('Couldn\'t get Command node.');
-        }
+        expect(result).to.be.true(functify(command));
       } else {
-        assert.fail('Couldn\'t get Commands node.');
+        assert.fail('Couldn\'t get Command node.');
       }
     });
   });
@@ -570,32 +498,25 @@ describe('xpath-converter.build', () => {
         </Application>`;
 
       const document: Document = parser.parseFromString(data, 'text/xml');
-      const commandsNode: types.SelectResult = xp.select(
-        '/Application/Cli/Commands', document, true);
+      const leafCommandNode: types.SelectResult = xp.select(
+        '/Application/Cli/Commands/Command[@name="leaf"]', document, true);
 
-      if (commandsNode && commandsNode instanceof Node) {
+      if (leafCommandNode instanceof Node) {
         const converter = new Jaxom();
-        const leafCommandNode: types.NullableNode = Helpers.selectElementNodeById(
-          'Command', 'name', 'leaf', commandsNode);
+        const command: {} = converter.build(leafCommandNode, testParseInfo);
 
-        if (leafCommandNode) {
-          const command: {} = converter.build(leafCommandNode, testParseInfo);
+        const result = Helpers.logIfFailedStringify(R.where({
+          'name': R.equals('leaf'),
+          'describe': R.equals('this is a leaf command'),
+          'album': R.equals('powerslave'),
+          'filter': R.equals('alpha'),
+          'type': R.equals('native'),
+          'theme': R.equals('concept')
+        })(command), command);
 
-          const result = Helpers.logIfFailedStringify(R.where({
-            'name': R.equals('leaf'),
-            'describe': R.equals('this is a leaf command'),
-            'album': R.equals('powerslave'),
-            'filter': R.equals('alpha'),
-            'type': R.equals('native'),
-            'theme': R.equals('concept')
-          })(command), command);
-
-          expect(result).to.be.true(functify(command));
-        } else {
-          assert.fail('Couldn\'t get Command node.');
-        }
+        expect(result).to.be.true(functify(command));
       } else {
-        assert.fail('Couldn\'t get Commands node.');
+        assert.fail('Couldn\'t get Command node.');
       }
     });
 
@@ -614,30 +535,22 @@ describe('xpath-converter.build', () => {
         </Application>`;
 
       const document: Document = parser.parseFromString(data, 'text/xml');
-      const commandsNode: types.SelectResult = xp.select(
-        '/Application/Cli/Commands', document, true);
+      const leafCommandNode: types.SelectResult = xp.select(
+        '/Application/Cli/Commands/Command[@name="leaf"]', document, true);
 
-      if (commandsNode && commandsNode instanceof Node) {
+      if (leafCommandNode instanceof Node) {
         const converter = new Jaxom();
-        const leafCommandNode: types.NullableNode = Helpers.selectElementNodeById(
-          'Command', 'name', 'leaf', commandsNode);
 
-        if (leafCommandNode) {
-          const command: {} = converter.build(leafCommandNode, testParseInfo);
+        const command: {} = converter.build(leafCommandNode, testParseInfo);
+        const result = Helpers.logIfFailedStringify(R.where({
+          'name': R.equals('leaf'),
+          'describe': R.equals('this is a leaf command'),
+          'filter': R.equals('leaf-filter')
+        })(command), command);
 
-          const result = Helpers.logIfFailedStringify(R.where({
-            'name': R.equals('leaf'),
-            'describe': R.equals('this is a leaf command'),
-            'filter': R.equals('leaf-filter')
-          })(command), command);
-
-          expect(result).to.be.true(functify(command));
-
-        } else {
-          assert.fail('Couldn\'t get Command node.');
-        }
+        expect(result).to.be.true(functify(command));
       } else {
-        assert.fail('Couldn\'t get Commands node.');
+        assert.fail('Couldn\'t get Command node.');
       }
     });
   });
@@ -658,31 +571,25 @@ describe('xpath-converter.build', () => {
         </Application>`;
 
       const document: Document = parser.parseFromString(data, 'text/xml');
-      const commandsNode: types.SelectResult = xp.select('/Application/Cli/Commands', document, true);
+      const leafCommandNode: types.SelectResult = xp.select(
+        '/Application/Cli/Commands/Command[@name="leaf"]', document, true);
 
-      if (commandsNode && commandsNode instanceof Node) {
+      if (leafCommandNode instanceof Node) {
         const converter = new Jaxom();
-        const leafCommandNode: types.NullableNode = Helpers.selectElementNodeById(
-          'Command', 'name', 'leaf', commandsNode);
+        const command: {} = converter.build(leafCommandNode, testParseInfo);
 
-        if (leafCommandNode) {
-          const command: {} = converter.build(leafCommandNode, testParseInfo);
+        const result = Helpers.logIfFailedStringify(R.where({
+          'name': R.equals('leaf'),
+          'describe': R.equals('this is a leaf command'),
+          'album': R.equals('powerslave'),
+          'filter': R.equals('alpha'),
+          'type': R.equals('native'),
+          'theme': R.equals('concept')
+        })(command), command);
 
-          const result = Helpers.logIfFailedStringify(R.where({
-            'name': R.equals('leaf'),
-            'describe': R.equals('this is a leaf command'),
-            'album': R.equals('powerslave'),
-            'filter': R.equals('alpha'),
-            'type': R.equals('native'),
-            'theme': R.equals('concept')
-          })(command), command);
-
-          expect(result).to.be.true(functify(command));
-        } else {
-          assert.fail('Couldn\'t get Command node.');
-        }
+        expect(result).to.be.true(functify(command));
       } else {
-        assert.fail('Couldn\'t get Commands node.');
+        assert.fail('Couldn\'t get Command node.');
       }
     });
   });
@@ -703,32 +610,25 @@ describe('xpath-converter.build', () => {
         </Application>`;
 
       const document: Document = parser.parseFromString(data, 'text/xml');
-      const commandsNode: types.SelectResult = xp.select(
-        '/Application/Cli/Commands', document, true);
+      const leafCommandNode: types.SelectResult = xp.select(
+        '/Application/Cli/Commands/Command[@name="leaf"]', document, true);
 
-      if (commandsNode && commandsNode instanceof Node) {
+      if (leafCommandNode instanceof Node) {
         const converter = new Jaxom();
-        const leafCommandNode: types.NullableNode = Helpers.selectElementNodeById(
-          'Command', 'name', 'leaf', commandsNode);
 
-        if (leafCommandNode) {
-          const command: {} = converter.build(leafCommandNode, testParseInfo);
+        const command: {} = converter.build(leafCommandNode, testParseInfo);
+        const result = Helpers.logIfFailedStringify(R.where({
+          'name': R.equals('leaf'),
+          'describe': R.equals('this is a leaf command'),
+          'album': R.equals('powerslave'),
+          'filter': R.equals('alpha'),
+          'type': R.equals('native'),
+          'theme': R.equals('concept')
+        })(command), command);
 
-          const result = Helpers.logIfFailedStringify(R.where({
-            'name': R.equals('leaf'),
-            'describe': R.equals('this is a leaf command'),
-            'album': R.equals('powerslave'),
-            'filter': R.equals('alpha'),
-            'type': R.equals('native'),
-            'theme': R.equals('concept')
-          })(command), command);
-
-          expect(result).to.be.true(functify(command));
-        } else {
-          assert.fail('Couldn\'t get Command node.');
-        }
+        expect(result).to.be.true(functify(command));
       } else {
-        assert.fail('Couldn\'t get Commands node.');
+        assert.fail('Couldn\'t get Command node.');
       }
     });
   });
@@ -748,29 +648,23 @@ describe('xpath-converter.build', () => {
         </Application>`;
 
       const document: Document = parser.parseFromString(data, 'text/xml');
-      const commandsNode = xp.select('/Application/Cli/Commands', document, true);
+      const leafCommandNode = xp.select(
+        '/Application/Cli/Commands/Command[@name="leaf"]', document, true);
 
-      if (commandsNode && commandsNode instanceof Node) {
+      if (leafCommandNode instanceof Node) {
         const converter = new Jaxom();
-        const leafCommandNode: types.NullableNode = Helpers.selectElementNodeById(
-          'Command', 'name', 'leaf', commandsNode);
 
-        if (leafCommandNode) {
-          const command: {} = converter.build(leafCommandNode, testParseInfo);
+        const command: {} = converter.build(leafCommandNode, testParseInfo);
+        const result = Helpers.logIfFailedStringify(R.where({
+          'name': R.equals('leaf'),
+          'describe': R.equals('this is a leaf command'),
+          'filter': R.equals('beta-filter'),
+          'mode': R.equals('auto')
+        })(command), command);
 
-          const result = Helpers.logIfFailedStringify(R.where({
-            'name': R.equals('leaf'),
-            'describe': R.equals('this is a leaf command'),
-            'filter': R.equals('beta-filter'),
-            'mode': R.equals('auto')
-          })(command), command);
-
-          expect(result).to.be.true(functify(command));
-        } else {
-          assert.fail('Couldn\'t get Command node.');
-        }
+        expect(result).to.be.true(functify(command));
       } else {
-        assert.fail('Couldn\'t get Commands node.');
+        assert.fail('Couldn\'t get Command node.');
       }
     });
   });
@@ -790,23 +684,17 @@ describe('xpath-converter.build', () => {
         </Application>`;
 
       const document: Document = parser.parseFromString(data, 'text/xml');
-      const commandsNode: types.SelectResult = xp.select(
-        '/Application/Cli/Commands', document, true);
+      const leafCommandNode: types.SelectResult = xp.select(
+        '/Application/Cli/Commands/Command[@name="leaf"]', document, true);
 
-      if (commandsNode && commandsNode instanceof Node) {
+      if (leafCommandNode instanceof Node) {
         const converter = new Jaxom();
-        const leafCommandNode: types.NullableNode = Helpers.selectElementNodeById(
-          'Command', 'name', 'leaf', commandsNode);
 
-        if (leafCommandNode) {
-          expect(() => {
-            converter.build(leafCommandNode, testParseInfo);
-          }).to.throw(Error);
-        } else {
-          assert.fail('FAILURE! Couldn\'t get Command node.');
-        }
+        expect(() => {
+          converter.build(leafCommandNode, testParseInfo);
+        }).to.throw(Error);
       } else {
-        assert.fail('FAILURE! Couldn\'t get Commands node.');
+        assert.fail('FAILURE! Couldn\'t get Command node.');
       }
     });
   });
@@ -882,18 +770,6 @@ describe('xpath-converter.build', () => {
 
     if (testCommandNode instanceof Node) {
       it('should: return a command object with all children attached', () => {
-        const command: any = converter.build(testCommandNode, testParseInfo);
-        const result = Helpers.logIfFailedStringify(R.where({
-          'name': R.equals('test'),
-          'describe': R.equals('Test regular expression definitions'),
-          '_': R.equals('Command'),
-          '_children': R.is(Object)
-        })(command), command);
-
-        expect(result).to.be.true(functify(command));
-      });
-
-      it('should: return a command object where no of children is ??4??', () => {
         const command: any = converter.build(testCommandNode, parseInfo);
         expect(command).to.deep.equal({
           name: 'test',
@@ -1067,32 +943,24 @@ describe('xpath-converter.build', () => {
         </Cli>
       </Application>`;
 
-    const document: Document = parser.parseFromString(data, 'text/xml');
-    const commandsNode: types.SelectResult = xp.select('/Application/Cli/Commands', document, true);
+    it('should: return a command object with all children attached', () => {
+      const document: Document = parser.parseFromString(data, 'text/xml');
+      const testCommandNode: types.SelectResult = xp.select(
+        '/Application/Cli/Commands/Command[@name="test"]', document, true);
 
-    if (commandsNode && commandsNode instanceof Node) {
-      const converter = new Jaxom();
-      const testCommandNode: types.NullableNode = Helpers.selectElementNodeById(
-        'Command', 'name', 'test', commandsNode);
+      if (testCommandNode instanceof Node) {
+        const converter = new Jaxom();
+        const command: any = converter.build(testCommandNode, testParseInfo);
+        const result = Helpers.logIfFailedStringify(R.where({
+          'name': R.equals('test'),
+          'describe': R.equals('Test regular expression definitions'),
+          '_': R.equals('Command'),
+          '_children': R.is(Object)
+        })(command), command);
 
-      if (testCommandNode) {
-        it('should: return a command object with all children attached', () => {
-          const command: any = converter.build(testCommandNode, testParseInfo);
-          const result = Helpers.logIfFailedStringify(R.where({
-            'name': R.equals('test'),
-            'describe': R.equals('Test regular expression definitions'),
-            '_': R.equals('Command'),
-            '_children': R.is(Object)
-          })(command), command);
-
-          expect(result).to.be.true(functify(command));
-        });
-      } else {
-        assert.fail('Couldn\'t get Command node.');
+        expect(result).to.be.true(functify(command));
       }
-    } else {
-      assert.fail('Couldn\'t get Commands node.');
-    }
+    });
   });
 
   context('given: an Expression with CDATA section', () => {
@@ -1110,25 +978,19 @@ describe('xpath-converter.build', () => {
         </Application>`;
 
       const document: Document = parser.parseFromString(data, 'text/xml');
-      const expressionsNode: types.SelectResult = xp.select(
-        '/Application/Expressions[@name="content-expressions"]', document, true);
+      const expressionNode: types.SelectResult = xp.select(
+        '/Application/Expressions[@name="content-expressions"]/Expression[@name="meta-prefix-expression"]',
+          document, true);
 
-      if (expressionsNode && expressionsNode instanceof Node) {
+      if (expressionNode instanceof Node) {
         const converter = new Jaxom();
-        const expressionNode: types.NullableNode = Helpers.selectElementNodeById(
-          'Expression', 'name', 'meta-prefix-expression', expressionsNode);
 
-        if (expressionNode) {
-          const command: {} = converter.build(expressionNode, testParseInfo);
+        const command: {} = converter.build(expressionNode, testParseInfo);
+        const result = Helpers.logIfFailedStringify(R.where({
+          'name': R.equals('meta-prefix-expression')
+        })(command), command);
 
-          const result = Helpers.logIfFailedStringify(R.where({
-            'name': R.equals('meta-prefix-expression')
-          })(command), command);
-
-          expect(result).to.be.true(functify(command));
-        } else {
-          assert.fail('Couldn\'t get Expressions node.');
-        }
+        expect(result).to.be.true(functify(command));
       } else {
         assert.fail('Couldn\'t get Expressions node.');
       }
@@ -1186,7 +1048,7 @@ describe('xpath-converter.build', () => {
         it('should: throw', () => {
           const document: Document = parser.parseFromString(t.data, 'text/xml');
           const commandNode: types.SelectResult = xp.select(t.query, document, true);
-          if (commandNode && commandNode instanceof Node) {
+          if (commandNode instanceof Node) {
             const converter = new Jaxom();
             expect(() => {
               converter.build(commandNode, testParseInfo);

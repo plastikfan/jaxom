@@ -100,9 +100,9 @@ describe('Normaliser.combine', () => {
         const document: Document = parser.parseFromString(t.data, 'text/xml');
         const commandNode = xp.select(
           '/Application/Cli/Commands/Command[@name="test"]',
-          document, true) as Node;
+            document, true);
 
-        if (commandNode) {
+        if (commandNode instanceof Node) {
           const converter = new Impl();
           expect(() => {
             converter.build(commandNode, testParseInfo);
@@ -211,31 +211,15 @@ describe('build => Normaliser.normalise', () => {
           </Application>`,
         query: '/Application/Cli/Arguments',
         verify: (children: any): void => {
-          expect(R.is(Array)(children)).to.not.be.true(functify(children));
-          const argumentName = 'director';
-          const directorArg: any = children[argumentName];
-          //
-          // const NORMALISED_BY_INDEX_ARGS = {
-          //   '_': 'Arguments',
-          //   '_children': {
-          //     'director': {
-          //       'name': 'director',
-          //       'alias': 'dn',
-          //       'optional': true,
-          //       'describe': 'Director name',
-          //       '_': 'Argument'
-          //     }
-          //   }
-          // };
-          //
-          const result: boolean = R.whereEq({
-            _: 'Argument',
-            name: 'director',
-            alias: 'dn',
-            optional: true,
-            describe: 'Director name'
-          })(directorArg);
-          expect(result).to.be.true(functify(directorArg));
+          expect(children).to.deep.equal({
+            'director': {
+              'name': 'director',
+              'alias': 'dn',
+              'optional': true,
+              'describe': 'Director name',
+              '_': 'Argument'
+            }
+          });
         }
       },
       {
@@ -257,17 +241,22 @@ describe('build => Normaliser.normalise', () => {
           </Application>`,
         query: '/Application/Cli/Arguments',
         verify: (children: any): void => {
-          expect(R.is(Array)(children)).to.not.be.true(functify(children));
-          const paramName = 'genre';
-          const genreArg: any = children[paramName];
-          const result: boolean = R.whereEq({
-            _: 'Argument',
-            name: 'genre',
-            alias: 'gn',
-            optional: true,
-            describe: 'Genre name'
-          })(genreArg);
-          expect(result).to.be.true(functify(genreArg));
+          expect(children).to.deep.equal({
+            director: {
+              name: 'director',
+              alias: 'dn',
+              optional: true,
+              describe: 'Director name',
+              _: 'Argument'
+            },
+            genre: {
+              name: 'genre',
+              alias: 'gn',
+              optional: true,
+              describe: 'Genre name',
+              _: 'Argument'
+            }
+          });
         }
       },
       {
@@ -289,17 +278,22 @@ describe('build => Normaliser.normalise', () => {
           </Application>`,
         query: '/Application/Cli/Arguments',
         verify: (children: any): void => {
-          expect(R.is(Array)(children)).to.not.be.true(functify(children));
-          const paramName = 'genre';
-          const genreParam: any = children[paramName];
-          const result: boolean = R.whereEq({
-            _: 'Parameter',
-            name: 'genre',
-            alias: 'gn',
-            optional: true,
-            describe: 'Genre name'
-          })(genreParam);
-          expect(result).to.be.true(functify(genreParam));
+          expect(children).to.deep.equal({
+            director: {
+              name: 'director',
+              alias: 'dn',
+              optional: true,
+              describe: 'Director name',
+              _: 'Argument'
+            },
+            genre: {
+              name: 'genre',
+              alias: 'gn',
+              optional: true,
+              describe: 'Genre name',
+              _: 'Parameter'
+            }
+          });
         }
       },
       {
@@ -321,7 +315,21 @@ describe('build => Normaliser.normalise', () => {
           </Application>`,
         query: '/Application/Cli/Arguments',
         verify: (children: any): void => {
-          expect(R.is(Array)(children)).to.be.true(functify(children));
+          expect(children).to.deep.equal([
+            {
+              name: 'director',
+              alias: 'dn',
+              optional: true,
+              describe: 'Director name',
+              _: 'Argument'
+            },
+            {
+              alias: 'gn',
+              optional: true,
+              describe: 'Genre name',
+              _: 'Parameter'
+            }
+          ]);
         }
       },
       // group by
@@ -341,19 +349,17 @@ describe('build => Normaliser.normalise', () => {
           </Application>`,
         query: '/Application/Cli/Arguments',
         verify: (children: any): void => {
-          const argumentName = 'director';
-          expect(R.is(Array)(children)).to.not.be.true(functify(children));
-          const directorArr: any = children[argumentName];
-          expect(R.is(Array)(directorArr)).to.be.true(functify(children));
-          const firstDirector = R.head(directorArr);
-          const result: boolean = R.whereEq({
-            _: 'Argument',
-            name: 'director',
-            alias: 'dn',
-            optional: true,
-            describe: 'Director name'
-          })(firstDirector);
-          expect(result).to.be.true(functify(firstDirector));
+          expect(children).to.deep.equal({
+            director: [
+              {
+                name: 'director',
+                alias: 'dn',
+                optional: true,
+                describe: 'Director name',
+                _: 'Argument'
+              }
+            ]
+          });
         }
       },
       {
@@ -375,19 +381,24 @@ describe('build => Normaliser.normalise', () => {
           </Application>`,
         query: '/Application/Cli/Arguments',
         verify: (children: any): void => {
-          const argumentName = 'director';
-          expect(R.is(Array)(children)).to.not.be.true(functify(children));
-          const directorArr: any = children[argumentName];
-          expect(R.is(Array)(directorArr)).to.be.true(functify(children));
-          const secondDirector = directorArr[1];
-          const result: boolean = R.whereEq({
-            _: 'Argument',
-            name: 'director',
-            alias: 'gn',
-            optional: true,
-            describe: 'Genre name'
-          })(secondDirector);
-          expect(result).to.be.true(functify(secondDirector));
+          expect(children).to.deep.equal({
+            director: [
+              {
+                name: 'director',
+                alias: 'dn',
+                optional: true,
+                describe: 'Director name',
+                _: 'Argument'
+              },
+              {
+                name: 'director',
+                alias: 'gn',
+                optional: true,
+                describe: 'Genre name',
+                _: 'Argument'
+              }
+            ]
+          });
         }
       },
       {
@@ -409,36 +420,26 @@ describe('build => Normaliser.normalise', () => {
           </Application>`,
         query: '/Application/Cli/Arguments',
         verify: (children: any): void => {
-          expect(R.is(Array)(children)).to.not.be.true(functify(children));
-          {
-            const namedDirector = 'director';
-            const directorArr: any = children[namedDirector];
-            expect(R.is(Array)(directorArr)).to.be.true(functify(children));
-            const firstDirector = R.head(directorArr);
-            const directorResult: boolean = R.whereEq({
-              _: 'Argument',
-              name: 'director',
-              alias: 'dn',
-              optional: true,
-              describe: 'Director name'
-            })(firstDirector);
-            expect(directorResult).to.be.true(functify(firstDirector));
-          }
-
-          {
-            const namedGenre = 'genre';
-            const genreArr: any = children[namedGenre];
-            expect(R.is(Array)(genreArr)).to.be.true(functify(children));
-            const firstGenre = R.head(genreArr);
-            const genreResult: boolean = R.whereEq({
-              _: 'Parameter',
-              name: 'genre',
-              alias: 'gn',
-              optional: true,
-              describe: 'Genre name'
-            })(firstGenre);
-            expect(genreResult).to.be.true(functify(firstGenre));
-          }
+          expect(children).to.deep.equal({
+            director: [
+              {
+                name: 'director',
+                alias: 'dn',
+                optional: true,
+                describe: 'Director name',
+                _: 'Argument'
+              }
+            ],
+            genre: [
+              {
+                name: 'genre',
+                alias: 'gn',
+                optional: true,
+                describe: 'Genre name',
+                _: 'Parameter'
+              }
+            ]
+          });
         }
       },
       {
@@ -460,7 +461,21 @@ describe('build => Normaliser.normalise', () => {
           </Application>`,
         query: '/Application/Cli/Arguments',
         verify: (children: any): void => {
-          expect(R.is(Array)(children)).to.be.true(functify(children));
+          expect(children).to.deep.equal([
+            {
+              name: 'director',
+              alias: 'dn',
+              optional: true,
+              describe: 'Director name',
+              _: 'Argument'
+            },
+            {
+              alias: 'gn',
+              optional: true,
+              describe: 'Genre name',
+              _: 'Parameter'
+            }
+          ]);
         }
       }
     ];
