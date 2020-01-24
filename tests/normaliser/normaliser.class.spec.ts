@@ -15,7 +15,7 @@ import { SpecOptionService } from '../../lib/specService/spec-option-service.cla
 
 const parser = new DOMParser();
 
-describe('Normaliser.combine', () => {
+describe('Normaliser.combineDescendants', () => {
   const testParseInfo: types.IParseInfo = {
     elements: new Map<string, types.IElementInfo>([
       ['Command', {
@@ -113,9 +113,9 @@ describe('Normaliser.combine', () => {
       });
     });
   });
-}); // Normaliser.combine
+}); // Normaliser.combineDescendants
 
-describe('build => Normaliser.normalise', () => {
+describe('build => Normaliser.normaliseDescendants', () => {
   const byIndexParseInfo: types.IParseInfo = {
     elements: new Map<string, types.IElementInfo>([
       ['Arguments', {
@@ -836,7 +836,7 @@ describe('build => Normaliser.normalise', () => {
       context(`given: ${t.given}`, () => {
         it(`should: ${t.should}`, () => {
           const document: Document = parser.parseFromString(t.data, 'text/xml');
-          const selectedNode = xp.select(t.query, document, true) as Node;
+          const selectedNode = xp.select(t.query, document, true);
 
           if (selectedNode instanceof Node) {
             const converter = new Impl();
@@ -850,7 +850,7 @@ describe('build => Normaliser.normalise', () => {
       });
     });
   }); // error handling
-}); // build => Normaliser.normalise
+}); // build => Normaliser.normaliseDescendants
 
 describe('Normaliser.combineDescendants', () => {
   const subject = '/SUBJECT';

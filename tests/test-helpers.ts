@@ -25,5 +25,7 @@ export function selectElementNodeById (
 
     return result instanceof Node ? result : null;
   }
+
+  /* istanbul ignore next: typescript type-guard */
   return null;
 }

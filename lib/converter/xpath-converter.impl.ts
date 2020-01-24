@@ -154,6 +154,7 @@ export class XpathConverterImpl implements IConverterImpl {
     const attributeNodes: types.SelectResult = xpath.select('@*', localNode);
     let element: any = {};
 
+    /* istanbul ignore next: type-guard, this xpath.select always returns an Array  */
     if (attributeNodes instanceof Array) {
       const attributesLabel = this.options.fetchOption('labels/attributes', false) as string;
       const coercionOption = this.options.fetchOption('attributes/coercion', false);
@@ -240,14 +241,17 @@ export class XpathConverterImpl implements IConverterImpl {
     parseInfo: types.IParseInfo, previouslySeen: string[]): {} {
 
     const ei = utils.composeElementInfo(elementNode.nodeName, parseInfo);
+    /* istanbul ignore next: recurseThroughAttribute won't be called unless these are set */
     const { id = '', recurse = '' } = ei;
 
+    /* istanbul ignore next: recurseThroughAttribute won't be called unless these are set */
     if (id === '' || recurse === '') {
       return element;
     }
 
     const identifier = element[id];
 
+    /* istanbul ignore next: recurseThroughAttribute won't be called unless these are set */
     if (identifier === '') {
       return element;
     }
@@ -461,7 +465,8 @@ export class XpathConverterImpl implements IConverterImpl {
    * @memberof XpathConverterImpl
    */
   public isNormalisable (subject: string, elementInfo: types.IElementInfo, element: {}): boolean {
-    return R.hasPath(['descendants', 'by'], elementInfo);
+    return R.hasPath(['descendants', 'by'], elementInfo) &&
+      R.hasPath(['descendants', 'id'], elementInfo);
   } // isNormalisable
 
   /**
@@ -536,11 +541,12 @@ function selectElementNodeById (elementName: string, id: string, name: string,
   //
 
   if (rootNode instanceof Node) {
-    const result: types.SelectResult = xpath.select(`.//${elementName}[@${id}="${name}"]`, rootNode, true);
+    const result: types.SelectResult = xpath.select(
+      `.//${elementName}[@${id}="${name}"]`, rootNode, true);
 
     return result instanceof Node ? result : null;
   }
-  /* istanbul ignore next */
+  /* istanbul ignore next: typescript type-guard */
   return null;
 } // selectElementNodeById
 

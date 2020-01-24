@@ -60,7 +60,7 @@ export class Transformer {
    */
   public getTransform (name: types.MatcherStr): ITransformFunction<any> {
     const result = this.transformers.get(name);
-    /* istanbul ignore next */
+    /* istanbul ignore next: un-testable name is protected by type */
     if (!result) {
       throw new e.JaxInternalError(`Couldn't get transformer for matcher: ${name}`,
         'getTransform');
@@ -219,7 +219,7 @@ export class Transformer {
       //
       const collectionType = R.view(R.lensPath(['groups', CollectionTypeLabel]))(match);
 
-      /* istanbul ignore next */ // reg-ex has already been tested above so can't be falsy
+      /* istanbul ignore next: reg-ex has already been tested above so can't be falsy */
       if (collectionType) {
         result = collectionType as string;
       }
@@ -379,7 +379,7 @@ export class Transformer {
         assocTypes = [assocType];
       }
 
-      /* istanbul ignore next */ // type guard so we can call .some()
+      /* istanbul ignore next: type guard so we can call .some() */
       if (assocTypes instanceof Array) {
         let self = this;
         assocTypes.some((val: types.PrimitiveStr) => {
