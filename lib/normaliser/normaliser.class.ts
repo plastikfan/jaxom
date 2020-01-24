@@ -73,6 +73,7 @@ export class Normaliser {
           const pluckIds = R.pluck(id);
           // First make sure that there is no clash between any of the ids.
           //
+          /* istanbul ignore else */
           if (allContainId(currentChildren) && allContainId(foundChildren)) {
             if (R.intersection(pluckIds(currentChildren), pluckIds(foundChildren)).length === 0) {
               // merge the descendants
@@ -111,55 +112,53 @@ export class Normaliser {
   public normaliseDescendants (subject: string, parentElement: any, elementInfo: types.IElementInfo): any {
     const descendants: Array<{}> = parentElement[this.options.descendantsLabel];
 
-    if (R.is(Array)(descendants)) { // descendants must be iterable
-      let normalisedDescendants;
-      /* istanbul ignore next: normalisation can't be invoked without 'descendants.id' */
-      const id: string = elementInfo?.descendants?.id ?? '';
+    let normalisedDescendants;
+    /* istanbul ignore next: normalisation can't be invoked without 'descendants.id' */
+    const id: string = elementInfo?.descendants?.id ?? '';
 
-      if (R.all(R.has(id))(descendants)) {
-        /* istanbul ignore next: normalisation can't be invoked without 'descendants.by' */
-        if (R.hasPath(['descendants', 'by'], elementInfo)) {
-          const lens = R.lensPath(['descendants', 'by']);
-          const descendantsBy = R.view(lens)(elementInfo) as 'index' | 'group';
+    if (R.all(R.has(id))(descendants)) {
+      /* istanbul ignore next: normalisation can't be invoked without 'descendants.by' */
+      if (R.hasPath(['descendants', 'by'], elementInfo)) {
+        const lens = R.lensPath(['descendants', 'by']);
+        const descendantsBy = R.view(lens)(elementInfo) as 'index' | 'group';
 
-          switch (descendantsBy) {
-            case 'index': {
-              if (elementInfo?.descendants?.throwIfMissing) {
-                // This reduce is only required because R.indexBy doesn't offer the ability to detect
-                // collisions (hence, that's why we're not interested in the return value.)
-                //
-                R.reduce((acc: any, val: any) => {
-                  if (R.includes(val[id], acc)) {
-                    throw new e.JaxSolicitedError(`Element collision found: ${functify(val)}`,
-                      subject);
-                  }
-                  return R.append(val[id], acc);
-                }, [])(descendants);
-              }
-
-              normalisedDescendants = R.indexBy(R.prop(id), descendants);
-              break;
+        switch (descendantsBy) {
+          case 'index': {
+            if (elementInfo?.descendants?.throwIfMissing) {
+              // This reduce is only required because R.indexBy doesn't offer the ability to detect
+              // collisions (hence, that's why we're not interested in the return value.)
+              //
+              R.reduce((acc: any, val: any) => {
+                if (R.includes(val[id], acc)) {
+                  throw new e.JaxSolicitedError(`Element collision found: ${functify(val)}`,
+                    subject);
+                }
+                return R.append(val[id], acc);
+              }, [])(descendants);
             }
-            case 'group': {
-              normalisedDescendants = R.groupBy(R.prop(id), descendants);
-              break;
-            }
+
+            normalisedDescendants = R.indexBy(R.prop(id), descendants);
+            break;
           }
-
-          // Now punch in the new normalised descendants
-          //
-          const normalised = parentElement;
-          normalised[this.options.descendantsLabel] = normalisedDescendants;
-          return normalised;
+          case 'group': {
+            normalisedDescendants = R.groupBy(R.prop(id), descendants);
+            break;
+          }
         }
-      } else if /* istanbul ignore next */ (elementInfo?.descendants?.throwIfMissing) {
-        const missing: any = R.find(
-          R.complement(R.has(id))
-        )(descendants) /* istanbul ignore next */ ?? {};
-        throw new e.JaxSolicitedError(
-          `Element is missing key attribute "${id}": (${functify(missing)})`,
-            subject);
+
+        // Now punch in the new normalised descendants
+        //
+        const normalised = parentElement;
+        normalised[this.options.descendantsLabel] = normalisedDescendants;
+        return normalised;
       }
+    } else if /* istanbul ignore next */ (elementInfo?.descendants?.throwIfMissing) {
+      const missing: any = R.find(
+        R.complement(R.has(id))
+      )(descendants) /* istanbul ignore next */ ?? {};
+      throw new e.JaxSolicitedError(
+        `Element is missing key attribute "${id}": (${functify(missing)})`,
+        subject);
     }
 
     return parentElement;
@@ -185,6 +184,7 @@ export class Normaliser {
   public mergeDescendants (local: [], inherited: types.Descendants): any[] {
     // local descendants has not been normalised yet so it's safe to assume its an array
     //
+    /* istanbul ignore else */
     if (R.is(Object)(inherited)) {
       // denormalise inherited
       //
