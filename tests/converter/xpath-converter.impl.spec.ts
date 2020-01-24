@@ -2,6 +2,9 @@
 import { expect, assert, use } from 'chai';
 import dirtyChai = require('dirty-chai');
 use(dirtyChai);
+import sinonChai = require('sinon-chai');
+use(sinonChai);
+
 import * as R from 'ramda';
 import * as xp from 'xpath-ts';
 import 'xmldom-ts';
@@ -13,6 +16,7 @@ import * as utils from '../../lib/utils/utils';
 import { XpathConverterImpl as Impl, composeElementPath }
   from '../../lib/converter/xpath-converter.impl';
 import { SpecOptionService, Specs } from '../../lib/specService/spec-option-service.class';
+import { functify } from 'jinxed';
 
 const testParseInfo: types.IParseInfo = {
   elements: new Map<string, types.IElementInfo>([
@@ -141,15 +145,15 @@ describe('XpathConverterImpl.composeText', () => {
   context('given: a Pattern element with single CDATA section and child element', () => {
     it('should: return the CDATA text.', () => {
       const data = `<?xml version="1.0"?>
-          <Application name="pez">
-            <Expressions name="content-expressions">
-              <Expression name="meta-prefix-expression">
-                <Pattern eg="TEXT"><![CDATA[ .SOME-CDATA-TEXT ]]>
-                  <Dummy/>
-                </Pattern>
-              </Expression>
-            </Expressions>
-          </Application>`;
+        <Application name="pez">
+          <Expressions name="content-expressions">
+            <Expression name="meta-prefix-expression">
+              <Pattern eg="TEXT"><![CDATA[ .SOME-CDATA-TEXT ]]>
+                <Dummy/>
+              </Pattern>
+            </Expression>
+          </Expressions>
+        </Application>`;
 
       const document: Document = parser.parseFromString(data, 'text/xml');
       const patternNode = xp.select(
@@ -166,12 +170,197 @@ describe('XpathConverterImpl.composeText', () => {
       }
     });
   });
+
+  context('given: a Pattern element with white space and trim disabled', () => {
+    it('should: return the text untrimmed', () => {
+      const data = `<?xml version="1.0"?>
+        <Application name="pez">
+          <Expressions name="content-expressions">
+            <Expression name="meta-prefix-expression">
+              <Pattern eg="TEXT"> .SOME-TEXT    <Dummy/></Pattern>
+            </Expression>
+          </Expressions>
+        </Application>`;
+
+      const document: Document = parser.parseFromString(data, 'text/xml');
+      const patternNode = xp.select(
+        '/Application/Expressions[@name="content-expressions"]/Expression/Pattern[@eg="TEXT"]',
+        document, true);
+
+      if (patternNode) {
+        const converter = new Impl(new SpecOptionService({
+          name: 'trim-disabled-for-text-nodes-for-test',
+          textNodes: {
+            trim: false
+          }
+        }));
+        const result = converter.composeText(patternNode);
+
+        expect(result).to.equal(' .SOME-TEXT    ');
+      } else {
+        assert.fail('Couldn\'t get Pattern node.');
+      }
+    });
+  });
 }); // XpathConverterImpl.composeText
 
 describe('converter.impl.buildLocalAttributes', () => {
-  context('given: a spec with "attributes" label set', () => {
-    it('should: populate attributes into array', () => {
-      const data = `<?xml version="1.0"?>
+  context('attributes as array', () => {
+    const parseInfo: types.IParseInfo = {
+      elements: new Map<string, types.IElementInfo>([
+        ['Commands', {
+          descendants: {
+            id: 'name',
+            by: 'index',
+            throwIfCollision: false,
+            throwIfMissing: false
+          }
+        }],
+        ['Command', {
+          id: 'name',
+          recurse: 'inherits',
+          discards: ['inherits', 'abstract']
+        }]
+      ])
+    };
+
+    context('given: a spec with coercion disabled', () => {
+      it('should: extract attributes as an array', () => {
+        const data = `<?xml version="1.0"?>
+          <Application name="pez">
+            <Cli>
+              <Commands>
+                <Command name="base-command" abstract="true"/>
+              </Commands>
+            </Cli>
+          </Application>`;
+
+        const document: Document = parser.parseFromString(data, 'text/xml');
+        const converter = new Impl(new SpecOptionService({
+          name: 'attributes-as-array-spec-without-coercion-for-test',
+          labels: {
+            attributes: '_attributes',
+            element: '_',
+            descendants: '_children',
+            text: '_text'
+          }
+        }));
+        const commandsNode: types.SelectResult = xp.select('/Application/Cli/Commands', document, true);
+
+        if (commandsNode instanceof Node) {
+          const commands = converter.build(commandsNode, parseInfo);
+
+          expect(commands).to.deep.equal({
+            _: 'Commands',
+            _children: {
+              'base-command': {
+                name: 'base-command',
+                _attributes: [{ name: 'base-command' }],
+                _: 'Command'
+              }
+            }
+          });
+        } else {
+          assert.fail('Couldn\'t get Commands node.');
+        }
+      });
+    }); // a spec with coercion disabled
+
+    context('given: a spec with coercion enabled', () => {
+      it('should: extract attributes as an array and coerce', () => {
+        const data = `<?xml version="1.0"?>
+          <Application name="pez">
+            <Cli>
+              <Commands>
+                <Command name="base-command" abstract="true" max="10"/>
+              </Commands>
+            </Cli>
+          </Application>`;
+
+        const document: Document = parser.parseFromString(data, 'text/xml');
+        const converter = new Impl(new SpecOptionService({
+          name: 'attributes-as-array-spec-without-coercion-for-test',
+          labels: {
+            attributes: '_attributes',
+            element: '_',
+            descendants: '_children',
+            text: '_text'
+          },
+          attributes: {
+            coercion: {}
+          }
+        }));
+
+        const commandsNode: types.SelectResult = xp.select('/Application/Cli/Commands', document, true);
+
+        if (commandsNode instanceof Node) {
+          const commands = converter.build(commandsNode, parseInfo);
+
+          expect(commands).to.deep.equal({
+            _: 'Commands',
+            _children: {
+              'base-command': {
+                name: 'base-command',
+                _attributes: [{ name: 'base-command' }, { max: 10 }],
+                _: 'Command'
+              }
+            }
+          });
+        } else {
+          assert.fail('Couldn\'t get Commands node.');
+        }
+      });
+    }); // a spec with coercion enabled
+
+    context('given: a spec with trim disabled', () => {
+      it('should: extract attributes as an array and coerce', () => {
+        const data = `<?xml version="1.0"?>
+          <Application name="pez">
+            <Cli>
+              <Commands>
+                <Command name="base-command" abstract="true" kind=" async "/>
+              </Commands>
+            </Cli>
+          </Application>`;
+
+        const document: Document = parser.parseFromString(data, 'text/xml');
+        const converter = new Impl(new SpecOptionService({
+          name: 'attributes-as-array-spec-without-coercion-for-test',
+          labels: {
+            attributes: '_attributes',
+            element: '_',
+            descendants: '_children',
+            text: '_text'
+          },
+          attributes: {
+            trim: false
+          }
+        }));
+
+        const commandsNode: types.SelectResult = xp.select(
+          '/Application/Cli/Commands', document, true);
+
+        if (commandsNode instanceof Node) {
+          const commands = converter.build(commandsNode, parseInfo);
+          expect(commands).to.deep.equal({
+            _: 'Commands',
+            _children: {
+              'base-command': {
+                name: 'base-command',
+                _attributes: [{ name: 'base-command' }, { kind: ' async ' }],
+                _: 'Command'
+              }
+            }
+          });
+        } else {
+          assert.fail('Couldn\'t get Commands node.');
+        }
+      });
+    });
+
+    context('given: a spec with "attributes" label set', () => {
+      it('should: populate attributes into array', () => {
+        const data = `<?xml version="1.0"?>
           <Application name="pez">
             <Directory name="archive"
               field="archive-location"
@@ -182,15 +371,12 @@ describe('converter.impl.buildLocalAttributes', () => {
             </Directory>
           </Application>`;
 
-      const document: Document = parser.parseFromString(data, 'text/xml');
-      const applicationNode: types.SelectResult = xp.select('/Application', document, true);
+        const document: Document = parser.parseFromString(data, 'text/xml');
+        const directoryNode: types.SelectResult = xp.select(
+          '/Application/Directory[@name="archive"]', document, true);
 
-      if (applicationNode && applicationNode instanceof Node) {
-        const converter = new Impl(new SpecOptionService(Specs.attributesAsArray));
-        const directoryNode: types.NullableNode = Helpers.selectElementNodeById(
-          'Directory', 'name', 'archive', applicationNode);
-
-        if (directoryNode) {
+        if (directoryNode instanceof Node) {
+          const converter = new Impl(new SpecOptionService(Specs.attributesAsArray));
           const directory = converter.build(directoryNode, testParseInfo);
 
           expect(R.has('_attributes')(directory));
@@ -201,13 +387,118 @@ describe('converter.impl.buildLocalAttributes', () => {
 
           expect(R.all(at => R.includes(at, attributeKeys))(
             ['name', 'field', 'date-modified', 'tags', 'category', 'format'])).to.be.true();
-
         } else {
           assert.fail('Couldn\'t get Application node.');
         }
-      } else {
-        assert.fail('Couldn\'t get Application node.');
-      }
+      });
+    }); // a spec with "attributes" label set
+
+    context('given: an abstract entity with child items', () => {
+      it('should: extract attributes as an array', () => {
+        const data = `<?xml version="1.0"?>
+          <Application name="pez">
+            <Cli>
+              <Commands>
+                <Command name="base-command" category="sync" abstract="true">
+                  <AlphaChild rank="alpha"/>
+                  <BetaChild rank="beta" label="red"/>
+                </Command>
+              </Commands>
+            </Cli>
+          </Application>`;
+
+        const document: Document = parser.parseFromString(data, 'text/xml');
+        const converter = new Impl(new SpecOptionService({
+          name: 'attributes-as-array-spec-without-coercion-for-test',
+          labels: {
+            attributes: '_attributes',
+            element: '_',
+            descendants: '_children',
+            text: '_text'
+          }
+        }));
+        const commandsNode: types.SelectResult = xp.select(
+          '/Application/Cli/Commands', document, true);
+
+        if (commandsNode instanceof Node) {
+          const commands = converter.build(commandsNode, parseInfo);
+
+          expect(commands).to.deep.equal({
+            _: 'Commands',
+            _children: {
+              'base-command': {
+                name: 'base-command',
+                _attributes: [{ name: 'base-command' }, { category: 'sync' }],
+                _: 'Command',
+                _children: [
+                  { _attributes: [{ rank: 'alpha' }], _: 'AlphaChild' },
+                  {
+                    _attributes: [{ rank: 'beta' }, { label: 'red' }],
+                    _: 'BetaChild'
+                  }
+                ]
+              }
+            }
+          });
+        } else {
+          assert.fail('Couldn\'t get Commands node.');
+        }
+      });
+    }); // a spec with coercion disabled
+  }); // attributes as array
+
+  context('attributes as members', () => {
+    context('given: coercion disabled', () => {
+      it('should: extract attributes as an array un-coerced', () => {
+        const data = `<?xml version="1.0"?>
+          <Application name="pez">
+            <Cli>
+              <Commands>
+                <Command name="base-command" max="10" abstract="true"/>
+              </Commands>
+            </Cli>
+          </Application>`;
+
+        const parseInfo: types.IParseInfo = {
+          elements: new Map<string, types.IElementInfo>([
+            ['Commands', {
+              descendants: {
+                id: 'name',
+                by: 'index'
+              }
+            }],
+            ['Command', {
+              id: 'name',
+              recurse: 'inherits',
+              discards: ['inherits', 'abstract']
+            }]
+          ])
+        };
+
+        const document: Document = parser.parseFromString(data, 'text/xml');
+        const converter = new Impl(new SpecOptionService({
+          name: 'attributes-as-array-spec-without-coercion-for-test',
+          labels: {
+            element: '_',
+            descendants: '_children',
+            text: '_text'
+          }
+        }));
+
+        const commandsNode: types.SelectResult = xp.select('/Application/Cli/Commands', document, true);
+        if (commandsNode instanceof Node) {
+          const commands = converter.build(commandsNode, parseInfo);
+
+          expect(commands).to.deep.equal({
+            _: 'Commands',
+            _children: {
+              'base-command': { name: 'base-command', max: '10', _: 'Command' }
+            }
+          });
+        } else {
+          assert.fail('Couldn\'t get Commands node.');
+        }
+      });
     });
   });
 }); // converter.impl.buildLocalAttributes
@@ -258,7 +549,7 @@ describe('composeElementPath', () => {
         const document: Document = parser.parseFromString(data, 'text/xml');
         const node: types.SelectResult = xp.select(t.path, document, true);
 
-        if (node && node instanceof Node) {
+        if (node instanceof Node) {
           const result = composeElementPath(node, t.id);
 
           expect(result).to.equal(t.expected);
@@ -437,3 +728,13 @@ describe('utils.composeElementInfo', () => {
     });
   }); // IParseInfo with common and def
 }); // utils.composeElementInfo
+
+describe('XpathConverterImpl', () => {
+  context('given: a custom spec', () => {
+    it('should: be constructed ok', () => {
+      const stub = new SpecOptionService();
+      const converter = new Impl(stub);
+      expect(converter).to.not.be.undefined();
+    });
+  });
+}); // XpathConverterImpl

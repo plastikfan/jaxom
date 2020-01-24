@@ -9,6 +9,7 @@ import {
 } from '../specService/spec-option-service.class';
 
 import * as e from '../exceptions';
+import * as utils from '../utils/utils';
 
 export class Transformer {
 
@@ -20,13 +21,29 @@ export class Transformer {
   // collection!
   //
   private readonly transformers = new Map<string, ITransformFunction<any>>([
-    ['number', this.transformNumber],
     ['boolean', this.transformBoolean],
-    ['primitives', this.transformPrimitives],
     ['collection', this.transformCollection],
     ['date', this.transformDate],
-    ['symbol', this.transformSymbol],
-    ['string', this.transformString]
+    ['number', this.transformNumber],
+    ['primitives', this.transformPrimitiveValue],
+    ['string', this.transformString],
+    ['symbol', this.transformSymbol]
+  ]);
+
+  // The invocation of these functions is the point at which type conversion of each array element
+  // occurs from the original type to numeric type. This is the reason why we don't have to explicity
+  // use the transformPrimitive / transformNumber functions to perform the type conversion.
+  //
+  private numericArrayCollections = new Map<string, (c: Iterable<number>, s: string, sc: types.SpecContext) => ArrayCollectionType>([
+    ['int8array', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Int8Array, c, s, sc)],
+    ['uint8array', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Uint8Array, c, s, sc)],
+    ['uint8clampedarray', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Uint8ClampedArray, c, s, sc)],
+    ['int16array', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Int16Array, c, s, sc)],
+    ['uint16array', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Uint16Array, c, s, sc)],
+    ['int32array', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Int32Array, c, s, sc)],
+    ['uint32array', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Uint32Array, c, s, sc)],
+    ['float32array', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Float32Array, c, s, sc)],
+    ['float64array', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Float64Array, c, s, sc)]
   ]);
 
   private static readonly typeExpr = /\<(?<type>[\w\[\]]+)\>/;
@@ -37,24 +54,24 @@ export class Transformer {
    * (Remember when invoking the resultant method, the this reference may not be correct
    * depending on the invocation). function.call may be required.
    *
-   * @param {types.MatcherType} name
+   * @param {types.MatcherStr} name
    * @returns {ITransformFunction<any>}
    * @memberof Transformer
    */
-  public getTransform (name: types.MatcherType): ITransformFunction<any> {
+  public getTransform (name: types.MatcherStr): ITransformFunction<any> {
     const result = this.transformers.get(name);
-
+    /* istanbul ignore next: un-testable name is protected by type */
     if (!result) {
       throw new e.JaxInternalError(`Couldn't get transformer for matcher: ${name}`,
         'getTransform');
     }
     return result;
-  }
+  } // getTransform
 
   // ---------------------------------------------------- ITransformer interface
 
   /**
-   * @method coerceAttributeValue
+   * @method coerceMatcherValue
    * @description Top level function that implements value type coercion.
    *
    * @private
@@ -65,31 +82,25 @@ export class Transformer {
    * @returns
    * @memberof Transformer
    */
-  coerceAttributeValue (subject: string, matchers: any, rawValue: any, attributeName: string): {} {
+  coerceMatcherValue (subject: string, matchers: types.IMatchers, rawValue: string, attributeName: string): {} {
     let resultValue = rawValue;
 
-    if (R.is(Object)(matchers)) {
-      // insertion order of keys is preserved, because key types of symbol
-      // and string are iterated in insertion order. Iterative only whilst
-      // we don't have a successful coercion result.
-      //
-      R.keys(matchers).some((mt: types.MatcherType) => {
-        const transform = this.getTransform(R.toLower(mt) as types.MatcherType);
-        const result = transform.call(this, subject, rawValue, 'attributes');
+    // insertion order of keys is preserved, because key types of symbol
+    // and string are iterated in insertion order. Iterate only whilst
+    // we don't have a successful coercion result.
+    //
+    R.keys(matchers).some((mt: types.MatcherStr) => {
+      const transform = this.getTransform(mt);
+      const result = transform.call(this, subject, rawValue, 'attributes');
 
-        if (result.succeeded) {
-          resultValue = result.value;
-        }
-        return result.succeeded;
-      });
-    } else {
-      throw new e.JaxInternalError(
-        `invalid matchers: ${functify(matchers)}, for attribute: ${attributeName} / raw value: ${rawValue}`,
-          'coerceAttributeValue');
-    }
+      if (result.succeeded) {
+        resultValue = result.value;
+      }
+      return result.succeeded;
+    });
 
     return resultValue;
-  }
+  } // coerceMatcherValue
 
   // ITransformer interface ====================================================
 
@@ -100,12 +111,12 @@ export class Transformer {
    * @private
    * @param {string} subject: Identifies the current xml entity
    * @param {string} collectionValue
-   * @param {types.ContextType} context
+   * @param {types.SpecContext} context
    * @returns {ITransformResult<any[]>}
    * @memberof Transformer
    */
   private transformCollection (subject: string, collectionValue: string,
-    context: types.ContextType): ITransformResult<any[]> {
+    context: types.SpecContext): ITransformResult<any> { // any collection!
     let succeeded = false;
     let value: any = null;
 
@@ -126,32 +137,54 @@ export class Transformer {
 
       if (openIsMatch && closeIsMatch) {
         let temp = openExpr.exec(collectionValue);
-        const capturedOpen: string = (temp) ? temp[0] : '';
-        if (capturedOpen === '') {
-          throw new e.JaxParseError(`open expression fails match for value '${collectionValue}'`,
-            subject);
-        }
+        const capturedOpen: string = temp![0];
 
         temp = closeExpr.exec(collectionValue);
-        const capturedClose: string = (temp) ? temp[0] : '';
-        if (capturedClose === '') {
-          throw new e.JaxParseError(`close expression fails match for value '${collectionValue}'`,
-            subject);
-        }
+        const capturedClose: string = temp![0];
 
         // Now look for the collection type which should be captured as '<type>'
         // So the default open pattern is: "!<[]>[", and close pattern is: "]"
         //
         // This allows values like
         // "!<[]>[1,2,3,4]" => [1,2,3,4]
-        // "!<[Int8Array]>[1,2,3,4]" => [1,2,3,4]
         //
         const coreValue: string = this.extractCoreCollectionValue(capturedOpen, capturedClose, collectionValue);
-        const arrayElements: any[] = coreValue.split(delim);
+        const collectionElements: any[] = coreValue.split(delim);
 
-        return this.isUnaryCollection(collectionType)
-          ? this.transformUnaryCollection(subject, context, arrayElements)
-          : this.transformAssociativeCollection(subject, context, collectionType, arrayElements);
+        if (collectionType === '[]') {
+          // mixed type collection
+          //
+          const resultMix = this.transformMixedCollection(subject, context, collectionElements);
+          value = resultMix.value;
+          succeeded = resultMix.succeeded;
+        } else if (R.includes(R.toLower(collectionType), ['object', '{}'])) {
+          // object
+          //
+          const resultObj = this.transformObject(subject, context, collectionType, collectionElements);
+          value = resultObj.value;
+          succeeded = resultObj.succeeded;
+        } else if (R.toLower(collectionType) === 'map') {
+          // map
+          //
+          const resultMap = this.transformMap(subject, context, collectionType, collectionElements);
+          value = resultMap.value;
+          succeeded = resultMap.succeeded;
+        } else if (this.numericArrayCollections.has(R.toLower(collectionType))) {
+          // typed numeric array
+          //
+          value = this.numericArrayCollections.get(R.toLower(collectionType))!(
+            collectionElements, subject, context);
+          succeeded = true;
+        } else if (R.toLower(collectionType) === 'set') {
+          // set
+          //
+          const resultSet = this.transformSet(subject, context, collectionElements);
+          value = resultSet.value;
+          succeeded = resultSet.succeeded;
+
+        } else {
+          throw new Error(`[${subject}]: Couldn't create ${collectionType} collection`);
+        }
       }
     }
 
@@ -179,10 +212,14 @@ export class Transformer {
     let result = '';
 
     if (Transformer.typeExpr.test(open)) {
-
       const match = Transformer.typeExpr.exec(open);
+
+      // Best explanation of RegExp named capturing group functionality:
+      // https://javascript.info/regexp-groups
+      //
       const collectionType = R.view(R.lensPath(['groups', CollectionTypeLabel]))(match);
 
+      /* istanbul ignore next: reg-ex has already been tested above so can't be falsy */
       if (collectionType) {
         result = collectionType as string;
       }
@@ -192,48 +229,20 @@ export class Transformer {
   } // extractTypeFromCollectionValue
 
   /**
-   * @method transformUnaryCollection
-   * @description A unary collection is one where each item is created by a single
-   * value; ie its the opposite of an associative collection where each entry in the
-   * collection requires 2 values: the key and the value. Each item in the collection
-   * is treated as a primitive and are transformed according to the primitives
-   * directive in the spec.
-   *
-   * @private
-   * @param {string} subject: Identifies the current xml entity
-   * @param {types.ContextType} context
-   * @param {any[]} sourceCollection
-   * @returns {ITransformResult<any[]>}
-   * @memberof Transformer
-   */
-  private transformUnaryCollection (subject: string, context: types.ContextType,
-    sourceCollection: any[]): ITransformResult<any[]> {
-    const value: any[] = R.map((item: types.PrimitiveType) => {
-      const itemResult = this.transformPrimitives(subject, item, context);
-      return (itemResult.succeeded) ? itemResult.value : item;
-    })(sourceCollection);
-
-    return {
-      value: value,
-      succeeded: true
-    };
-  } // transformUnaryCollection
-
-  /**
-   * @method transformAssociativeCollection
+   * @method transformObject
    * @description Coerces the items in the associative collection passed in according
    * to the assoc.keyType and assoc.valueType defined in the spec.
    *
    * @private
    * @param {string} subject: Identifies the current xml entity
-   * @param {types.ContextType} context
+   * @param {types.SpecContext} context
    * @param {string} collectionType
    * @param {any[]} sourceCollection
    * @returns {ITransformResult<any[]>}
    * @memberof Transformer
    */
-  private transformAssociativeCollection (subject: string, context: types.ContextType,
-    collectionType: string, sourceCollection: any[]): ITransformResult<any[]> {
+  private transformObject (subject: string, context: types.SpecContext,
+    collectionType: string, sourceCollection: any[]): ITransformResult<types.ObjectType> {
 
     const assocDelim = this.options.fetchOption(
       `${context}/coercion/matchers/collection/assoc/delim`) as string;
@@ -246,32 +255,31 @@ export class Transformer {
 
     // Split out the values into an array of pairs
     //
-    const transformValue: any[] = R.reduce((acc: any[], collectionPair: string) => {
+    const transformValue: any[] = R.reduce((acc: types.PrimitiveType[], collectionPair: string) => {
       const elements: string[] = R.split(assocDelim)(collectionPair);
+      let resultAcc = acc;
       if (elements.length === 2) {
-        const coercedKeyResult = this.transformAssoc(subject, assocKeyType, context, elements[0]);
-        const coercedValueResult = this.transformAssoc(subject, assocValueType, context, elements[1]);
+        const coercedKeyResult = this.transformAssocValue(subject, assocKeyType, context, elements[0]);
+        const coercedValueResult = this.transformAssocValue(subject, assocValueType, context, elements[1]);
 
         if (coercedKeyResult.succeeded && coercedValueResult.succeeded) {
-          return R.append([coercedKeyResult.value, coercedValueResult.value])(acc);
+          resultAcc = R.append([coercedKeyResult.value, coercedValueResult.value])(acc);
+        } else {
+          const keyMessage = `[KEY; type: "${assocKeyType}", val: "${coercedKeyResult.value.toString()}]"`;
+          const valMessage = `[VAL; type: "${assocValueType}", val: "${coercedValueResult.value.toString()}]"`;
+          throw new e.JaxParseError(
+            `Coercion: ${keyMessage}, ${valMessage}`, subject);
         }
       } else {
-        throw new e.JaxParseError(`Malformed map entry: ${collectionPair}`,
+        throw new e.JaxParseError(`Malformed object entry: ${collectionPair}`,
           subject);
       }
 
-      return acc;
+      return resultAcc;
     }, [])(sourceCollection);
 
-    let succeeded = true;
-    let result: any;
-
-    // Create the collection wrapper. We need to apply the coercion to individual
-    // values here; transformAssoc ...
-    //
-    result = R.includes(R.toLower(collectionType), ['object', '{}'])
-      ? R.fromPairs(transformValue)
-      : this.createTypedCollection(R.toLower(collectionType), transformValue);
+    let succeeded = transformValue.length > 0;
+    let result: types.ObjectType = R.fromPairs(transformValue);
 
     return {
       value: result,
@@ -280,50 +288,117 @@ export class Transformer {
   } // transformAssociativeCollection
 
   /**
-   * @method transformAssoc
+   * @method transformMap
+   * @description Coerces the items in the associative collection passed in according
+   * to the assoc.keyType and assoc.valueType defined in the spec.
+   *
+   * @private
+   * @param {string} subject: Identifies the current xml entity
+   * @param {types.SpecContext} context
+   * @param {string} collectionType
+   * @param {any[]} sourceCollection
+   * @returns {ITransformResult<Map<types.PrimitiveType, types.PrimitiveType>>}
+   * @memberof Transformer
+   */
+  private transformMap (subject: string, context: types.SpecContext,
+    collectionType: string, sourceCollection: any[]): ITransformResult<Map<types.PrimitiveType, types.PrimitiveType>> {
+
+    const assocDelim = this.options.fetchOption(
+      `${context}/coercion/matchers/collection/assoc/delim`) as string;
+
+    const assocKeyType = this.options.fetchOption(
+      `${context}/coercion/matchers/collection/assoc/keyType`) as string;
+
+    const assocValueType = this.options.fetchOption(
+      `${context}/coercion/matchers/collection/assoc/valueType`) as string;
+
+    // Split out the values into an array of pairs
+    //
+    const init = new Map<types.PrimitiveType, types.PrimitiveType>();
+
+    const resultMap: Map<types.PrimitiveType, types.PrimitiveType> = R.reduce(
+      (acc: Map<types.PrimitiveType, types.PrimitiveType>, collectionPair: string) => {
+        const elements: string[] = R.split(assocDelim)(collectionPair);
+        let result = acc;
+        if (elements.length === 2) {
+          const coercedKeyResult = this.transformAssocValue(subject, assocKeyType, context, elements[0]);
+          const coercedValueResult = this.transformAssocValue(subject, assocValueType, context, elements[1]);
+
+          if (coercedKeyResult.succeeded && coercedValueResult.succeeded) {
+            result = acc.set(coercedKeyResult.value, coercedValueResult.value);
+          }
+        } else {
+          throw new e.JaxParseError(`Malformed map entry: ${collectionPair}`,
+            subject);
+        }
+
+        return result;
+      }, init)(sourceCollection);
+
+    let succeeded = resultMap.size > 0;
+
+    return {
+      value: resultMap,
+      succeeded: succeeded
+    };
+  } // transformMap
+
+  /**
+   * @method transformAssocValue
    * @description Attempts to coerce a value from an associative collection
    *
    * @private
    * @param {string} subject: Identifies the current xml entity
-   * @param {*} assocType
-   * @param {types.ContextType} context
+   * @param {string | string[]} assocType: The textual specifier of the type(s) to be tried. When
+   * this function is invoked as part of primitive processing, the configured type can be an array
+   * of types. When invoked from other contexts (eg key/value items in an associate collection), the
+   * type descriptor here will simply be a string.
+   * @param {types.SpecContext} context
    * @param {string} assocValue
    * @returns {ITransformResult<any>}
    * @memberof Transformer
    */
-  private transformAssoc (subject: string, assocType: any,
-    context: types.ContextType, assocValue: string): ITransformResult<any> {
+  private transformAssocValue (subject: string, assocType: string | string[],
+    context: types.SpecContext, assocValue: string): ITransformResult<types.PrimitiveType> {
 
-    let coercedValue = null;
+    let coercedValue: types.PrimitiveType = assocValue;
     let succeeded = false;
-
     let assocTypes = assocType;
 
-    if (R.is(String)(assocType)) {
-      assocTypes = [assocType];
-    }
-
-    if (R.is(Array)(assocTypes)) {
-      let self = this;
-      assocTypes.some((val: types.PrimitiveType) => {
-        if (R.includes(val, ['number', 'boolean', 'symbol', 'string'])) {
-          const transform = self.getTransform(val);
-          const coercedResult = transform.call(self, subject, assocValue, context);
-
-          if (coercedResult.succeeded) {
-            succeeded = coercedResult.succeeded;
-            coercedValue = coercedResult.value;
-          }
-
-          return coercedResult.succeeded;
-        } else {
-          throw new e.JaxConfigError(`Invalid value type for associative collection found: ${val}`,
-            subject);
-        }
-      });
+    // If invoked from processing associative key/value pairs that are configured as a
+    // string, we do not need to attempt coercion. We can't leave it to the string transform
+    // because this is overkill, and we should not be subject to having a string matcher set
+    // to 'false', which is meant for a different purpose altogether. So we check for this and
+    // bypass the coercion attempt.
+    //
+    if (assocType === 'string') {
+      coercedValue = assocValue;
+      succeeded = true;
     } else {
-      throw new e.JaxConfigError(`Invalid associative value type: ${functify(assocTypes)}`,
-        subject);
+      if (typeof assocType === 'string') {
+        assocTypes = [assocType];
+      }
+
+      /* istanbul ignore next: type guard so we can call .some() */
+      if (assocTypes instanceof Array) {
+        let self = this;
+        assocTypes.some((val: types.PrimitiveStr) => {
+          if (R.includes(val, types.PrimitiveStrArray)) {
+            const transform = self.getTransform(val);
+            const coercedResult = transform.call(self, subject, assocValue, context);
+
+            if (coercedResult.succeeded) {
+              succeeded = coercedResult.succeeded;
+              coercedValue = coercedResult.value;
+            }
+
+            return coercedResult.succeeded;
+          } else {
+            throw new e.JaxConfigError(`Invalid value type for associative collection found: ${val}`,
+              subject);
+          }
+        });
+      }
     }
 
     return {
@@ -339,12 +414,12 @@ export class Transformer {
    * @private
    * @param {string} subject: Identifies the current xml entity
    * @param {number} numberValue
-   * @param {types.ContextType} context
+   * @param {types.SpecContext} context
    * @returns {ITransformResult<number>}
    * @memberof Transformer
    */
   private transformNumber (subject: string, numberValue: number,
-    context: types.ContextType): ITransformResult<number> {
+    context: types.SpecContext): ITransformResult<number> {
 
     let result = Number(numberValue);
 
@@ -366,20 +441,20 @@ export class Transformer {
    * @private
    * @param {string} subject: Identifies the current xml entity
    * @param {(string | boolean)} booleanValue
-   * @param {types.ContextType} context
+   * @param {types.SpecContext} context
    * @returns {ITransformResult<boolean>}
    * @memberof Transformer
    */
   private transformBoolean (subject: string, booleanValue: string | boolean,
-    context: types.ContextType): ITransformResult<boolean> {
+    context: types.SpecContext): ITransformResult<boolean> {
 
-    let value;
+    let value = false;
     let succeeded = false;
 
     if (R.is(Boolean)(booleanValue)) {
       succeeded = true;
       value = booleanValue as boolean;
-    } else if (R.is(String)(booleanValue)) {
+    } else {
       const lowerBooleanValue = R.toLower(booleanValue as string);
       if (R.either(R.equals('true'), R.equals('false'))(lowerBooleanValue)) {
         succeeded = true;
@@ -391,11 +466,6 @@ export class Transformer {
       } else {
         value = false;
       }
-    } else {
-      // This value is not significant and should not be used, since the transform function
-      // has failed; however, we can't leave value to be unset.
-      //
-      value = false;
     }
 
     return {
@@ -405,36 +475,38 @@ export class Transformer {
   } // transformBoolean
 
   /**
-   * @method transformPrimitives
+   * @method transformPrimitiveValue
    * @description Attempts to coerce value according to the primitives defined in the spec
    *
    * @private
    * @param {string} subject: Identifies the current xml entity
-   * @param {types.PrimitiveType} primitiveValue
-   * @param {types.ContextType} context
+   * @param {string} primitiveValue: the raw primitive text value to be transformed
+   * @param {types.SpecContext} context
    * @returns {ITransformResult<any>}
    * @memberof Transformer
    */
-  private transformPrimitives (subject: string, primitiveValue: types.PrimitiveType,
-    context: types.ContextType): ITransformResult<any> {
+  private transformPrimitiveValue (subject: string, primitiveValue: string,
+    context: types.SpecContext): ITransformResult<types.CoercivePrimitiveType> {
 
     const primitives = this.options.fetchOption(`${context}/coercion/matchers/primitives`) as [];
 
-    if (R.includes(R.toLower(primitiveValue), ['primitives', 'collection'])) {
-      throw new e.JaxConfigError(`primitives matcher cannot contain: ${primitiveValue}`,
-        subject);
-    }
-
-    let coercedValue = null;
+    let coercedValue = 0;
     let succeeded = false;
 
-    primitives.some((val: types.PrimitiveType) => {
-      const transform = this.getTransform(val);
-      const coercedResult = transform(subject, primitiveValue, context);
-      succeeded = coercedResult.succeeded;
+    primitives.some((val: types.CoercivePrimitiveStr) => {
+      const validatedPrimitiveStr = R.toLower(val);
+      if (R.includes(validatedPrimitiveStr, types.CoercivePrimitiveStrArray)) {
+        const transform = this.getTransform(val);
+        const coercedResult = transform(subject, primitiveValue, context);
+        succeeded = coercedResult.succeeded;
 
-      if (succeeded) {
-        coercedValue = coercedResult.value;
+        if (succeeded) {
+          coercedValue = coercedResult.value;
+        }
+      } else {
+        throw new e.JaxConfigError(
+          `Invalid primitives config "${context}/coercion/matchers/primitives = ${primitives}"`,
+            subject);
       }
 
       return succeeded;
@@ -444,7 +516,51 @@ export class Transformer {
       succeeded: succeeded,
       value: coercedValue
     };
-  } // transformPrimitives
+  } // transformPrimitiveValue
+
+  /**
+   * @method transformElementValue
+   * @description Transforms a single element value
+   *
+   * @private
+   * @param {string} subject
+   * @param {types.CoercivePrimitiveType} elementValue
+   * @param {types.SpecContext} context
+   * @returns {ITransformResult<types.CoercivePrimitiveType>}
+   * @memberof Transformer
+   */
+  private transformElementValue (subject: string, elementValue: types.PrimitiveType,
+    context: types.SpecContext): ITransformResult<types.PrimitiveType> {
+
+    const elementTypes = this.options.fetchOption(`${context}/coercion/matchers/collection/elementTypes`) as [];
+
+    let coercedValue = elementValue;
+    let succeeded = false;
+
+    elementTypes.some((val: types.PrimitiveStr) => {
+      const validatedElementStr = R.toLower(val);
+      if (R.includes(validatedElementStr, types.CoercivePrimitiveStrArray)) {
+        const transform = this.getTransform(val);
+        const coercedResult = transform(subject, elementValue, context);
+        succeeded = coercedResult.succeeded;
+
+        if (succeeded) {
+          coercedValue = coercedResult.value;
+        }
+      } else {
+        throw new e.JaxConfigError(
+          `Invalid elementTypes config "${context}/coercion/matchers/elementTypes = ${elementTypes}"`,
+            subject);
+      }
+
+      return succeeded;
+    });
+
+    return {
+      succeeded: succeeded,
+      value: coercedValue
+    };
+  } // transformElementValue
 
   /**
    * @method transformDate
@@ -453,25 +569,16 @@ export class Transformer {
    * @private
    * @param {string} subject: Identifies the current xml entity
    * @param {string} dateValue
-   * @param {types.ContextType} context
+   * @param {types.SpecContext} context
    * @returns {ITransformResult<Date>}
    * @memberof Transformer
    */
   private transformDate (subject: string, dateValue: string,
-    context: types.ContextType): ITransformResult<Date> {
+    context: types.SpecContext): ITransformResult<Date> {
 
     const format = this.options.fetchOption(`${context}/coercion/matchers/date/format`) as string;
-
-    let momentDate;
-    let succeeded;
-
-    try {
-      momentDate = moment(dateValue, format);
-      succeeded = momentDate.isValid();
-    } catch (err) {
-      succeeded = false;
-      momentDate = dateValue;
-    }
+    const momentDate = moment(dateValue, format);
+    const succeeded = momentDate.isValid();
 
     return {
       value: momentDate,
@@ -490,7 +597,7 @@ export class Transformer {
    * @memberof Transformer
    */
   transformSymbol (subject: string, symbolValue: string,
-    context: types.ContextType): ITransformResult<Symbol> {
+    context: types.SpecContext): ITransformResult<Symbol> {
 
     const prefix = this.options.fetchOption(
       `${context}/coercion/matchers/symbol/prefix`) as string;
@@ -511,21 +618,22 @@ export class Transformer {
   /**
    * @method transformString
    * @description: Simply returns the value directly from the source. This transform
-   *    can be explicitly defined to force an exception to be thrown if other defined
-   *    transforms also fail. To achieve this, just define the "string" matcher in the
-   *    spec with a value of false.
+   * can be explicitly defined to force an exception to be thrown if other defined
+   * transforms also fail. To achieve this, just define the "string" matcher in the
+   * spec with a value of false. If the string matcher is missing from the spec then
+   * we just default to accepting the raw value as the coercion result.
    *
    * @param {string} subject: Identifies the current xml entity
    * @param {string} stringValue
    * @param {contextType} context
-   * @returns: { value: the transformed string, succeeded: flag to indicate transform result }
+   * @returns: { value: the raw string verbatim, succeeded: flag to indicate transform result }
    * @memberof Transformer
    */
-  transformString (subject: string, stringValue: string, context: types.ContextType)
+  transformString (subject: string, stringValue: string, context: types.SpecContext)
     : ITransformResult<string> {
-    const stringCoercionAcceptable = this.options.fetchOption(
-      `${context}/coercion/matchers/string`) as boolean;
+    const optionStr = this.options.fetchOption(`${context}/coercion/matchers/string`);
 
+    const stringCoercionAcceptable: boolean = optionStr === undefined ? true : optionStr as boolean;
     if (!stringCoercionAcceptable) {
       throw new e.JaxSolicitedError(`matching failed, terminated by string matcher.`,
         subject);
@@ -536,39 +644,6 @@ export class Transformer {
       succeeded: true
     };
   } // transformString
-
-  /**
-   * @function createTypedCollection
-   *
-   * @param {string} t
-   * @param {*} collectionElements: the source to create the typed collection from
-   * @returns {*}
-   * @memberof Transformer
-   */
-  createTypedCollection (t: string, collectionElements: any): any {
-    let collection: any;
-
-    switch (t) {
-      case 'int8array': collection = Int8Array.from(collectionElements); break;
-      case 'uint8array': collection = Uint8Array.from(collectionElements); break;
-      case 'uint8clampedarray': collection = Uint8ClampedArray.from(collectionElements); break;
-      case 'int16array': collection = Int16Array.from(collectionElements); break;
-      case 'uint16array': collection = Uint16Array.from(collectionElements); break;
-      case 'int32array': collection = Int32Array.from(collectionElements); break;
-      case 'uint32array': collection = Uint32Array.from(collectionElements); break;
-      case 'float32array': collection = Float32Array.from(collectionElements); break;
-      case 'float64array': collection = Float64Array.from(collectionElements); break;
-      case 'set': collection = new Set(collectionElements); break;
-      case 'weakset': collection = new WeakSet(collectionElements); break;
-      case 'map': collection = new Map(collectionElements); break;
-      case 'weakmap': collection = new WeakMap(collectionElements); break;
-
-      default:
-        collection = Array.from(collectionElements);
-    }
-
-    return collection;
-  } // createTypedCollection
 
   /**
    * @function extractCoreCollectionValue
@@ -583,13 +658,12 @@ export class Transformer {
    * @returns {string}
    * @memberof Transformer
    */
-  extractCoreCollectionValue (open: string, close: string, collectionValue: string): string {
-    if (collectionValue.startsWith(open) && collectionValue.endsWith(close)) {
-      const coreValue = collectionValue.replace(open, '');
-      return coreValue.slice(0, coreValue.length - close.length);
-    }
-
-    return collectionValue;
+  private extractCoreCollectionValue (open: string, close: string, collectionValue: string): string {
+    // Assumption: the open and close have already been matched against the collection value,
+    // so collectionValue must start with open and end with close, so we don't need to check.
+    //
+    const coreValue = collectionValue.replace(open, '');
+    return coreValue.slice(0, coreValue.length - close.length);
   } // extractCoreCollectionValue
 
   /**
@@ -599,19 +673,90 @@ export class Transformer {
    * @param {String} inputString: input to escape.
    * @returns: escaped String.
    */
-  escapeRegExp (inputString: string): string {
+  private escapeRegExp (inputString: string): string {
     return inputString.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
   }
 
   /**
-   * @function isUnaryCollection
+   * @method create
+   * @description Creates the typed collection. Whilst creating the collection, we need to ensure that
+   *  each element is actually numeric. Since the user may accidentally add a non numeric element to the
+   *  array, it would be bad to silently convert this value to 0, as is the case by default. There is no
+   *  sensible scenario in which a user may request that a compound value declared to be created with a
+   *  typed collection, should specify a non numeric value so let's just throw in all cases; and it
+   *  doesn't even make sense to make this behaviour to be configurable via a spec or IElementInfo setting.
    *
-   * @param {string} definedType
-   * @returns {boolean}
+   * @private
+   * @template CT the type of collection to create
+   * @param {IFrom<CT>} collectionClass
+   * @param {Iterable<number>} c: the collection being converted
+   * @param {string} s: the subject
+   * @param {types.SpecContext} sc: the context
+   * @returns {CT}
+   * @memberof Transformer
    */
-  isUnaryCollection (definedType: string): boolean {
-    return R.includes(R.toLower(definedType), ['[]', 'int8array', 'uint8array', 'uint8clampedarray', 'int16array',
-      'int16array', 'int32array', 'uint32array', 'float32array', 'float64array', 'set']);
+  private create<CT> (collectionClass: IFrom<CT>, c: Iterable<number>, s: string, sc: types.SpecContext): CT {
+    const collection = collectionClass.from(c, (v: any, i: number): number => {
+      if (!utils.isNumeric(v)) {
+        const message = `[${s}]: Can't add non numeric ${sc} item: "${v}", to collection: "${collectionClass.name}".`;
+        throw new TypeError(message);
+      }
+      return v;
+    });
+
+    return collection;
+  }
+
+  /**
+   * @method transformMixedCollection
+   * @description Creates a mixed type collection. Each element is coerced by trying each transform
+   * defined in ../coercion/matchers/collection/elementTypes.
+   *
+   * @private
+   * @param {string} subject
+   * @param {types.SpecContext} context
+   * @param {any[]} c: the collection instance to convert
+   * @returns {ITransformResult<types.CoercivePrimitiveType[]>}
+   * @memberof Transformer
+   */
+  private transformMixedCollection (subject: string, context: types.SpecContext, c: any[])
+    : ITransformResult<types.CoercivePrimitiveType[]> {
+
+    const value = Array.from(c, (val: any, i: number): any => {
+      const transformResult = this.transformElementValue(subject, val, context);
+      return transformResult.succeeded ? transformResult.value : val;
+    });
+
+    return {
+      value: value,
+      succeeded: true
+    };
+  }
+
+  /**
+   * @method transformSet
+   * @description Creates a Set instance with coerced element contents
+   * @private
+   * @param {string} subject
+   * @param {types.SpecContext} context
+   * @param {types.PrimitiveType[]} c: the collection instance to convert
+   * @returns {ITransformResult<Set<types.PrimitiveType>>}
+   * @memberof Transformer
+   */
+  private transformSet (subject: string, context: types.SpecContext, c: types.PrimitiveType[])
+    : ITransformResult<Set<types.PrimitiveType>> {
+
+    const init = new Set<types.CoercivePrimitiveType>();
+    const resultSet = R.reduce((acc: Set<types.PrimitiveType>, val: types.PrimitiveType)
+      : Set<types.PrimitiveType> => {
+      const transformResult = this.transformElementValue(subject, val, context);
+      return acc.add(transformResult.value);
+    }, init)(c);
+
+    return {
+      value: resultSet,
+      succeeded: true
+    };
   }
 } // Transformer class
 
@@ -646,5 +791,25 @@ export interface ITransformResult<T> {
  * @template T The type of the transform result payload.
  */
 export interface ITransformFunction<T> {
-  (s: string, v: any, c: types.ContextType): ITransformResult<T>;
+  (subject: string, rawValue: T, c: types.SpecContext): ITransformResult<T>;
+}
+
+/**
+ * @interface IFrom
+ * @template CT represents the collection type, eg Int8Array
+ * @description used as a constraint for the create method and also allowing create
+ * to invoke the from method for creation of the typed collection from an iterable.
+ */
+interface IFrom<CT> { // definitions taken from iterable.d.ts
+  new(elements: Iterable<number>): CT;
+  from (arrayLike: Iterable<number>, mapfn?: (v: number, k: number) => number, thisArg?: any): CT;
+}
+
+type ArrayCollectionType = [] | Int8Array | Uint8Array | Uint8ClampedArray | Int16Array |
+  Uint16Array | Int32Array | Uint32Array | Float32Array | Float64Array;
+
+// Extend the Function interface to enable proper reporting of collection in "create<CT>"
+//
+interface Function {
+  name: string;
 }

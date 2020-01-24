@@ -21,16 +21,12 @@ export class XpathConverter implements types.IConverter {
    * @memberof XpathConverter
    */
   constructor (spec: types.ISpec = Specs.default) {
-    if (!spec) {
-      throw new Error('null spec not permitted');
-    }
-
     // Control freak!
     //
     this.impl = new XpathConverterImpl(new SpecOptionService(spec));
   }
 
-  private impl: IConverterImpl;
+  private readonly impl: IConverterImpl;
 
   /**
    * @method build

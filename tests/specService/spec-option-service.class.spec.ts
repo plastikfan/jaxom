@@ -183,3 +183,41 @@ describe('SpecOptionService.fetchOption', () => {
     });
   });
 }); // SpecOptionService.fetchSpecOption
+
+describe('SpecOptionService.getSpec', () => {
+  context('given: a constructed SpecOptionService', () => {
+    it('should: be able to get the current spec', () => {
+      const converter = new SpecOptionService();
+      const spec: types.ISpec = converter.getSpec();
+      expect(spec).to.not.be.undefined();
+    });
+  });
+});
+
+describe('SpecOptionService.validateSpec', () => {
+  context('given: invalid spec with identical collection/delim & collection/assoc/delim delimiters', () => {
+    it('should: throw', () => {
+      const invalidSpec: types.ISpec = Object.freeze({
+        name: 'invalid-spec-with-identical-delimiters',
+        attributes: {
+          trim: true,
+          coercion: {
+            matchers: {
+              collection: {
+                delim: '=',
+                assoc: {
+                  delim: '='
+                }
+              }
+            }
+          }
+        }
+      });
+
+      expect(() => {
+        // tslint:disable-next-line: no-unused-expression
+        new SpecOptionService(invalidSpec);
+      }).to.throw();
+    });
+  });
+});

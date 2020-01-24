@@ -26,3 +26,9 @@ export function composeElementInfo (elementName: string, parseInfo: types.IParse
 
   return result;
 } // composeElementInfo
+
+// why is this functionality not part of the standard js library
+//
+export function isNumeric (n: any) {
+  return !isNaN(parseFloat(n)) && isFinite(n);
+}

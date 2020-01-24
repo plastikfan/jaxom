@@ -7,7 +7,8 @@
 
 export class JaxConfigError extends Error {
   constructor (message: string, elementPath: string) {
-    super(`${message} at: '${elementPath}'`);
+    super(`${message} at: '${elementPath}'`)
+      /* istanbul ignore next: istanbul coverage issue #690 */;
 
     Object.setPrototypeOf(this, JaxConfigError.prototype);
   }
@@ -15,7 +16,8 @@ export class JaxConfigError extends Error {
 
 export class JaxParseError extends Error {
   constructor (message: string, elementPath: string) {
-    super(`${message} at: '${elementPath}'`);
+    super(`${message} at: '${elementPath}'`)
+      /* istanbul ignore next: istanbul coverage issue #690 */;
 
     Object.setPrototypeOf(this, JaxParseError.prototype);
   }
@@ -23,7 +25,8 @@ export class JaxParseError extends Error {
 
 export class JaxInternalError extends Error {
   constructor (message: string, private fnName: string) {
-    super(`['${fnName}']: ${message}`);
+    super(`['${fnName}']: ${message}`)
+      /* istanbul ignore next: istanbul coverage issue #690 */;
 
     Object.setPrototypeOf(this, JaxInternalError.prototype);
   }
@@ -31,8 +34,18 @@ export class JaxInternalError extends Error {
 
 export class JaxSolicitedError extends Error {
   constructor (message: string, elementPath: string) {
-    super(`${message} at: '${elementPath}'`);
+    super(`${message} at: '${elementPath}'`)
+      /* istanbul ignore next: istanbul coverage issue #690 */;
 
     Object.setPrototypeOf(this, JaxSolicitedError.prototype);
+  }
+}
+
+export class JaxSpecValidationError extends Error {
+  constructor (reason: string, specName: string, val: string, configPath: string) {
+    super(`spec named: ${specName} failed validation at: "${configPath}", with: "${val}" (${reason})`)
+      /* istanbul ignore next: istanbul coverage issue #690 */;
+
+    Object.setPrototypeOf(this, JaxSpecValidationError.prototype);
   }
 }
