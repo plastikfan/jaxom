@@ -19,7 +19,7 @@ export class Normaliser {
    * in multiple separate collections. For ease of use, this method will collate elements
    * of the same type into the same collection. See documentation and tests for more
    * information. Note, this method is only appropriate to be used on any elements that
-   * are NOT abstract and do inherit from other elements.
+   * are NOT abstract and inherit from other elements.
    *
    * @param {string} subject
    * @param {*} parentElement: The element whose inherited descendants need to be combined.
@@ -29,7 +29,6 @@ export class Normaliser {
 
   public combineDescendants (subject: string, parentElement: any,
     parseInfo: types.IParseInfo): any {
-
     const self = this;
     const children: [] = parentElement[this.options.descendantsLabel];
 
@@ -46,17 +45,11 @@ export class Normaliser {
         return R.append(current, acc);
       }
 
-      // "found" here, is a reference obtained by the [] operator and therefore not
-      // a copy, so any changes to it are persistent in the accumulator.
-      //
       const found: any = acc[foundIndex];
       const foundElementInfo = utils.composeElementInfo(
         found[self.options.elementLabel], parseInfo);
-      const id = foundElementInfo.descendants?.id;
 
-      if (id) {
-        const allContainId = R.all((o: any): boolean => id in o);
-
+      if (current[self.options.descendantsLabel] && found[self.options.descendantsLabel]) {
         const currentChildren: any[] = R.is(Array)(current[self.options.descendantsLabel])
           ? current[self.options.descendantsLabel]
           : R.values(current[self.options.descendantsLabel]);
@@ -65,26 +58,21 @@ export class Normaliser {
           ? found[self.options.descendantsLabel]
           : R.values(found[self.options.descendantsLabel]);
 
-        // Are the types of children the same?
-        //
         if (R.is(Array)(current[self.options.descendantsLabel]) ===
           R.is(Array)(found[self.options.descendantsLabel])) {
 
-          const pluckIds = R.pluck(id);
-          // First make sure that there is no clash between any of the ids.
-          //
-          /* istanbul ignore else */
-          if (allContainId(currentChildren) && allContainId(foundChildren)) {
-            if (R.intersection(pluckIds(currentChildren), pluckIds(foundChildren)).length === 0) {
-              // merge the descendants
-              //
-              const mergedChildren = R.is(Array)(found[self.options.descendantsLabel])
-                ? R.union(foundChildren, currentChildren)
-                : R.mergeDeepLeft(found[self.options.descendantsLabel],
-                  current[self.options.descendantsLabel]);
-              found[self.options.descendantsLabel] = mergedChildren;
-              return acc;
-            }
+          const id = foundElementInfo.descendants?.id;
+          const clash = (id)
+            ? this.clashingIds(id, currentChildren, foundChildren)
+            : this.clashingKeys(currentChildren, foundChildren);
+
+          if (!clash) {
+            const mergedChildren = R.is(Array)(found[self.options.descendantsLabel])
+              ? R.union(foundChildren, currentChildren)
+              : R.mergeDeepLeft(found[self.options.descendantsLabel],
+                current[self.options.descendantsLabel]);
+            found[self.options.descendantsLabel] = mergedChildren;
+            return acc;
           }
         }
       }
@@ -99,6 +87,47 @@ export class Normaliser {
     parentElement[this.options.descendantsLabel] = combined;
     return parentElement;
   } // combineDescendants
+
+  /**
+   * @method clashingIds
+   * @description Given an id and the arrays of child objects of 2 parents, determines
+   * that both collections contain all child objects that all contain id as a member property
+   * and also that this id property is unique. This is usd as a guard against improperly
+   * merging child collections.
+   *
+   * @private
+   * @param {string} id
+   * @param {any[]} first
+   * @param {any[]} second
+   * @returns {boolean}
+   * @memberof Normaliser
+   */
+  private clashingIds (id: string, first: any[], second: any[]): boolean {
+    const allContainId = R.all((o: any): boolean => id in o);
+    const pluckIds = R.pluck(id);
+    const foundClash = !(allContainId(first) && allContainId(second)
+      && R.intersection(pluckIds(first), pluckIds(second)).length === 0);
+    return foundClash;
+  }
+
+  /**
+   * @method clashingKeys
+   * @description Given 2 collections that each represent the children of 2 parents, determines
+   * that both collections do not contain any common keys. Used as a guard again attempting
+   * to combine to map objects that contain common keys.
+   *
+   * @private
+   * @param {types.IndexableObjByStr} first
+   * @param {types.IndexableObjByStr} second
+   * @returns {boolean}
+   * @memberof Normaliser
+   */
+  private clashingKeys (first: types.IndexableObjByStr, second: types.IndexableObjByStr): boolean {
+    const firstKeys = R.keys(first[this.options.descendantsLabel]);
+    const secondKeys = R.keys(second[this.options.descendantsLabel]);
+    const foundClash = R.intersection(firstKeys, secondKeys).length > 0;
+    return foundClash;
+  }
 
   /**
    * @method normaliseDescendants
