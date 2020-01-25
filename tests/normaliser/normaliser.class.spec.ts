@@ -15,7 +15,7 @@ import { SpecOptionService } from '../../lib/specService/spec-option-service.cla
 
 const parser = new DOMParser();
 
-describe('Normaliser.combineDescendants', () => {
+describe('Normaliser.combineDescendants error handling', () => {
   const testParseInfo: types.IParseInfo = {
     elements: new Map<string, types.IElementInfo>([
       ['Command', {
@@ -113,7 +113,7 @@ describe('Normaliser.combineDescendants', () => {
       });
     });
   });
-}); // Normaliser.combineDescendants
+}); // Normaliser.combineDescendants error handling
 
 describe('build => Normaliser.normaliseDescendants', () => {
   const byIndexParseInfo: types.IParseInfo = {
@@ -183,7 +183,7 @@ describe('build => Normaliser.normaliseDescendants', () => {
     ])
   };
 
-  context('Normaliser.normalise no throw', () => {
+  context('Normaliser.normalise', () => {
     interface IUnitTestInfo {
       given: string;
       should: string;
@@ -704,7 +704,7 @@ describe('build => Normaliser.normaliseDescendants', () => {
         }
       });
     });
-  }); // Normaliser.normalise no throw
+  }); // Normaliser.normalise
 
   context('error handling', () => {
     const byIndexParseInfoWithParamThrows: types.IParseInfo = {
@@ -1167,4 +1167,287 @@ describe('Normaliser.combineDescendants', () => {
       });
     });
   }); // un-normalised built entity, with mixed child element types'
+
+  context('anon id', () => {
+    const info: types.IParseInfo = {
+      elements: new Map<string, types.IElementInfo>([
+        ['Commands', {
+          descendants: {
+            by: 'index',
+            id: 'name',
+            throwIfCollision: true,
+            throwIfMissing: true
+          }
+        }],
+        ['Command', {
+          id: 'name',
+          recurse: 'inherits',
+          discards: ['inherits', 'abstract']
+        }],
+        ['Arguments', {
+          descendants: {
+            by: 'index',
+            id: 'name',
+            throwIfCollision: true,
+            throwIfMissing: true
+          }
+        }],
+        ['ArgumentRef', {
+          id: 'name'
+        }]
+      ])
+    };
+
+    context('given: un-normalised built entity, grand children are ARRAYs', () => {
+      it('should: combine children of inherited elements without using id', () => {
+        const command = {
+          name: 'rename',
+          source: 'filesystem-source',
+          _: 'Command',
+          _children: [
+            {
+              _: 'Arguments',
+              _children: {
+                with: { name: 'with', _: 'ArgumentRef' },
+                put: { name: 'put', _: 'ArgumentRef' }
+              }
+            },
+            {
+              _: 'Arguments',
+              _children: {
+                loglevel: { name: 'loglevel', _: 'ArgumentRef' },
+                logfile: { name: 'logfile', _: 'ArgumentRef' }
+              }
+            },
+            {
+              _: 'ArgumentGroups', // <-- should still be grouped together with [+]
+              _children: [ // <-- Grand children array
+                {
+                  _: 'Conflicts', // <-- does not contain "name" id [*]
+                  _children: [
+                    { name: 'loglevel', _: 'ArgumentRef' },
+                    { name: 'logfile', _: 'ArgumentRef' }
+                  ]
+                }
+              ]
+            },
+            {
+              _: 'Arguments',
+              _children: {
+                name: { name: 'name', _: 'ArgumentRef' },
+                labelname: { name: 'labelname', _: 'ArgumentRef' }
+              }
+            },
+            {
+              _: 'ArgumentGroups', // <-- [+]
+              _children: [ // <-- Grand children array
+                {
+                  _: 'Conflicts', // <-- [*]
+                  _children: [
+                    { name: 'name', _: 'ArgumentRef' },
+                    { name: 'labelname', _: 'ArgumentRef' }
+                  ]
+                },
+                {
+                  _: 'Implies', // <-- [*]
+                  _children: [
+                    { name: 'incname', _: 'ArgumentRef' },
+                    { name: 'studioname', _: 'ArgumentRef' }
+                  ]
+                }
+              ]
+            },
+            {
+              _: 'Arguments',
+              _children: {
+                filesys: { name: 'filesys', _: 'ArgumentRef' },
+                tree: { name: 'tree', _: 'ArgumentRef' }
+              }
+            }
+          ],
+          describe: 'Rename albums according to arguments specified (write).',
+          inherits: 'base-command,domain-command,uni-command'
+        };
+
+        const combined = normaliser.combineDescendants(subject, command, info);
+        expect(combined).to.deep.equal({
+          name: 'rename',
+          source: 'filesystem-source',
+          _: 'Command',
+          _children: [
+            {
+              _: 'Arguments',
+              _children: {
+                with: { name: 'with', _: 'ArgumentRef' },
+                put: { name: 'put', _: 'ArgumentRef' },
+                loglevel: { name: 'loglevel', _: 'ArgumentRef' },
+                logfile: { name: 'logfile', _: 'ArgumentRef' },
+                name: { name: 'name', _: 'ArgumentRef' },
+                labelname: { name: 'labelname', _: 'ArgumentRef' },
+                filesys: { name: 'filesys', _: 'ArgumentRef' },
+                tree: { name: 'tree', _: 'ArgumentRef' }
+              }
+            },
+            {
+              _: 'ArgumentGroups',
+              _children: [
+                {
+                  _: 'Conflicts',
+                  _children: [
+                    { name: 'loglevel', _: 'ArgumentRef' },
+                    { name: 'logfile', _: 'ArgumentRef' }
+                  ]
+                },
+                {
+                  _: 'Conflicts',
+                  _children: [
+                    { name: 'name', _: 'ArgumentRef' },
+                    { name: 'labelname', _: 'ArgumentRef' }
+                  ]
+                },
+                {
+                  _: 'Implies',
+                  _children: [
+                    { name: 'incname', _: 'ArgumentRef' },
+                    { name: 'studioname', _: 'ArgumentRef' }
+                  ]
+                }
+              ]
+            }
+          ],
+          describe: 'Rename albums according to arguments specified (write).',
+          inherits: 'base-command,domain-command,uni-command'
+        });
+      });
+
+      context('given: un-normalised built entity, grand children are Objects', () => {
+        it('should: combine children of inherited elements without using id', () => {
+          const command = {
+            name: 'rename',
+            source: 'filesystem-source',
+            _: 'Command',
+            _children: [
+              {
+                _: 'Arguments',
+                _children: {
+                  with: { name: 'with', _: 'ArgumentRef' },
+                  put: { name: 'put', _: 'ArgumentRef' }
+                }
+              },
+              {
+                _: 'Arguments',
+                _children: {
+                  loglevel: { name: 'loglevel', _: 'ArgumentRef' },
+                  logfile: { name: 'logfile', _: 'ArgumentRef' }
+                }
+              },
+              {
+                _: 'ArgumentGroups', // <-- should still be grouped together with [+]
+                _children: { // <-- Grand children Object
+                  red: {
+                    colour: 'red',
+                    _: 'Conflicts', // <-- does not contain "name" id [*]
+                    _children: [
+                      { name: 'loglevel', _: 'ArgumentRef' },
+                      { name: 'logfile', _: 'ArgumentRef' }
+                    ]
+                  }
+                }
+              },
+              {
+                _: 'Arguments',
+                _children: {
+                  name: { name: 'name', _: 'ArgumentRef' },
+                  labelname: { name: 'labelname', _: 'ArgumentRef' }
+                }
+              },
+              {
+                _: 'ArgumentGroups', // <-- [+]
+                _children: { // <-- Grand children Object
+                  green: {
+                    colour: 'green',
+                    _: 'Conflicts', // <-- [*]
+                    _children: [
+                      { name: 'name', _: 'ArgumentRef' },
+                      { name: 'labelname', _: 'ArgumentRef' }
+                    ]
+                  },
+                  blue: {
+                    colour: 'blue',
+                    _: 'Implies', // <-- [*]
+                    _children: [
+                      { name: 'incname', _: 'ArgumentRef' },
+                      { name: 'studioname', _: 'ArgumentRef' }
+                    ]
+                  }
+                }
+              },
+              {
+                _: 'Arguments',
+                _children: {
+                  filesys: { name: 'filesys', _: 'ArgumentRef' },
+                  tree: { name: 'tree', _: 'ArgumentRef' }
+                }
+              }
+            ],
+            describe: 'Rename albums according to arguments specified (write).',
+            inherits: 'base-command,domain-command,uni-command'
+          };
+
+          const combined = normaliser.combineDescendants(subject, command, info);
+          expect(combined).to.deep.equal({
+            name: 'rename',
+            source: 'filesystem-source',
+            _: 'Command',
+            _children: [
+              {
+                _: 'Arguments',
+                _children: {
+                  with: { name: 'with', _: 'ArgumentRef' },
+                  put: { name: 'put', _: 'ArgumentRef' },
+                  loglevel: { name: 'loglevel', _: 'ArgumentRef' },
+                  logfile: { name: 'logfile', _: 'ArgumentRef' },
+                  name: { name: 'name', _: 'ArgumentRef' },
+                  labelname: { name: 'labelname', _: 'ArgumentRef' },
+                  filesys: { name: 'filesys', _: 'ArgumentRef' },
+                  tree: { name: 'tree', _: 'ArgumentRef' }
+                }
+              },
+              {
+                _: 'ArgumentGroups',
+                _children: { // <-- combined children object
+                  red: {
+                    colour: 'red',
+                    _: 'Conflicts',
+                    _children: [
+                      { name: 'loglevel', _: 'ArgumentRef' },
+                      { name: 'logfile', _: 'ArgumentRef' }
+                    ]
+                  },
+                  green: {
+                    colour: 'green',
+                    _: 'Conflicts',
+                    _children: [
+                      { name: 'name', _: 'ArgumentRef' },
+                      { name: 'labelname', _: 'ArgumentRef' }
+                    ]
+                  },
+                  blue: {
+                    colour: 'blue',
+                    _: 'Implies',
+                    _children: [
+                      { name: 'incname', _: 'ArgumentRef' },
+                      { name: 'studioname', _: 'ArgumentRef' }
+                    ]
+                  }
+                }
+              }
+            ],
+            describe: 'Rename albums according to arguments specified (write).',
+            inherits: 'base-command,domain-command,uni-command'
+          });
+        });
+      });
+    });
+  });
 }); // Normaliser.combineDescendants
