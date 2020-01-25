@@ -795,12 +795,7 @@ describe('xpath-converter.build', () => {
                     { name: 'expr', _: 'ArgumentRef' },
                     { name: 'input', _: 'ArgumentRef' }
                   ]
-                }
-              ]
-            },
-            {
-              _: 'ArgumentGroups',
-              _children: [
+                },
                 {
                   _: 'Implies',
                   _children: [
