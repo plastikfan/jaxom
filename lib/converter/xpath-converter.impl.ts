@@ -540,6 +540,7 @@ function selectElementNodeById (elementName: string, id: string, name: string,
   // an error?
   //
 
+  /* istanbul ignore else: typescript type-guard */
   if (rootNode instanceof Node) {
     const result: types.SelectResult = xpath.select(
       `.//${elementName}[@${id}="${name}"]`, rootNode, true);
