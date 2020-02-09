@@ -1,42 +1,57 @@
-import * as xp from 'xpath-ts';
+import * as yargs from 'yargs';
+import * as fs from 'fs';
 import 'xmldom-ts';
-import * as types from '../types';
-import { ParseInfoFactory } from './parseinfo-factory.class';
-import { XpathConverter } from '../converter/xpath-converter.class';
-
-export interface IParseInfoFactory {
-  get (): types.IParseInfo;
-}
-
-export interface ICommandLineInputs {
-  xmlContent: string;
-  query: string;
-  parseInfoContent: string;
-}
+import { ICommandLineInputs, ConsoleTag } from './cli-types';
 
 export class CommandLine {
 
-  constructor (private inputs: ICommandLineInputs,
-    private parseInfoFactory: IParseInfoFactory = new ParseInfoFactory(inputs.parseInfoContent),
-    private converter: types.IConverter = new XpathConverter(),
-    private parser: DOMParser = new DOMParser()) {
+  // needs to change to return a command line inputs instance
+  //
+  public build (instance: yargs.Argv): ICommandLineInputs {
 
-  }
+    instance = instance.scriptName('jaxom-cli')
+      .option('xml', {
+        alias: 'x',
+        describe: 'path to xml file',
+        string: true,
+        normalize: true
+      })
+      .option('query', {
+        alias: 'q',
+        describe: 'xpath query',
+        string: true
+      })
+      .option('parseinfo', {
+        alias: 'p',
+        describe: 'path to json file containing parse info to apply to xml document',
+        string: true,
+        normalize: true
+      })
+      .option('o', {
+        alias: 'output',
+        describe: 'output file name, if not specified, display result to console',
+        string: true,
+        normalize: true,
+        default: ConsoleTag
+      })
+      .requiresArg(['xml', 'query', 'parseinfo'])
+      .usage('$0: -x/--xml string -q/--query string -p/--parseinfo string [-o/--output string]')
+      .fail((msg: string, err: Error, yin: yargs.Argv): any => {
+        console.log(`••• Error: ${msg}`);
+      })
+      .demandOption(['xml', 'query', 'parseinfo'], 'Missing parameters, try again!');
 
-  acquire (): { [key: string]: any} {
-    // read the x document
-    //
-    const document = this.parser.parseFromString(this.inputs.xmlContent, 'text/xml');
-    const selectResult = xp.select(this.inputs.query, document, true);
+    const parseResult = instance.argv;
 
-    if (!(selectResult instanceof Node)) {
-      throw new Error(`Query: "${this.inputs.query}" is invalid.`);
-    }
+    const inputs: ICommandLineInputs = {
+      xmlContent: fs.readFileSync(parseResult.xml as string, 'utf8'),
+      query: parseResult.query as string,
+      parseInfoContent: fs.readFileSync(parseResult.parseinfo as string, 'utf8'),
+      out: parseResult.output as string,
+      argv: parseResult // mmmm, whats happens if there is a failure?
+    };
 
-    // get the parse info
-    //
-    const parseInfo: types.IParseInfo = this.parseInfoFactory.get();
+    return inputs;
 
-    return this.converter.build(selectResult, parseInfo);
-  }
+  } // buildCli
 }

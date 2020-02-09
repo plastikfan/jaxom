@@ -2,11 +2,10 @@ import * as types from '../types';
 import * as R from 'ramda';
 
 export class ParseInfoFactory {
-  constructor (private source: string) { }
 
-  public get (): types.IParseInfo {
+  public get (source: string): types.IParseInfo { // this should be on an interface?
 
-    const json = JSON.parse(this.source);
+    const json = JSON.parse(source); // json conversion probably not needed
 
     // elements array
     //

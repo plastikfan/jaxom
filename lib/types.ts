@@ -150,3 +150,5 @@ export interface ISpecService {
   readonly textLabel: string;
   getSpec (): ISpec;
 }
+
+export type ConversionResult = { [key: string]: any } | { [key: string]: any }[];
