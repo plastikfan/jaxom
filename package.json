@@ -29,6 +29,7 @@
     "fix": "npx semistandard --fix",
     "watch": "npm run clean && webpack --watch --env.mode development --config webpack.config.src.js",
     "watch:t": "npm run clean && webpack --watch --env.mode development --config webpack.config.test.js",
+    "watch:c": "npm run clean && webpack --watch --env.mode development --config webpack.config.cli.js",
     "audit": "npm audit --skip-unused",
     "dep": "depcheck --ignores 'xpath,webpack-cli,sinon,@commitlint/cli,@commitlint/config-conventional,precommit-hook,shebang-loader,raw-loader'",
     "check": "npm run audit && npm run dep && npm outdated --depth 0",

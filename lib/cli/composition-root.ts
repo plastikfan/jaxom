@@ -1,4 +1,5 @@
 import 'xmldom-ts';
+import * as fs from 'fs';
 import { CommandLine } from './command-line.class';
 import { ParseInfoFactory } from './parseinfo-factory.class';
 import { Application } from './application.class';
@@ -17,7 +18,8 @@ module.exports = (): number => {
   const converter = new XpathConverter(Specs.default);
   const parseInfoFactory = new ParseInfoFactory();
   const parser: DOMParser = new DOMParser();
-  const application = new Application(inputs, parseInfoFactory, converter, parser, console);
+  const application = new Application(inputs, parseInfoFactory, converter, parser,
+    console, fs.writeFileSync);
 
   // run
   //
