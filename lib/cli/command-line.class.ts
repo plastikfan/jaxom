@@ -27,8 +27,8 @@ export class CommandLine {
         string: true,
         normalize: true
       })
-      .option('o', {
-        alias: 'output',
+      .option('output', {
+        alias: 'o',
         describe: 'output file name, if not specified, display result to console',
         string: true,
         normalize: true,
@@ -41,6 +41,8 @@ export class CommandLine {
       })
       .demandOption(['xml', 'query', 'parseinfo'], 'Missing parameters, try again!');
 
+    // do parse
+    //
     const parseResult = instance.argv;
 
     const inputs: ICommandLineInputs = {
