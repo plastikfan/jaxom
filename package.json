@@ -8,21 +8,23 @@
     "dist"
   ],
   "bin": {
-    "jax": ".lib/cli/cli-index"
+    "jax": "./dist/jaxom-cli-bundle.js"
   },
   "scripts": {
-    "clean": "rimraf dist/* && rimraf output/*",
+    "clean": "rimraf dist/* && rimraf coverage/*",
     "t": "mocha",
     "test": "npm run build:p && npm run t",
     "build": "npm run build:d",
-    "build:d": "npm run clean && npm run __b:dev:src && npm run __b:dev:test",
-    "build:p": "npm run clean && npm run __b:prod:src && npm run __b:prod:test",
+    "build:d": "npm run clean && npm run __b:dev:src && npm run __b:dev:test && npm run __b:dev:cli",
+    "build:p": "npm run clean && npm run __b:prod:src && npm run __b:prod:test && npm run __b:prod:cli",
     "__b:prod:src": "webpack -d --env.mode production --config webpack.config.src.js",
     "__b:prod:test": "webpack -d --env.mode production --config webpack.config.test.js",
+    "__b:prod:cli": "webpack -d --env.mode production --config webpack.config.cli.js",
     "__b:publish": "npm run clean && webpack -d --env.mode production --config webpack.config.src.js",
     "__b:dev:src": "webpack -d --env.mode development --config webpack.config.src.js",
     "__b:dev:test": "webpack -d --env.mode development --config webpack.config.test.js",
-    "exec": "node ./dist/jaxom-bundle.js",
+    "__b:dev:cli": "webpack -d --env.mode development --config webpack.config.cli.js",
+    "exec": "node ./dist/jaxom-cli-bundle.js",
     "lint": "(npx semistandard --verbose | npx snazzy) && npx tslint -c tslint.json --project ./tsconfig.lint.json",
     "fix": "npx semistandard --fix",
     "watch": "npm run clean && webpack --watch --env.mode development --config webpack.config.src.js",

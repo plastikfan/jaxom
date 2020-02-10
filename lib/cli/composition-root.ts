@@ -21,5 +21,7 @@ module.exports = (): number => {
 
   // run
   //
-  return application.run();
+  const result = application.run();
+  process.exitCode = result;
+  return result;
 };

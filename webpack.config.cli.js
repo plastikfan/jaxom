@@ -6,11 +6,11 @@ module.exports = env => {
   const { getIfUtils } = require('webpack-config-utils');
   const { ifProduction } = getIfUtils(env);
   const mode = ifProduction('production', 'development');
-  console.log('>>> Jaxom Webpack Environment mode: ' + env.mode);
+  console.log('>>> Jaxom CLI Webpack Environment mode: ' + env.mode);
 
   return {
     mode: mode,
-    entry: ['./lib/index.ts'],
+    entry: ['./lib/cli/cli-index.ts'],
     target: 'node',
     externals: [nodeExternals()],
     module: {
@@ -44,8 +44,8 @@ module.exports = env => {
       ignored: /node_modules/
     },
     output: {
-      filename: 'jaxom-bundle.js',
-      sourceMapFilename: 'jaxom-bundle.js.map',
+      filename: 'jaxom-cli-bundle.js',
+      sourceMapFilename: 'jaxom-cli-bundle.js.map',
       path: path.join(__dirname, 'dist'),
       libraryTarget: 'commonjs'
     },
