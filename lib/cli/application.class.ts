@@ -1,4 +1,4 @@
-
+import * as fs from 'fs';
 import * as xp from 'xpath-ts';
 import 'xmldom-ts';
 import * as R from 'ramda';
@@ -13,11 +13,11 @@ import * as cli from './cli-types';
  */
 export class Application {
   constructor (private inputs: cli.ICommandLineInputs,
-    private parseInfoFactory: cli.IParseInfoFactory = new ParseInfoFactory(),
+    private parseInfoFactory: cli.IParseInfoFactory,
     private converter: types.IConverter = new XpathConverter(),
     private parser: DOMParser = new DOMParser(),
-    private applicationConsole: cli.IApplicationConsole,
-    private write: cli.IFileWriter) {
+    private applicationConsole: cli.IApplicationConsole = console,
+    private write: cli.IFileWriter = fs.writeFileSync) {
 
   }
 
@@ -36,15 +36,16 @@ export class Application {
     // get the parse info
     //
     const parseInfo: types.IParseInfo = this.parseInfoFactory.get(this.inputs.parseInfoContent);
-    let showResult = 0;
+    let actionResult = 0;
 
     try {
+      /* istanbul ignore else */
       if (selectResult instanceof Array) {
         // Multiple node result
         //
         if (this.inputs.out && this.inputs.out !== cli.ConsoleTag) {
           this.applicationConsole.log(Title);
-          // collate then print all
+          // collate then persist all
           //
           const collection = R.reduce((acc: { [key: string]: any }[], node: Node): { [key: string]: any }[] => {
             const conversionResult: types.ConversionResult = this.converter.build(node, parseInfo);
@@ -57,7 +58,7 @@ export class Application {
             result: collection
           };
           this.applicationConsole.log(descriptionMessage);
-          showResult = this.print(jsonCollectionResult);
+          actionResult = this.persist(jsonCollectionResult);
           this.applicationConsole.log(End);
         } else {
           this.applicationConsole.log(Title);
@@ -65,31 +66,29 @@ export class Application {
           //
           selectResult.forEach((node: Node): void => {
             const conversionResult: types.ConversionResult = this.converter.build(node, parseInfo);
-            showResult = this.display(conversionResult);
+            actionResult = this.display(conversionResult);
             this.applicationConsole.log(Sep);
           });
           this.applicationConsole.log(End);
         }
-      } else {
-        throw new Error(`Query: "${this.inputs.query}" is invalid.`);
       }
     } catch (error) {
       this.applicationConsole.log(error);
-      showResult = 1;
+      actionResult = 1;
     }
 
-    return showResult;
+    return actionResult;
   }
 
   /**
-   * @method print
+   * @method persist
    * @description direct the output to a file
    *
    * @param {types.ConversionResult} conversion
    * @returns {number}
    * @memberof Application
    */
-  private print (conversion: types.ConversionResult): number {
+  private persist (conversion: types.ConversionResult): number {
     this.write(this.inputs.out, JSON.stringify(conversion, null, 2), 'utf8');
 
     return 0;

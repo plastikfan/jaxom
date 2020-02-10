@@ -11,7 +11,7 @@
     "jax": "./dist/jaxom-cli-bundle.js"
   },
   "scripts": {
-    "clean": "rimraf dist/* && rimraf coverage/*",
+    "clean": "rimraf dist/*",
     "t": "mocha",
     "test": "npm run build:p && npm run t",
     "build": "npm run build:d",

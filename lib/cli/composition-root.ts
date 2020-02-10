@@ -8,16 +8,19 @@ import { XpathConverter } from '../converter/xpath-converter.class';
 import { Specs } from '../specService/spec-option-service.class';
 
 module.exports = (): number => {
-  // acquire inputs
-  //
-  const commandLine = new CommandLine();
-  const inputs: ICommandLineInputs = commandLine.build(require('yargs'));
-
-  // inject dependencies
+  // setup
   //
   const converter = new XpathConverter(Specs.default);
   const parseInfoFactory = new ParseInfoFactory();
   const parser: DOMParser = new DOMParser();
+  const commandLine = new CommandLine();
+
+  // acquire inputs
+  //
+  const inputs: ICommandLineInputs = commandLine.build(require('yargs'));
+
+  // inject dependencies
+  //
   const application = new Application(inputs, parseInfoFactory, converter, parser,
     console, fs.writeFileSync);
 

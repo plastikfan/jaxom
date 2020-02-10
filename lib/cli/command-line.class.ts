@@ -50,7 +50,7 @@ export class CommandLine {
       query: parseResult.query as string,
       parseInfoContent: fs.readFileSync(parseResult.parseinfo as string, 'utf8'),
       out: parseResult.output as string,
-      argv: parseResult // mmmm, whats happens if there is a failure?
+      argv: parseResult
     };
 
     return inputs;
