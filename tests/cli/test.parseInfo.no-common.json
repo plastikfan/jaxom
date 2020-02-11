@@ -1,0 +1,27 @@
+{
+  "elements": [
+    ["Commands",
+      {
+        "descendants": {
+          "id": "name"
+        }
+      }
+    ],
+    [
+      "Command",
+      {
+        "id": "name",
+        "recurse": "inherits"
+      }
+    ],
+    [
+      "Argument",
+      {
+        "id": "ref"
+      }
+    ]
+  ],
+  "def": {
+    "id": "none"
+  }
+}

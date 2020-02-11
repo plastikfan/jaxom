@@ -1,0 +1,35 @@
+{
+  "elements": [
+    ["Commands",
+      {
+        "descendants": {
+          "id": "name"
+        }
+      }
+    ],
+    [
+      "Command",
+      {
+        "id": "name",
+        "recurse": "inherits"
+      }
+    ],
+    [
+      "Argument",
+      {
+        "id": "ref"
+      }
+    ]
+  ],
+  "common": {
+    "discards": ["inherits", "abstract"],
+    "descendants": {
+      "by": "index",
+      "throwIfCollision": false,
+      "throwIfMissing": false
+    }
+  },
+  "def": {
+    "id": "none"
+  }
+}
