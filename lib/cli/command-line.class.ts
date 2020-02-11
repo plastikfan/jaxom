@@ -53,6 +53,7 @@ export class CommandLine {
       argv: parseResult
     };
 
+    /* istanbul ignore next: ? */
     return inputs;
 
   } // buildCli

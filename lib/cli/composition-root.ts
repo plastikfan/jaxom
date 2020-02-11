@@ -21,12 +21,16 @@ module.exports = (): number => {
 
   // inject dependencies
   //
+  /* istanbul ignore next: not worth the effort in testing */
   const application = new Application(inputs, parseInfoFactory, converter, parser,
     console, fs.writeFileSync);
 
   // run
   //
+  /* istanbul ignore next */
   const result = application.run();
+  /* istanbul ignore next */
   process.exitCode = result;
+  /* istanbul ignore next */
   return result;
 };

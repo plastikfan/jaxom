@@ -3,7 +3,6 @@ import * as xp from 'xpath-ts';
 import 'xmldom-ts';
 import * as R from 'ramda';
 import * as types from '../types';
-import { ParseInfoFactory } from './parseinfo-factory.class';
 import { XpathConverter } from '../converter/xpath-converter.class';
 import * as cli from './cli-types';
 
