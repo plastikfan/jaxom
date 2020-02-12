@@ -1,5 +1,7 @@
 
 import * as R from 'ramda';
+import * as fs from 'fs';
+import * as memfs from 'memfs';
 
 // Element Parse Info
 //
@@ -152,3 +154,5 @@ export interface ISpecService {
 }
 
 export type ConversionResult = { [key: string]: any } | { [key: string]: any }[];
+
+export type VirtualFS = typeof fs | memfs.IFs;

@@ -3,4 +3,4 @@
 /* istanbul ignore next */
 const compositionRoot = require('./composition-root');
 /* istanbul ignore next */
-compositionRoot();
+compositionRoot(console, require('fs'));

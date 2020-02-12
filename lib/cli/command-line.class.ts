@@ -36,9 +36,6 @@ export class CommandLine {
       })
       .requiresArg(['xml', 'query', 'parseinfo'])
       .usage('$0: -x/--xml string -q/--query string -p/--parseinfo string [-o/--output string]')
-      .fail((msg: string, err: Error, yin: yargs.Argv): any => {
-        console.log(`••• Error: ${msg}`);
-      })
       .demandOption(['xml', 'query', 'parseinfo'], 'Missing parameters, try again!');
 
     // do parse

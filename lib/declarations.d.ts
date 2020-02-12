@@ -3,3 +3,7 @@
 //
 
 declare module '*.xml';
+
+declare module 'fs-monkey' {
+  function patchFs(vol: any, fs: any);
+}

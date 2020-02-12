@@ -1,4 +1,3 @@
-import * as fs from 'fs';
 import * as xp from 'xpath-ts';
 import 'xmldom-ts';
 import * as R from 'ramda';
@@ -16,8 +15,7 @@ export class Application {
     private converter: types.IConverter = new XpathConverter(),
     private parser: DOMParser = new DOMParser(),
     private applicationConsole: cli.IApplicationConsole = console,
-    private write: cli.IFileWriter = fs.writeFileSync) {
-
+    private fs: types.VirtualFS = require('fs')) {
   }
 
   /**
@@ -27,17 +25,18 @@ export class Application {
    * @memberof Application
    */
   run (): number {
-    // read the xml document
-    //
-    const document = this.parser.parseFromString(this.inputs.xmlContent, 'text/xml');
-    const selectResult = xp.select(this.inputs.query, document);
-
-    // get the parse info
-    //
-    const parseInfo: types.IParseInfo = this.parseInfoFactory.get(this.inputs.parseInfoContent);
     let actionResult = 0;
 
     try {
+      // read the xml document
+      //
+      const document = this.parser.parseFromString(this.inputs.xmlContent, 'text/xml');
+      const selectResult = xp.select(this.inputs.query, document);
+
+      // get the parse info
+      //
+      const parseInfo: types.IParseInfo = this.parseInfoFactory.get(this.inputs.parseInfoContent);
+
       /* istanbul ignore else */
       if (selectResult instanceof Array) {
         // Multiple node result
@@ -88,7 +87,7 @@ export class Application {
    * @memberof Application
    */
   private persist (conversion: types.ConversionResult): number {
-    this.write(this.inputs.out, JSON.stringify(conversion, null, 2), 'utf8');
+    this.fs.writeFileSync(this.inputs.out, JSON.stringify(conversion, null, 2), 'utf8');
 
     return 0;
   }

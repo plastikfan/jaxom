@@ -18,7 +18,3 @@ export const ConsoleTag = '[CONSOLE]';
 export interface IApplicationConsole {
   log (message?: any, ...optionalParams: any[]): void;
 }
-
-export interface IFileWriter {
-  (path: fs.PathLike | number, data: any, options?: fs.WriteFileOptions): void;
-}
