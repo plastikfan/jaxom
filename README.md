@@ -8,5 +8,3 @@ Another JSON to XML converter with inheritable attributes and custom element con
 [![Dependency Status](https://david-dm.org/plastikfan/jaxom-ts.svg)](https://david-dm.org/plastikfan/jaxom-ts)
 [![devDependency Status](https://david-dm.org/plastikfan/jaxom-ts/dev-status.svg)](https://david-dm.org/plastikfan/jaxom-ts#info=devDependencies)
 [![Greenkeeper badge](https://badges.greenkeeper.io/plastikfan/jaxom-ts.svg)](https://greenkeeper.io/)
-
-Another JSON to XML converter with inheritable attributes and custom element consolidation
