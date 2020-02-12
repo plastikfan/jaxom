@@ -16,7 +16,6 @@ import { XpathConverter } from '../../lib/converter/xpath-converter.class';
 const compositionRoot = require('../../lib/cli/composition-root');
 const vol = memfs.vol;
 
-// createFsFromVolume
 class FakeConsole {
   log (message?: any, ...optionalParams: any[]): void {
     // null-op
@@ -50,8 +49,7 @@ describe('Application', () => {
   let converter: types.IConverter;
   let parser: DOMParser;
   let applicationConsole: cli.IApplicationConsole;
-  let mfs: memfs.IFs = memfs.fs;
-  let fs = require('fs');
+  let mfs: memfs.IFs;
 
   beforeEach(() => {
     parseInfoFactory = new ParseInfoFactory();
