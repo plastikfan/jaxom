@@ -83,7 +83,7 @@
     "jinxed": "0.0.2",
     "memfs": "^3.0.4",
     "moment": "^2.24.0",
-    "ramda": "^0.26.1",
+    "ramda": "^0.27.0",
     "xmldom-ts": "^0.3.1",
     "xpath-ts": "^1.3.13",
     "yargs": "^15.1.0"
@@ -94,7 +94,7 @@
     "@istanbuljs/nyc-config-typescript": "^1.0.1",
     "@types/chai": "^4.2.5",
     "@types/dirty-chai": "^2.0.2",
-    "@types/mocha": "^5.2.7",
+    "@types/mocha": "^7.0.0",
     "@types/sinon": "^7.5.1",
     "@types/sinon-chai": "^3.2.3",
     "chai": "^4.2.0",
