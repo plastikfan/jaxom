@@ -39,7 +39,8 @@ export class XpathConverter implements types.IConverter {
    * @memberof XpathConverter
    */
   build (elementNode: Node, parseInfo: types.IParseInfo): any {
-    return this.impl.build(elementNode, parseInfo, []);
+    const previouslySeen: any[] = [];
+    return this.impl.build(elementNode, parseInfo, previouslySeen);
   }
 } // class XpathConverter
 

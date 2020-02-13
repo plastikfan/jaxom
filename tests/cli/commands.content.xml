@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<Application name="pez">
+  <Cli>
+    <Commands>
+      <Command name="base-command" abstract="true" source="filesystem-source">
+        <Arguments>
+          <ArgumentRef name="loglevel"/>
+          <ArgumentRef name="logfile"/>
+        </Arguments>
+        <ArgumentGroups>
+          <Conflicts>
+            <ArgumentRef name="loglevel"/>
+            <ArgumentRef name="logfile"/>
+          </Conflicts>
+        </ArgumentGroups>
+      </Command>
+      <Command name="domain-command" abstract="true">
+        <Arguments>
+          <ArgumentRef name="name"/>
+          <ArgumentRef name="labelname"/>
+          <ArgumentRef name="incname"/>
+          <ArgumentRef name="studioname"/>
+          <ArgumentRef name="header"/>
+          <ArgumentRef name="producer"/>
+          <ArgumentRef name="director"/>
+        </Arguments>
+        <ArgumentGroups>
+          <Conflicts>
+            <ArgumentRef name="name"/>
+            <ArgumentRef name="labelname"/>
+          </Conflicts>
+          <Implies>
+            <ArgumentRef name="incname"/>
+            <ArgumentRef name="studioname"/>
+          </Implies>
+          <Conflicts>
+            <ArgumentRef name="header"/>
+            <ArgumentRef name="producer"/>
+            <ArgumentRef name="director"/>
+          </Conflicts>
+        </ArgumentGroups>
+      </Command>
+      <Command name="uni-command" abstract="true">
+        <Arguments>
+          <ArgumentRef name="path"/>
+          <ArgumentRef name="filesys"/>
+          <ArgumentRef name="tree"/>
+        </Arguments>
+      </Command>
+      <Command name="rename"
+        describe="Rename albums according to arguments specified (write)."
+        inherits="base-command,domain-command,uni-command">
+        <Arguments>
+          <ArgumentRef name="with"/>
+          <ArgumentRef name="put"/>
+        </Arguments>
+      </Command>
+    </Commands>
+  </Cli>
+</Application>
