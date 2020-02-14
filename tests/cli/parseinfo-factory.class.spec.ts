@@ -14,7 +14,7 @@ describe('ParseInfoFactory', () => {
       const source: string = fs.readFileSync(resolved, 'utf8');
 
       const factory = new ParseInfoFactory();
-      const parseInfo: types.IParseInfo = factory.get(source);
+      const parseInfo: types.IParseInfo = factory.construct(source);
       expect(parseInfo.elements.size).to.equal(3);
       expect(parseInfo.common).not.to.be.undefined();
       expect(parseInfo.def).not.to.be.undefined();
@@ -27,7 +27,7 @@ describe('ParseInfoFactory', () => {
       const source: string = fs.readFileSync(resolved, 'utf8');
 
       const factory = new ParseInfoFactory();
-      const parseInfo: types.IParseInfo = factory.get(source);
+      const parseInfo: types.IParseInfo = factory.construct(source);
       expect(parseInfo.elements.size).to.equal(3);
       expect(parseInfo.common).to.be.undefined();
       expect(parseInfo.def).not.to.be.undefined();
@@ -40,7 +40,7 @@ describe('ParseInfoFactory', () => {
       const source: string = fs.readFileSync(resolved, 'utf8');
 
       const factory = new ParseInfoFactory();
-      const parseInfo: types.IParseInfo = factory.get(source);
+      const parseInfo: types.IParseInfo = factory.construct(source);
       expect(parseInfo.elements.size).to.equal(3);
       expect(parseInfo.common).not.to.be.undefined();
       expect(parseInfo.def).to.be.undefined();
