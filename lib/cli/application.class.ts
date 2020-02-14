@@ -35,7 +35,7 @@ export class Application {
 
       // get the parse info
       //
-      const parseInfo: types.IParseInfo = this.parseInfoFactory.get(this.inputs.parseInfoContent);
+      const parseInfo: types.IParseInfo = this.parseInfoFactory.construct(this.inputs.parseInfoContent);
 
       /* istanbul ignore else */
       if (selectResult instanceof Array) {
