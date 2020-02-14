@@ -10,7 +10,7 @@ export interface ICommandLineInputs {
 }
 
 export interface IParseInfoFactory {
-  get (source: string): types.IParseInfo;
+  construct (source: string): types.IParseInfo;
 }
 
 export const ConsoleTag = '[CONSOLE]';

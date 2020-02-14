@@ -4,14 +4,14 @@ import * as R from 'ramda';
 export class ParseInfoFactory {
 
   /**
-   * @method get
+   * @method construct
    * @description Acquire a parse info instance from the @source json provided.
    *
    * @param {string} source
    * @returns {types.IParseInfo}
    * @memberof ParseInfoFactory
    */
-  public get (source: string): types.IParseInfo {
+  public construct (source: string): types.IParseInfo {
 
     const json = JSON.parse(source);
 
