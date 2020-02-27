@@ -1,22 +1,17 @@
-
 import { expect, assert, use } from 'chai';
+import * as R from 'ramda';
+import * as xp from 'xpath-ts';
+import 'xmldom-ts';
+import * as types from '../../lib/types';
+import * as utils from '../../lib/utils/utils';
+import { XpathConverterImpl as Impl, composeElementPath }
+  from '../../lib/converter/xpath-converter.impl';
+import { SpecOptionService, Specs } from '../../lib/specService/spec-option-service.class';
 import dirtyChai = require('dirty-chai');
 use(dirtyChai);
 import sinonChai = require('sinon-chai');
 use(sinonChai);
-
-import * as R from 'ramda';
-import * as xp from 'xpath-ts';
-import 'xmldom-ts';
 const parser = new DOMParser();
-import * as types from '../../lib/types';
-import * as Helpers from '../test-helpers';
-import * as utils from '../../lib/utils/utils';
-
-import { XpathConverterImpl as Impl, composeElementPath }
-  from '../../lib/converter/xpath-converter.impl';
-import { SpecOptionService, Specs } from '../../lib/specService/spec-option-service.class';
-import { functify } from 'jinxed';
 
 const testParseInfo: types.IParseInfo = {
   elements: new Map<string, types.IElementInfo>([
@@ -52,7 +47,7 @@ describe('XpathConverterImpl.composeText', () => {
 
       if (patternNode) {
         const converter = new Impl();
-        let result = converter.composeText(patternNode);
+        const result = converter.composeText(patternNode);
 
         expect(result).to.equal('SOME-RAW-TEXT');
       } else {
@@ -79,7 +74,7 @@ describe('XpathConverterImpl.composeText', () => {
 
       if (patternNode) {
         const converter = new Impl();
-        let result = converter.composeText(patternNode);
+        const result = converter.composeText(patternNode);
 
         expect(result).to.equal('.SOME-CDATA-TEXT');
       } else {
@@ -106,7 +101,7 @@ describe('XpathConverterImpl.composeText', () => {
 
       if (patternNode) {
         const converter = new Impl();
-        let result = converter.composeText(patternNode);
+        const result = converter.composeText(patternNode);
 
         expect(result).to.equal('SOME-RAW-TEXT.SOME-CDATA-TEXT');
       } else {
@@ -133,7 +128,7 @@ describe('XpathConverterImpl.composeText', () => {
 
       if (patternNode) {
         const converter = new Impl();
-        let result = converter.composeText(patternNode);
+        const result = converter.composeText(patternNode);
 
         expect(result).to.equal('SOME-RAW-TEXT.SOME-CDATA-TEXT.SOME-MORE-CDATA-TEXT');
       } else {
@@ -162,7 +157,7 @@ describe('XpathConverterImpl.composeText', () => {
 
       if (patternNode) {
         const converter = new Impl();
-        let result = converter.composeText(patternNode);
+        const result = converter.composeText(patternNode);
 
         expect(result).to.equal('.SOME-CDATA-TEXT');
       } else {
@@ -545,7 +540,7 @@ describe('composeElementPath', () => {
 
   tests.forEach((t: any) => {
     context(`given: ${t.given}`, () => {
-      it(`should: return full path`, () => {
+      it('should: return full path', () => {
         const document: Document = parser.parseFromString(data, 'text/xml');
         const node: types.SelectResult = xp.select(t.path, document, true);
 
@@ -577,11 +572,6 @@ describe('composeElementPath', () => {
 }); // composeElementPath
 
 describe('utils.composeElementInfo', () => {
-  let converter: Impl;
-  beforeEach(() => {
-    converter = new Impl();
-  });
-
   context('IParseInfo without common or def', () => {
     const withoutCommonOrDefInfo: types.IParseInfo = {
       elements: new Map<string, types.IElementInfo>([
@@ -619,7 +609,7 @@ describe('utils.composeElementInfo', () => {
   context('IParseInfo with common', () => {
     const withCommonInfo: types.IParseInfo = {
       elements: new Map<string, types.IElementInfo>([
-        [ 'Command', { id: 'cmd' } ]
+        ['Command', { id: 'cmd' }]
       ]),
       common: {
         id: 'common-id',

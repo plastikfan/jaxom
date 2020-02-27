@@ -1,16 +1,16 @@
 
 import { expect, assert, use } from 'chai';
-import dirtyChai = require('dirty-chai');
-use(dirtyChai);
 import * as sinon from 'sinon';
-import sinonChai = require('sinon-chai');
-use(sinonChai);
 import * as R from 'ramda';
 import 'xmldom-ts';
-const { functify } = require('jinxed');
 import * as types from '../../lib/types';
 import { Transformer, ITransformFunction } from '../../lib/transformer/transformer.class';
 import { SpecOptionService, Specs } from '../../lib/specService/spec-option-service.class';
+import dirtyChai = require('dirty-chai');
+use(dirtyChai);
+import sinonChai = require('sinon-chai');
+use(sinonChai);
+const { functify } = require('jinxed');
 
 describe('Transformer for "attributes" context', () => {
   afterEach(() => {
@@ -287,7 +287,6 @@ describe('Transformer for "attributes" context', () => {
       }
     });
   });
-
 }); // Transformer for "attributes" context
 
 describe('Transformer.transformCollection for "attributes" context', () => {
@@ -302,10 +301,11 @@ describe('Transformer.transformCollection for "attributes" context', () => {
       const segments: string[] = R.split('/')(path);
       const itemLens: R.Lens = R.lensPath(segments);
       const result = fallBack ? R.defaultTo(R.view(itemLens)(Specs.fallBack),
-          R.view(itemLens)(this.spec)) : R.view(itemLens)(this.spec);
+        R.view(itemLens)(this.spec)) : R.view(itemLens)(this.spec);
 
       return result;
     }
+
     readonly elementLabel: string;
     readonly descendantsLabel: string;
     readonly textLabel: string;
@@ -348,7 +348,7 @@ describe('Transformer.transformCollection for "attributes" context', () => {
     ];
 
     tests.forEach((t) => {
-      context(`given: a compound value, transformCollection (using default spec)`, () => {
+      context('given: a compound value, transformCollection (using default spec)', () => {
         it(`should: ${t.should}`, () => {
           try {
             const transformer = new Transformer(new Stub(Specs.default));
@@ -383,7 +383,7 @@ describe('Transformer.transformCollection for "attributes" context', () => {
   }); // Array collection
 
   context('Set collection', () => {
-    it(`should: coerce as a multiple item Set`, () => {
+    it('should: coerce as a multiple item Set', () => {
       const raw = '!<Set>[1,2,3,4]';
       try {
         const stub = new SpecOptionService();
@@ -412,7 +412,7 @@ describe('Transformer.transformCollection for "attributes" context', () => {
   // and the resulting set should contain numbers
 
   context('Map collection', () => {
-    it(`should: coerce as a single item map`, () => {
+    it('should: coerce as a single item map', () => {
       const raw = '!<Map>[foo=bar]';
       try {
         const stub = new SpecOptionService();
@@ -438,7 +438,7 @@ describe('Transformer.transformCollection for "attributes" context', () => {
       }
     });
 
-    it(`should: coerce as a multi item map`, () => {
+    it('should: coerce as a multi item map', () => {
       const raw = '!<Map>[a=one,b=two,c=three]';
 
       try {
@@ -469,7 +469,7 @@ describe('Transformer.transformCollection for "attributes" context', () => {
     });
 
     context('given: malformed map entry', () => {
-      it(`should: throw`, () => {
+      it('should: throw', () => {
         const raw = '!<Map>[foo=bar=baz]';
         try {
           const stub = new SpecOptionService();
@@ -516,7 +516,7 @@ describe('Transformer.transformCollection for "attributes" context', () => {
     });
 
     context('given: invalid assoc value type', () => {
-      it(`should: return negative transform result`, () => {
+      it('should: return negative transform result', () => {
         const raw = '!<Map>[foo=not-a-number]';
         try {
           const stub = new SpecOptionService();
@@ -539,11 +539,10 @@ describe('Transformer.transformCollection for "attributes" context', () => {
         }
       });
     });
-
   }); // Map collection
 
   context('Object instance collection', () => {
-    it(`should: coerce as a multiple item Object`, () => {
+    it('should: coerce as a multiple item Object', () => {
       const raw = '!<Object>[a=one,b=two,c=three]';
 
       const stub = new SpecOptionService();
@@ -564,12 +563,12 @@ describe('Transformer.transformCollection for "attributes" context', () => {
       expect(result.succeeded).to.be.true(functify(result));
       expect(R.keys(result.value).length).to.equal(3, functify(result));
 
-      expect(result.value['a']).to.equal('one', functify(result));
-      expect(result.value['b']).to.equal('two', functify(result));
-      expect(result.value['c']).to.equal('three', functify(result));
+      expect(result.value.a).to.equal('one', functify(result));
+      expect(result.value.b).to.equal('two', functify(result));
+      expect(result.value.c).to.equal('three', functify(result));
     });
 
-    it(`should: coerce as a multiple item Object and numeric keys`, () => {
+    it('should: coerce as a multiple item Object and numeric keys', () => {
       const raw = '!<Object>[1=one,2=two,3=three]';
 
       const stub = new SpecOptionService();
@@ -595,7 +594,7 @@ describe('Transformer.transformCollection for "attributes" context', () => {
       expect(result.value[3]).to.equal('three', functify(result));
     });
 
-    it(`should: coerce as a multiple item Object and numeric keys and values`, () => {
+    it('should: coerce as a multiple item Object and numeric keys and values', () => {
       const raw = '!<Object>[1=15,2=30,3=40]';
 
       const stub = new SpecOptionService();
@@ -621,7 +620,7 @@ describe('Transformer.transformCollection for "attributes" context', () => {
       expect(result.value[3]).to.equal(40, functify(result));
     });
 
-    it(`should: coerce as a multiple item Object mixed type numeric keys and values`, () => {
+    it('should: coerce as a multiple item Object mixed type numeric keys and values', () => {
       const raw = '!<Object>[1=15,2=30,3=40,4=g,deuce=adv]';
 
       const stub = new SpecOptionService();
@@ -644,13 +643,13 @@ describe('Transformer.transformCollection for "attributes" context', () => {
 
       expect(result.value[1]).to.equal(15, functify(result));
       expect(result.value[4]).to.equal('g', functify(result));
-      expect(result.value['deuce']).to.equal('adv', functify(result));
+      expect(result.value.deuce).to.equal('adv', functify(result));
     });
   }); // Object instance collection
 
   context('Error handling', () => {
     context('given: invalid assoc.keyType', () => {
-      it(`should: throw`, () => {
+      it('should: throw', () => {
         const raw = '!<Object>[1=15,2=30,3=40,4=g,deuce=adv]';
         const stub = new SpecOptionService();
         sinon.stub(stub, 'fetchOption')
@@ -673,7 +672,7 @@ describe('Transformer.transformCollection for "attributes" context', () => {
     });
 
     context('given: invalid "collection" assoc.keyType', () => {
-      it(`should: throw`, () => {
+      it('should: throw', () => {
         const raw = '!<Object>[1=15,2=30,3=40,4=g,deuce=adv]';
         const stub = new SpecOptionService();
         sinon.stub(stub, 'fetchOption')
@@ -696,7 +695,7 @@ describe('Transformer.transformCollection for "attributes" context', () => {
     });
 
     context('given: invalid assoc.valueType', () => {
-      it(`should: throw`, () => {
+      it('should: throw', () => {
         const raw = '!<Object>[1=15,2=30,3=40,4=g,deuce=adv]';
         const stub = new SpecOptionService();
         sinon.stub(stub, 'fetchOption')
@@ -719,7 +718,7 @@ describe('Transformer.transformCollection for "attributes" context', () => {
     });
 
     context('given: unknown collection type', () => {
-      it(`should: throw`, () => {
+      it('should: throw', () => {
         const raw = '!<duff>[foo=bar]';
         const stub = new SpecOptionService();
         sinon.stub(stub, 'fetchOption')
@@ -742,7 +741,7 @@ describe('Transformer.transformCollection for "attributes" context', () => {
     });
 
     context('given: malformed object entry', () => {
-      it(`should: throw`, () => {
+      it('should: throw', () => {
         const raw = '!<Object>[1=15,2=30,3=40,4=g,deuce=adv=game]'; // <-- !!
 
         const stub = new SpecOptionService();
@@ -766,7 +765,7 @@ describe('Transformer.transformCollection for "attributes" context', () => {
     });
 
     context('given: invalid key coercion, valid value coercion', () => {
-      it(`should: throw`, () => {
+      it('should: throw', () => {
         const raw = '!<Object>[1=15,2=30,3=40,4=g,deuce=adv]'; // <-- !!
 
         const stub = new SpecOptionService();
@@ -899,4 +898,4 @@ describe('Transformer.getTransform for typed collection', () => {
       }).to.throw();
     });
   });
-});  // Transformer.getTransform for typed collection
+}); // Transformer.getTransform for typed collection

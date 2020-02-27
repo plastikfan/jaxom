@@ -1,11 +1,10 @@
-import { functify } from 'jinxed';
-import { expect, assert, use } from 'chai';
-import dirtyChai = require('dirty-chai');
-use(dirtyChai);
+import { expect, use } from 'chai';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as types from '../../lib/types';
 import { ParseInfoFactory } from '../../lib/cli/parseinfo-factory.class';
+import dirtyChai = require('dirty-chai');
+use(dirtyChai);
 
 describe('ParseInfoFactory', () => {
   context('given: parse info file with all top level fields', () => {

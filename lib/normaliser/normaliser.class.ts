@@ -60,7 +60,6 @@ export class Normaliser {
 
         if (R.is(Array)(current[self.options.descendantsLabel]) ===
           R.is(Array)(found[self.options.descendantsLabel])) {
-
           const id = foundElementInfo.descendants?.id;
           const clash = (id)
             ? this.clashingIds(id, currentChildren, foundChildren)
@@ -105,8 +104,8 @@ export class Normaliser {
   private clashingIds (id: string, first: any[], second: any[]): boolean {
     const allContainId = R.all((o: any): boolean => id in o);
     const pluckIds = R.pluck(id);
-    const foundClash = !(allContainId(first) && allContainId(second)
-      && R.intersection(pluckIds(first), pluckIds(second)).length === 0);
+    const foundClash = !(allContainId(first) && allContainId(second) &&
+      R.intersection(pluckIds(first), pluckIds(second)).length === 0);
     return foundClash;
   }
 

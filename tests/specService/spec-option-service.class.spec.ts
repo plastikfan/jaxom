@@ -1,11 +1,10 @@
-
 import { expect, use } from 'chai';
-import dirtyChai = require('dirty-chai');
-use(dirtyChai);
 import * as R from 'ramda';
 import 'xmldom-ts';
 import * as types from '../../lib/types';
 import { SpecOptionService, Specs } from '../../lib/specService/spec-option-service.class';
+import dirtyChai = require('dirty-chai');
+use(dirtyChai);
 
 const testSpec: types.ISpec = Object.freeze({
   name: 'test-spec-with-attributes',
@@ -74,7 +73,7 @@ describe('SpecOptionService.fetchOption', () => {
       path: 'attributes/coercion/matchers/collection/assoc/delim',
       fallback: true,
       spec: () => R.set(R.lensPath(['attributes', 'coercion', 'matchers', 'collection', 'assoc']), {
-          // no delim here!
+        // no delim here!
         keyType: 'string',
         valueType: 'string'
       })(localSpec),
@@ -99,7 +98,7 @@ describe('SpecOptionService.fetchOption', () => {
       path: 'textNodes/coercion/matchers/collection/assoc/delim',
       fallback: true,
       spec: () => R.set(R.lensPath(['textNodes', 'coercion', 'matchers', 'collection', 'assoc']), {
-          // no delim here!
+        // no delim here!
         keyType: 'string',
         valueType: 'string'
       })(localSpec),
@@ -215,7 +214,7 @@ describe('SpecOptionService.validateSpec', () => {
       });
 
       expect(() => {
-        // tslint:disable-next-line: no-unused-expression
+        // eslint-disable-next-line no-new
         new SpecOptionService(invalidSpec);
       }).to.throw();
     });

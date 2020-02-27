@@ -1,7 +1,5 @@
-
+/* eslint-disable no-useless-escape */
 import * as R from 'ramda';
-import { functify } from 'jinxed';
-let moment = require('moment'); // why doesn't normal TS import work?
 import * as types from '../types';
 import {
   CollectionTypePlaceHolder,
@@ -10,9 +8,9 @@ import {
 
 import * as e from '../exceptions';
 import * as utils from '../utils/utils';
+const moment = require('moment');
 
 export class Transformer {
-
   constructor (private options: types.ISpecService) {
 
   }
@@ -34,7 +32,9 @@ export class Transformer {
   // occurs from the original type to numeric type. This is the reason why we don't have to explicity
   // use the transformPrimitive / transformNumber functions to perform the type conversion.
   //
-  private numericArrayCollections = new Map<string, (c: Iterable<number>, s: string, sc: types.SpecContext) => ArrayCollectionType>([
+  private numericArrayCollections =
+  // eslint-disable-next-line func-call-spacing
+  new Map<string, (c: Iterable<number>, s: string, sc: types.SpecContext) => ArrayCollectionType>([
     ['int8array', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Int8Array, c, s, sc)],
     ['uint8array', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Uint8Array, c, s, sc)],
     ['uint8clampedarray', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Uint8ClampedArray, c, s, sc)],
@@ -181,7 +181,6 @@ export class Transformer {
           const resultSet = this.transformSet(subject, context, collectionElements);
           value = resultSet.value;
           succeeded = resultSet.succeeded;
-
         } else {
           throw new Error(`[${subject}]: Couldn't create ${collectionType} collection`);
         }
@@ -243,7 +242,6 @@ export class Transformer {
    */
   private transformObject (subject: string, context: types.SpecContext,
     collectionType: string, sourceCollection: any[]): ITransformResult<types.ObjectType> {
-
     const assocDelim = this.options.fetchOption(
       `${context}/coercion/matchers/collection/assoc/delim`) as string;
 
@@ -278,8 +276,8 @@ export class Transformer {
       return resultAcc;
     }, [])(sourceCollection);
 
-    let succeeded = transformValue.length > 0;
-    let result: types.ObjectType = R.fromPairs(transformValue);
+    const succeeded = transformValue.length > 0;
+    const result: types.ObjectType = R.fromPairs(transformValue);
 
     return {
       value: result,
@@ -302,7 +300,6 @@ export class Transformer {
    */
   private transformMap (subject: string, context: types.SpecContext,
     collectionType: string, sourceCollection: any[]): ITransformResult<Map<types.PrimitiveType, types.PrimitiveType>> {
-
     const assocDelim = this.options.fetchOption(
       `${context}/coercion/matchers/collection/assoc/delim`) as string;
 
@@ -335,7 +332,7 @@ export class Transformer {
         return result;
       }, init)(sourceCollection);
 
-    let succeeded = resultMap.size > 0;
+    const succeeded = resultMap.size > 0;
 
     return {
       value: resultMap,
@@ -360,7 +357,6 @@ export class Transformer {
    */
   private transformAssocValue (subject: string, assocType: string | string[],
     context: types.SpecContext, assocValue: string): ITransformResult<types.PrimitiveType> {
-
     let coercedValue: types.PrimitiveType = assocValue;
     let succeeded = false;
     let assocTypes = assocType;
@@ -381,7 +377,7 @@ export class Transformer {
 
       /* istanbul ignore next: type guard so we can call .some() */
       if (assocTypes instanceof Array) {
-        let self = this;
+        const self = this;
         assocTypes.some((val: types.PrimitiveStr) => {
           if (R.includes(val, types.PrimitiveStrArray)) {
             const transform = self.getTransform(val);
@@ -420,7 +416,6 @@ export class Transformer {
    */
   private transformNumber (subject: string, numberValue: number,
     context: types.SpecContext): ITransformResult<number> {
-
     let result = Number(numberValue);
 
     const succeeded = !(isNaN(result));
@@ -447,7 +442,6 @@ export class Transformer {
    */
   private transformBoolean (subject: string, booleanValue: string | boolean,
     context: types.SpecContext): ITransformResult<boolean> {
-
     let value = false;
     let succeeded = false;
 
@@ -487,7 +481,6 @@ export class Transformer {
    */
   private transformPrimitiveValue (subject: string, primitiveValue: string,
     context: types.SpecContext): ITransformResult<types.CoercivePrimitiveType> {
-
     const primitives = this.options.fetchOption(`${context}/coercion/matchers/primitives`) as [];
 
     let coercedValue = 0;
@@ -506,7 +499,7 @@ export class Transformer {
       } else {
         throw new e.JaxConfigError(
           `Invalid primitives config "${context}/coercion/matchers/primitives = ${primitives}"`,
-            subject);
+          subject);
       }
 
       return succeeded;
@@ -531,7 +524,6 @@ export class Transformer {
    */
   private transformElementValue (subject: string, elementValue: types.PrimitiveType,
     context: types.SpecContext): ITransformResult<types.PrimitiveType> {
-
     const elementTypes = this.options.fetchOption(`${context}/coercion/matchers/collection/elementTypes`) as [];
 
     let coercedValue = elementValue;
@@ -550,7 +542,7 @@ export class Transformer {
       } else {
         throw new e.JaxConfigError(
           `Invalid elementTypes config "${context}/coercion/matchers/elementTypes = ${elementTypes}"`,
-            subject);
+          subject);
       }
 
       return succeeded;
@@ -575,7 +567,6 @@ export class Transformer {
    */
   private transformDate (subject: string, dateValue: string,
     context: types.SpecContext): ITransformResult<Date> {
-
     const format = this.options.fetchOption(`${context}/coercion/matchers/date/format`) as string;
     const momentDate = moment(dateValue, format);
     const succeeded = momentDate.isValid();
@@ -598,7 +589,6 @@ export class Transformer {
    */
   transformSymbol (subject: string, symbolValue: string,
     context: types.SpecContext): ITransformResult<Symbol> {
-
     const prefix = this.options.fetchOption(
       `${context}/coercion/matchers/symbol/prefix`) as string;
 
@@ -635,7 +625,7 @@ export class Transformer {
 
     const stringCoercionAcceptable: boolean = optionStr === undefined ? true : optionStr as boolean;
     if (!stringCoercionAcceptable) {
-      throw new e.JaxSolicitedError(`matching failed, terminated by string matcher.`,
+      throw new e.JaxSolicitedError('matching failed, terminated by string matcher.',
         subject);
     }
 
@@ -721,7 +711,6 @@ export class Transformer {
    */
   private transformMixedCollection (subject: string, context: types.SpecContext, c: any[])
     : ITransformResult<types.CoercivePrimitiveType[]> {
-
     const value = Array.from(c, (val: any, i: number): any => {
       const transformResult = this.transformElementValue(subject, val, context);
       return transformResult.succeeded ? transformResult.value : val;
@@ -745,7 +734,6 @@ export class Transformer {
    */
   private transformSet (subject: string, context: types.SpecContext, c: types.PrimitiveType[])
     : ITransformResult<Set<types.PrimitiveType>> {
-
     const init = new Set<types.CoercivePrimitiveType>();
     const resultSet = R.reduce((acc: Set<types.PrimitiveType>, val: types.PrimitiveType)
       : Set<types.PrimitiveType> => {
