@@ -1,7 +1,4 @@
-import { functify } from 'jinxed';
 import { expect, use } from 'chai';
-import dirtyChai = require('dirty-chai');
-use(dirtyChai);
 import 'xmldom-ts';
 import * as R from 'ramda';
 import * as path from 'path';
@@ -13,6 +10,8 @@ import * as cli from '../../lib/cli/cli-types';
 import { Application } from '../../lib/cli/application.class';
 import { ParseInfoFactory } from '../../lib/cli/parseinfo-factory.class';
 import { XpathConverter } from '../../lib/converter/xpath-converter.class';
+import dirtyChai = require('dirty-chai');
+use(dirtyChai);
 const compositionRoot = require('../../lib/cli/composition-root');
 const vol = memfs.vol;
 
@@ -29,7 +28,6 @@ const patchedFS = {
 };
 
 function setupFS (fileNames: string[], patch?: {}): memfs.IFs {
-
   const resultFS = R.reduce((acc: { [key: string]: any }, fileName: string): { [key: string]: any } => {
     const filePath = path.resolve(__dirname, fileName);
     const content: string = fs.readFileSync(filePath, 'utf8');

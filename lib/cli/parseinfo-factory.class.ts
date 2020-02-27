@@ -2,7 +2,6 @@ import * as types from '../types';
 import * as R from 'ramda';
 
 export class ParseInfoFactory {
-
   /**
    * @method construct
    * @description Acquire a parse info instance from the @source json provided.
@@ -12,7 +11,6 @@ export class ParseInfoFactory {
    * @memberof ParseInfoFactory
    */
   public construct (source: string): types.IParseInfo {
-
     const json = JSON.parse(source);
 
     // elements array

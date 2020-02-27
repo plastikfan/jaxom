@@ -4,11 +4,9 @@ import 'xmldom-ts';
 import { ICommandLineInputs, ConsoleTag } from './cli-types';
 
 export class CommandLine {
-
   // needs to change to return a command line inputs instance
   //
   public build (instance: yargs.Argv): ICommandLineInputs {
-
     instance = instance.scriptName('jaxom-cli')
       .option('xml', {
         alias: 'x',
@@ -52,6 +50,5 @@ export class CommandLine {
 
     /* istanbul ignore next: ? */
     return inputs;
-
   } // buildCli
 }

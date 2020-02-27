@@ -1,8 +1,5 @@
-
 import * as R from 'ramda';
 import * as xpath from 'xpath-ts';
-import { functify } from 'jinxed';
-
 import * as types from '../types';
 import * as e from '../exceptions';
 import { Transformer } from '../transformer/transformer.class';
@@ -55,7 +52,6 @@ export class XpathConverterImpl implements IConverterImpl {
    */
   build (elementNode: Node, parseInfo: types.IParseInfo,
     previouslySeen: string[] = []): any {
-
     const abstractValue = getAttributeValue(elementNode, 'abstract');
 
     if (abstractValue && abstractValue === 'true') {
@@ -63,8 +59,8 @@ export class XpathConverterImpl implements IConverterImpl {
       const subject = composeElementPath(elementNode, id);
 
       throw new e.JaxConfigError(
-        `Attempt to directly build abstract entity is prohibited. (Please remove "abstract")`,
-          subject);
+        'Attempt to directly build abstract entity is prohibited. (Please remove "abstract")',
+        subject);
     }
 
     return this.buildElement(elementNode, parseInfo, previouslySeen);
@@ -82,7 +78,6 @@ export class XpathConverterImpl implements IConverterImpl {
    * @memberof XpathConverterImpl
    */
   buildElement (elementNode: Node, parseInfo: types.IParseInfo, previouslySeen: string[]): any {
-
     const elementInfo = utils.composeElementInfo(elementNode.nodeName, parseInfo);
     const { recurse = '', discards = [], id = '' } = elementInfo;
     const subject = composeElementPath(elementNode, id);
@@ -165,11 +160,11 @@ export class XpathConverterImpl implements IConverterImpl {
         // Retain the "id" attribute as a member so that normalisation can proceed
         //
         const idAttributeNode: any = R.find((attrNode: any) => {
-          return attrNode['name'] === id;
+          return attrNode.name === id;
         })(attributeNodes);
 
         if (idAttributeNode) {
-          let attributePair = R.props(['name', 'value'])(idAttributeNode); // => [attrKey, attrValue]
+          const attributePair = R.props(['name', 'value'])(idAttributeNode); // => [attrKey, attrValue]
           const attributeName = R.head(attributePair) as string;
           const rawAttributeValue = R.last(attributePair) as string;
           element[attributeName] = rawAttributeValue;
@@ -178,11 +173,11 @@ export class XpathConverterImpl implements IConverterImpl {
         // Build attributes as an array identified by labels.attributes
         //
         const attributes = R.reduce((acc: any, attrNode: any) => {
-          const attributeName = attrNode['name'];
+          const attributeName = attrNode.name;
           const attributeSubject = `${subject}/[@${attributeName}]`;
           const attributeValue = doCoercion
-            ? this.transformer.coerceMatcherValue(attributeSubject, matchers, attrNode['value'], attributeName)
-            : attrNode['value'];
+            ? this.transformer.coerceMatcherValue(attributeSubject, matchers, attrNode.value, attributeName)
+            : attrNode.value;
 
           return R.append(R.objOf(attributeName, attributeValue), acc);
         }, [])(attributeNodes);
@@ -197,7 +192,7 @@ export class XpathConverterImpl implements IConverterImpl {
         const coerce = (attrNode: any) => {
           // coercion is active
           //
-          let attributePair = R.props(['name', 'value'])(attrNode); // => [attrKey, attrValue]
+          const attributePair = R.props(['name', 'value'])(attrNode); // => [attrKey, attrValue]
           const attributeName = R.head(attributePair) as string;
           const attributeSubject = `${subject}/[@${attributeName}]`;
           const rawAttributeValue = R.last(attributePair) as string;
@@ -239,7 +234,6 @@ export class XpathConverterImpl implements IConverterImpl {
    */
   private recurseThroughAttribute (subject: string, element: any, elementNode: Element,
     parseInfo: types.IParseInfo, previouslySeen: string[]): {} {
-
     const ei = utils.composeElementInfo(elementNode.nodeName, parseInfo);
     /* istanbul ignore next: recurseThroughAttribute won't be called unless these are set */
     const { id = '', recurse = '' } = ei;
@@ -305,8 +299,8 @@ export class XpathConverterImpl implements IConverterImpl {
         const doMergeElements = (a: any, b: any) => {
           let merged;
 
-          if (R.includes(this.options.descendantsLabel, R.keys(a) as string[])
-            && R.includes(this.options.descendantsLabel, R.keys(b) as string[])) {
+          if (R.includes(this.options.descendantsLabel, R.keys(a) as string[]) &&
+            R.includes(this.options.descendantsLabel, R.keys(b) as string[])) {
             // Both a and b have children, therefore we must merge in such a way as to
             // not to lose any properties of a by calling R.mergeAll
             //
@@ -399,7 +393,7 @@ export class XpathConverterImpl implements IConverterImpl {
       }
     }
 
-    let elementText: string = this.composeText(elementNode);
+    const elementText: string = this.composeText(elementNode);
 
     if (elementText && elementText !== '') {
       element[this.options.textLabel] = elementText;
@@ -505,7 +499,7 @@ export class XpathConverterImpl implements IConverterImpl {
     if (!inheritedAbstractValue || inheritedAbstractValue === 'false') {
       throw new e.JaxConfigError(
         `Can't inherit from non abstract element: ${inheritedNode.nodeName}`,
-          subject);
+        subject);
     }
   }
 } // class XpathConverterImpl

@@ -21,7 +21,7 @@ export function logIfFailedStringify (result: boolean, widget: any) {
 export function selectElementNodeById (
   elementName: string, id: string, name: string, rootNode: any): types.NullableNode {
   if (rootNode && rootNode instanceof Node) {
-    let result: types.SelectResult = xp.select(`.//${elementName}[@${id}="${name}"]`, rootNode, true);
+    const result: types.SelectResult = xp.select(`.//${elementName}[@${id}="${name}"]`, rootNode, true);
 
     return result instanceof Node ? result : null;
   }

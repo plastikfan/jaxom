@@ -1,4 +1,3 @@
-import * as fs from 'fs';
 import * as types from '../types';
 
 export interface ICommandLineInputs {

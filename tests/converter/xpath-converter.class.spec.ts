@@ -1,15 +1,16 @@
+/* eslint-disable no-useless-escape */
 import { expect, assert, use } from 'chai';
-import dirtyChai = require('dirty-chai');
-use(dirtyChai);
 import * as R from 'ramda';
 import * as xp from 'xpath-ts';
 import 'xmldom-ts';
-const parser = new DOMParser();
-const { functify } = require('jinxed');
 import * as types from '../../lib/types';
 import * as Helpers from '../test-helpers';
 import { XpathConverter as Jaxom } from '../../lib/converter/xpath-converter.class';
 import { Specs } from '../../lib/specService/spec-option-service.class';
+import dirtyChai = require('dirty-chai');
+use(dirtyChai);
+const parser = new DOMParser();
+const { functify } = require('jinxed');
 
 const testParseInfo: types.IParseInfo = {
   elements: new Map<string, types.IElementInfo>([
@@ -59,9 +60,9 @@ describe('xpath-converter.build', () => {
         const command: {} = converter.build(leafCommandNode, testParseInfo);
 
         const result = Helpers.logIfFailedStringify(R.where({
-          'name': R.equals('leaf'),
-          'describe': R.equals('this is a leaf command'),
-          'type': R.equals('native')
+          name: R.equals('leaf'),
+          describe: R.equals('this is a leaf command'),
+          type: R.equals('native')
         })(command), command);
         expect(result).to.be.true(functify(command));
       } else {
@@ -92,9 +93,9 @@ describe('xpath-converter.build', () => {
         const command: {} = converter.build(leafCommandNode, testParseInfo);
 
         const result = Helpers.logIfFailedStringify(R.where({
-          'name': R.equals('leaf'),
-          'describe': R.equals('this is a leaf command'),
-          'type': R.equals('native')
+          name: R.equals('leaf'),
+          describe: R.equals('this is a leaf command'),
+          type: R.equals('native')
         })(command), command);
 
         expect(result).to.be.true(functify(command));
@@ -177,7 +178,7 @@ describe('xpath-converter.build', () => {
       const document: Document = parser.parseFromString(data, 'text/xml');
       const expressionNode: types.SelectResult = xp.select(
         '/Application/Expressions/Expression[@name="person\'s-name-expression"]',
-          document, true);
+        document, true);
 
       if (expressionNode instanceof Node) {
         const converter = new Jaxom();
@@ -196,8 +197,8 @@ describe('xpath-converter.build', () => {
         });
 
         const result = Helpers.logIfFailedStringify(R.where({
-          'name': R.equals(`person's-name-expression`),
-          'eg': R.equals('Mick Mars')
+          name: R.equals('person\'s-name-expression'),
+          eg: R.equals('Mick Mars')
         })(element), element);
 
         expect(result).to.be.true(functify(element));
@@ -239,8 +240,8 @@ describe('xpath-converter.build', () => {
         });
 
         const result = Helpers.logIfFailedStringify(R.where({
-          'name': R.equals('some-json-source'),
-          'provider': R.equals('json-provider')
+          name: R.equals('some-json-source'),
+          provider: R.equals('json-provider')
         })(source), source);
 
         expect(result).to.be.true(functify(source));
@@ -284,9 +285,9 @@ describe('xpath-converter.build', () => {
         });
 
         const result = Helpers.logIfFailedStringify(R.where({
-          'name': R.equals('filesys'),
-          'alias': R.equals('fs'),
-          'optional': R.equals(true)
+          name: R.equals('filesys'),
+          alias: R.equals('fs'),
+          optional: R.equals(true)
         })(source), source);
 
         expect(result).to.be.true(functify(source));
@@ -330,8 +331,8 @@ describe('xpath-converter.build', () => {
         });
 
         const result = Helpers.logIfFailedStringify(R.where({
-          'alias': R.equals('skipa'),
-          'root': R.equals('/Volumes/Epsilon/Skipa')
+          alias: R.equals('skipa'),
+          root: R.equals('/Volumes/Epsilon/Skipa')
         })(tree), tree);
 
         expect(result).to.be.true(functify(tree));
@@ -364,9 +365,9 @@ describe('xpath-converter.build', () => {
 
           const command: {} = converter.build(leafCommandNode, testParseInfo);
           const result = Helpers.logIfFailedStringify(R.where({
-            'name': R.equals('leaf'),
-            'describe': R.equals('this is a leaf command'),
-            'type': R.equals('native')
+            name: R.equals('leaf'),
+            describe: R.equals('this is a leaf command'),
+            type: R.equals('native')
           })(command), command);
 
           expect(result).to.be.true(functify(command));
@@ -398,9 +399,9 @@ describe('xpath-converter.build', () => {
           const command: {} = converter.build(leafCommandNode, testParseInfo);
 
           const result = Helpers.logIfFailedStringify(R.where({
-            'name': R.equals('leaf'),
-            'describe': R.equals('this is a leaf command'),
-            'type': R.equals('native')
+            name: R.equals('leaf'),
+            describe: R.equals('this is a leaf command'),
+            type: R.equals('native')
           })(command), command);
 
           expect(result).to.be.true(functify(command));
@@ -432,14 +433,13 @@ describe('xpath-converter.build', () => {
           const command: {} = converter.build(leafCommandNode, testParseInfo);
 
           const result = Helpers.logIfFailedStringify(R.where({
-            'name': R.equals('leaf'),
-            'describe': R.equals('this is a leaf command'),
-            'type': R.equals('native'),
-            'filter': R.equals('beta')
+            name: R.equals('leaf'),
+            describe: R.equals('this is a leaf command'),
+            type: R.equals('native'),
+            filter: R.equals('beta')
           })(command), command);
 
           expect(result).to.be.true(functify(command));
-
         } else {
           assert.fail('Couldn\'t get Command node.');
         }
@@ -469,10 +469,10 @@ describe('xpath-converter.build', () => {
 
         const command: {} = converter.build(leafCommandNode, testParseInfo);
         const result = Helpers.logIfFailedStringify(R.where({
-          'name': R.equals('leaf'),
-          'describe': R.equals('this is a leaf command'),
-          'type': R.equals('native'),
-          'filter': R.equals('beta')
+          name: R.equals('leaf'),
+          describe: R.equals('this is a leaf command'),
+          type: R.equals('native'),
+          filter: R.equals('beta')
         })(command), command);
 
         expect(result).to.be.true(functify(command));
@@ -506,12 +506,12 @@ describe('xpath-converter.build', () => {
         const command: {} = converter.build(leafCommandNode, testParseInfo);
 
         const result = Helpers.logIfFailedStringify(R.where({
-          'name': R.equals('leaf'),
-          'describe': R.equals('this is a leaf command'),
-          'album': R.equals('powerslave'),
-          'filter': R.equals('alpha'),
-          'type': R.equals('native'),
-          'theme': R.equals('concept')
+          name: R.equals('leaf'),
+          describe: R.equals('this is a leaf command'),
+          album: R.equals('powerslave'),
+          filter: R.equals('alpha'),
+          type: R.equals('native'),
+          theme: R.equals('concept')
         })(command), command);
 
         expect(result).to.be.true(functify(command));
@@ -543,9 +543,9 @@ describe('xpath-converter.build', () => {
 
         const command: {} = converter.build(leafCommandNode, testParseInfo);
         const result = Helpers.logIfFailedStringify(R.where({
-          'name': R.equals('leaf'),
-          'describe': R.equals('this is a leaf command'),
-          'filter': R.equals('leaf-filter')
+          name: R.equals('leaf'),
+          describe: R.equals('this is a leaf command'),
+          filter: R.equals('leaf-filter')
         })(command), command);
 
         expect(result).to.be.true(functify(command));
@@ -579,12 +579,12 @@ describe('xpath-converter.build', () => {
         const command: {} = converter.build(leafCommandNode, testParseInfo);
 
         const result = Helpers.logIfFailedStringify(R.where({
-          'name': R.equals('leaf'),
-          'describe': R.equals('this is a leaf command'),
-          'album': R.equals('powerslave'),
-          'filter': R.equals('alpha'),
-          'type': R.equals('native'),
-          'theme': R.equals('concept')
+          name: R.equals('leaf'),
+          describe: R.equals('this is a leaf command'),
+          album: R.equals('powerslave'),
+          filter: R.equals('alpha'),
+          type: R.equals('native'),
+          theme: R.equals('concept')
         })(command), command);
 
         expect(result).to.be.true(functify(command));
@@ -618,12 +618,12 @@ describe('xpath-converter.build', () => {
 
         const command: {} = converter.build(leafCommandNode, testParseInfo);
         const result = Helpers.logIfFailedStringify(R.where({
-          'name': R.equals('leaf'),
-          'describe': R.equals('this is a leaf command'),
-          'album': R.equals('powerslave'),
-          'filter': R.equals('alpha'),
-          'type': R.equals('native'),
-          'theme': R.equals('concept')
+          name: R.equals('leaf'),
+          describe: R.equals('this is a leaf command'),
+          album: R.equals('powerslave'),
+          filter: R.equals('alpha'),
+          type: R.equals('native'),
+          theme: R.equals('concept')
         })(command), command);
 
         expect(result).to.be.true(functify(command));
@@ -656,10 +656,10 @@ describe('xpath-converter.build', () => {
 
         const command: {} = converter.build(leafCommandNode, testParseInfo);
         const result = Helpers.logIfFailedStringify(R.where({
-          'name': R.equals('leaf'),
-          'describe': R.equals('this is a leaf command'),
-          'filter': R.equals('beta-filter'),
-          'mode': R.equals('auto')
+          name: R.equals('leaf'),
+          describe: R.equals('this is a leaf command'),
+          filter: R.equals('beta-filter'),
+          mode: R.equals('auto')
         })(command), command);
 
         expect(result).to.be.true(functify(command));
@@ -947,10 +947,10 @@ describe('xpath-converter.build', () => {
         const converter = new Jaxom();
         const command: any = converter.build(testCommandNode, testParseInfo);
         const result = Helpers.logIfFailedStringify(R.where({
-          'name': R.equals('test'),
-          'describe': R.equals('Test regular expression definitions'),
-          '_': R.equals('Command'),
-          '_children': R.is(Object)
+          name: R.equals('test'),
+          describe: R.equals('Test regular expression definitions'),
+          _: R.equals('Command'),
+          _children: R.is(Object)
         })(command), command);
 
         expect(result).to.be.true(functify(command));
@@ -975,14 +975,14 @@ describe('xpath-converter.build', () => {
       const document: Document = parser.parseFromString(data, 'text/xml');
       const expressionNode: types.SelectResult = xp.select(
         '/Application/Expressions[@name="content-expressions"]/Expression[@name="meta-prefix-expression"]',
-          document, true);
+        document, true);
 
       if (expressionNode instanceof Node) {
         const converter = new Jaxom();
 
         const command: {} = converter.build(expressionNode, testParseInfo);
         const result = Helpers.logIfFailedStringify(R.where({
-          'name': R.equals('meta-prefix-expression')
+          name: R.equals('meta-prefix-expression')
         })(command), command);
 
         expect(result).to.be.true(functify(command));

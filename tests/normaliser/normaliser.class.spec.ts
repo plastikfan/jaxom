@@ -1,17 +1,15 @@
 import { Normaliser } from './../../lib/normaliser/normaliser.class';
 /// <reference types="../../lib/declarations" />
-
 import { expect, assert, use } from 'chai';
+import * as R from 'ramda';
+import * as xp from 'xpath-ts';
+import * as types from '../../lib/types';
+import { XpathConverterImpl as Impl } from '../../lib/converter/xpath-converter.impl';
+import { SpecOptionService } from '../../lib/specService/spec-option-service.class';
 import dirtyChai = require('dirty-chai');
 use(dirtyChai);
 import sinonChai = require('sinon-chai');
 use(sinonChai);
-import * as R from 'ramda';
-import * as xp from 'xpath-ts';
-import * as types from '../../lib/types';
-import { functify } from 'jinxed';
-import { XpathConverterImpl as Impl } from '../../lib/converter/xpath-converter.impl';
-import { SpecOptionService } from '../../lib/specService/spec-option-service.class';
 
 const parser = new DOMParser();
 
@@ -100,7 +98,7 @@ describe('Normaliser.combineDescendants error handling', () => {
         const document: Document = parser.parseFromString(t.data, 'text/xml');
         const commandNode = xp.select(
           '/Application/Cli/Commands/Command[@name="test"]',
-            document, true);
+          document, true);
 
         if (commandNode instanceof Node) {
           const converter = new Impl();
@@ -212,12 +210,12 @@ describe('build => Normaliser.normaliseDescendants', () => {
         query: '/Application/Cli/Arguments',
         verify: (children: any): void => {
           expect(children).to.deep.equal({
-            'director': {
-              'name': 'director',
-              'alias': 'dn',
-              'optional': true,
-              'describe': 'Director name',
-              '_': 'Argument'
+            director: {
+              name: 'director',
+              alias: 'dn',
+              optional: true,
+              describe: 'Director name',
+              _: 'Argument'
             }
           });
         }
@@ -499,7 +497,7 @@ describe('build => Normaliser.normaliseDescendants', () => {
     });
 
     context('inherit from another element which also contains its own child elements', () => {
-      context(`given: normalisation at parent not active (parent=command)`, () => {
+      context('given: normalisation at parent not active (parent=command)', () => {
         it('should: not normalise children', () => {
           const data = `<?xml version="1.0"?>
           <Application name="pez">
@@ -517,7 +515,7 @@ describe('build => Normaliser.normaliseDescendants', () => {
           const document: Document = parser.parseFromString(data, 'text/xml');
           const commandNode = xp.select(
             '/Application/Cli/Commands/Command[@name="list-command"]',
-              document, true) as Node;
+            document, true) as Node;
 
           const parseInfo: types.IParseInfo = {
             // There is no common id attribute between Command and AlphaChild/BetaChild, so
@@ -557,7 +555,7 @@ describe('build => Normaliser.normaliseDescendants', () => {
         });
       }); // normalisation at parent not active (parent=command)
 
-      context(`given: normalisation at parent active (parent=command)`, () => {
+      context('given: normalisation at parent active (parent=command)', () => {
         it('should: normalise inherited children', () => {
           const data = `<?xml version="1.0"?>
           <Application name="pez">
@@ -1002,7 +1000,7 @@ describe('Normaliser.combineDescendants', () => {
           },
           {
             _: 'Arguments',
-            _children: {  // <-- different type from [*]
+            _children: { // <-- different type from [*]
               from: { name: 'from', _: 'ArgumentRef' },
               to: { name: 'to', _: 'ArgumentRef' }
             }
