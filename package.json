@@ -80,7 +80,7 @@
   "dependencies": {
     "@types/ramda": "^0.26.36",
     "@types/yargs": "^15.0.3",
-    "jinxed": "0.0.2",
+    "jinxed": "0.0.3",
     "memfs": "^3.0.4",
     "moment": "^2.24.0",
     "ramda": "^0.27.0",
