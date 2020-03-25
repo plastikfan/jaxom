@@ -1,4 +1,4 @@
-import * as types from '../types';
+import * as xiberia from 'xiberia';
 
 export interface ICommandLineInputs {
   xmlContent: string;
@@ -9,7 +9,7 @@ export interface ICommandLineInputs {
 }
 
 export interface IParseInfoFactory {
-  construct (source: string): types.IParseInfo;
+  construct(source: string): xiberia.IParseInfo;
 }
 
 export const ConsoleTag = '[CONSOLE]';

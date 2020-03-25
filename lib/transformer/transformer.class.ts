@@ -1,5 +1,6 @@
 /* eslint-disable no-useless-escape */
 import * as R from 'ramda';
+import * as xiberia from 'xiberia';
 import * as types from '../types';
 import {
   CollectionTypePlaceHolder,
@@ -11,7 +12,7 @@ import * as utils from '../utils/utils';
 const moment = require('moment');
 
 export class Transformer {
-  constructor (private options: types.ISpecService) {
+  constructor (private options: xiberia.ISpecService) {
 
   }
 
@@ -34,16 +35,16 @@ export class Transformer {
   //
   private numericArrayCollections =
   // eslint-disable-next-line func-call-spacing
-  new Map<string, (c: Iterable<number>, s: string, sc: types.SpecContext) => ArrayCollectionType>([
-    ['int8array', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Int8Array, c, s, sc)],
-    ['uint8array', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Uint8Array, c, s, sc)],
-    ['uint8clampedarray', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Uint8ClampedArray, c, s, sc)],
-    ['int16array', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Int16Array, c, s, sc)],
-    ['uint16array', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Uint16Array, c, s, sc)],
-    ['int32array', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Int32Array, c, s, sc)],
-    ['uint32array', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Uint32Array, c, s, sc)],
-    ['float32array', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Float32Array, c, s, sc)],
-    ['float64array', (c: Iterable<number>, s: string, sc: types.SpecContext) => this.create(Float64Array, c, s, sc)]
+  new Map<string, (c: Iterable<number>, s: string, sc: xiberia.SpecContext) => ArrayCollectionType>([
+    ['int8array', (c: Iterable<number>, s: string, sc: xiberia.SpecContext) => this.create(Int8Array, c, s, sc)],
+    ['uint8array', (c: Iterable<number>, s: string, sc: xiberia.SpecContext) => this.create(Uint8Array, c, s, sc)],
+    ['uint8clampedarray', (c: Iterable<number>, s: string, sc: xiberia.SpecContext) => this.create(Uint8ClampedArray, c, s, sc)],
+    ['int16array', (c: Iterable<number>, s: string, sc: xiberia.SpecContext) => this.create(Int16Array, c, s, sc)],
+    ['uint16array', (c: Iterable<number>, s: string, sc: xiberia.SpecContext) => this.create(Uint16Array, c, s, sc)],
+    ['int32array', (c: Iterable<number>, s: string, sc: xiberia.SpecContext) => this.create(Int32Array, c, s, sc)],
+    ['uint32array', (c: Iterable<number>, s: string, sc: xiberia.SpecContext) => this.create(Uint32Array, c, s, sc)],
+    ['float32array', (c: Iterable<number>, s: string, sc: xiberia.SpecContext) => this.create(Float32Array, c, s, sc)],
+    ['float64array', (c: Iterable<number>, s: string, sc: xiberia.SpecContext) => this.create(Float64Array, c, s, sc)]
   ]);
 
   private static readonly typeExpr = /\<(?<type>[\w\[\]]+)\>/;
@@ -82,7 +83,7 @@ export class Transformer {
    * @returns
    * @memberof Transformer
    */
-  coerceMatcherValue (subject: string, matchers: types.IMatchers, rawValue: string, attributeName: string): {} {
+  coerceMatcherValue (subject: string, matchers: xiberia.IMatchers, rawValue: string, attributeName: string): {} {
     let resultValue = rawValue;
 
     // insertion order of keys is preserved, because key types of symbol
@@ -111,12 +112,12 @@ export class Transformer {
    * @private
    * @param {string} subject: Identifies the current xml entity
    * @param {string} collectionValue
-   * @param {types.SpecContext} context
+   * @param {xiberia.SpecContext} context
    * @returns {ITransformResult<any[]>}
    * @memberof Transformer
    */
   private transformCollection (subject: string, collectionValue: string,
-    context: types.SpecContext): ITransformResult<any> { // any collection!
+    context: xiberia.SpecContext): ITransformResult<any> { // any collection!
     let succeeded = false;
     let value: any = null;
 
@@ -234,14 +235,14 @@ export class Transformer {
    *
    * @private
    * @param {string} subject: Identifies the current xml entity
-   * @param {types.SpecContext} context
+   * @param {xiberia.SpecContext} context
    * @param {string} collectionType
    * @param {any[]} sourceCollection
    * @returns {ITransformResult<any[]>}
    * @memberof Transformer
    */
-  private transformObject (subject: string, context: types.SpecContext,
-    collectionType: string, sourceCollection: any[]): ITransformResult<types.ObjectType> {
+  private transformObject (subject: string, context: xiberia.SpecContext,
+    collectionType: string, sourceCollection: any[]): ITransformResult<xiberia.PlainObject> {
     const assocDelim = this.options.fetchOption(
       `${context}/coercion/matchers/collection/assoc/delim`) as string;
 
@@ -277,7 +278,7 @@ export class Transformer {
     }, [])(sourceCollection);
 
     const succeeded = transformValue.length > 0;
-    const result: types.ObjectType = R.fromPairs(transformValue);
+    const result: xiberia.PlainObject = R.fromPairs(transformValue);
 
     return {
       value: result,
@@ -292,13 +293,13 @@ export class Transformer {
    *
    * @private
    * @param {string} subject: Identifies the current xml entity
-   * @param {types.SpecContext} context
+   * @param {xiberia.SpecContext} context
    * @param {string} collectionType
    * @param {any[]} sourceCollection
    * @returns {ITransformResult<Map<types.PrimitiveType, types.PrimitiveType>>}
    * @memberof Transformer
    */
-  private transformMap (subject: string, context: types.SpecContext,
+  private transformMap (subject: string, context: xiberia.SpecContext,
     collectionType: string, sourceCollection: any[]): ITransformResult<Map<types.PrimitiveType, types.PrimitiveType>> {
     const assocDelim = this.options.fetchOption(
       `${context}/coercion/matchers/collection/assoc/delim`) as string;
@@ -350,13 +351,13 @@ export class Transformer {
    * this function is invoked as part of primitive processing, the configured type can be an array
    * of types. When invoked from other contexts (eg key/value items in an associate collection), the
    * type descriptor here will simply be a string.
-   * @param {types.SpecContext} context
+   * @param {xiberia.SpecContext} context
    * @param {string} assocValue
    * @returns {ITransformResult<any>}
    * @memberof Transformer
    */
   private transformAssocValue (subject: string, assocType: string | string[],
-    context: types.SpecContext, assocValue: string): ITransformResult<types.PrimitiveType> {
+    context: xiberia.SpecContext, assocValue: string): ITransformResult<types.PrimitiveType> {
     let coercedValue: types.PrimitiveType = assocValue;
     let succeeded = false;
     let assocTypes = assocType;
@@ -410,12 +411,12 @@ export class Transformer {
    * @private
    * @param {string} subject: Identifies the current xml entity
    * @param {number} numberValue
-   * @param {types.SpecContext} context
+   * @param {xiberia.SpecContext} context
    * @returns {ITransformResult<number>}
    * @memberof Transformer
    */
   private transformNumber (subject: string, numberValue: number,
-    context: types.SpecContext): ITransformResult<number> {
+    context: xiberia.SpecContext): ITransformResult<number> {
     let result = Number(numberValue);
 
     const succeeded = !(isNaN(result));
@@ -436,12 +437,12 @@ export class Transformer {
    * @private
    * @param {string} subject: Identifies the current xml entity
    * @param {(string | boolean)} booleanValue
-   * @param {types.SpecContext} context
+   * @param {xiberia.SpecContext} context
    * @returns {ITransformResult<boolean>}
    * @memberof Transformer
    */
   private transformBoolean (subject: string, booleanValue: string | boolean,
-    context: types.SpecContext): ITransformResult<boolean> {
+    context: xiberia.SpecContext): ITransformResult<boolean> {
     let value = false;
     let succeeded = false;
 
@@ -475,12 +476,12 @@ export class Transformer {
    * @private
    * @param {string} subject: Identifies the current xml entity
    * @param {string} primitiveValue: the raw primitive text value to be transformed
-   * @param {types.SpecContext} context
+   * @param {xiberia.SpecContext} context
    * @returns {ITransformResult<any>}
    * @memberof Transformer
    */
   private transformPrimitiveValue (subject: string, primitiveValue: string,
-    context: types.SpecContext): ITransformResult<types.CoercivePrimitiveType> {
+    context: xiberia.SpecContext): ITransformResult<types.CoercivePrimitiveType> {
     const primitives = this.options.fetchOption(`${context}/coercion/matchers/primitives`) as [];
 
     let coercedValue = 0;
@@ -518,12 +519,12 @@ export class Transformer {
    * @private
    * @param {string} subject
    * @param {types.CoercivePrimitiveType} elementValue
-   * @param {types.SpecContext} context
+   * @param {xiberia.SpecContext} context
    * @returns {ITransformResult<types.CoercivePrimitiveType>}
    * @memberof Transformer
    */
   private transformElementValue (subject: string, elementValue: types.PrimitiveType,
-    context: types.SpecContext): ITransformResult<types.PrimitiveType> {
+    context: xiberia.SpecContext): ITransformResult<types.PrimitiveType> {
     const elementTypes = this.options.fetchOption(`${context}/coercion/matchers/collection/elementTypes`) as [];
 
     let coercedValue = elementValue;
@@ -561,12 +562,12 @@ export class Transformer {
    * @private
    * @param {string} subject: Identifies the current xml entity
    * @param {string} dateValue
-   * @param {types.SpecContext} context
+   * @param {xiberia.SpecContext} context
    * @returns {ITransformResult<Date>}
    * @memberof Transformer
    */
   private transformDate (subject: string, dateValue: string,
-    context: types.SpecContext): ITransformResult<Date> {
+    context: xiberia.SpecContext): ITransformResult<Date> {
     const format = this.options.fetchOption(`${context}/coercion/matchers/date/format`) as string;
     const momentDate = moment(dateValue, format);
     const succeeded = momentDate.isValid();
@@ -588,7 +589,7 @@ export class Transformer {
    * @memberof Transformer
    */
   transformSymbol (subject: string, symbolValue: string,
-    context: types.SpecContext): ITransformResult<Symbol> {
+    context: xiberia.SpecContext): ITransformResult<Symbol> {
     const prefix = this.options.fetchOption(
       `${context}/coercion/matchers/symbol/prefix`) as string;
 
@@ -619,7 +620,7 @@ export class Transformer {
    * @returns: { value: the raw string verbatim, succeeded: flag to indicate transform result }
    * @memberof Transformer
    */
-  transformString (subject: string, stringValue: string, context: types.SpecContext)
+  transformString (subject: string, stringValue: string, context: xiberia.SpecContext)
     : ITransformResult<string> {
     const optionStr = this.options.fetchOption(`${context}/coercion/matchers/string`);
 
@@ -681,11 +682,11 @@ export class Transformer {
    * @param {IFrom<CT>} collectionClass
    * @param {Iterable<number>} c: the collection being converted
    * @param {string} s: the subject
-   * @param {types.SpecContext} sc: the context
+   * @param {xiberia.SpecContext} sc: the context
    * @returns {CT}
    * @memberof Transformer
    */
-  private create<CT> (collectionClass: IFrom<CT>, c: Iterable<number>, s: string, sc: types.SpecContext): CT {
+  private create<CT> (collectionClass: IFrom<CT>, c: Iterable<number>, s: string, sc: xiberia.SpecContext): CT {
     const collection = collectionClass.from(c, (v: any, i: number): number => {
       if (!utils.isNumeric(v)) {
         const message = `[${s}]: Can't add non numeric ${sc} item: "${v}", to collection: "${collectionClass.name}".`;
@@ -704,12 +705,12 @@ export class Transformer {
    *
    * @private
    * @param {string} subject
-   * @param {types.SpecContext} context
+   * @param {xiberia.SpecContext} context
    * @param {any[]} c: the collection instance to convert
    * @returns {ITransformResult<types.CoercivePrimitiveType[]>}
    * @memberof Transformer
    */
-  private transformMixedCollection (subject: string, context: types.SpecContext, c: any[])
+  private transformMixedCollection (subject: string, context: xiberia.SpecContext, c: any[])
     : ITransformResult<types.CoercivePrimitiveType[]> {
     const value = Array.from(c, (val: any, i: number): any => {
       const transformResult = this.transformElementValue(subject, val, context);
@@ -727,12 +728,12 @@ export class Transformer {
    * @description Creates a Set instance with coerced element contents
    * @private
    * @param {string} subject
-   * @param {types.SpecContext} context
+   * @param {xiberia.SpecContext} context
    * @param {types.PrimitiveType[]} c: the collection instance to convert
    * @returns {ITransformResult<Set<types.PrimitiveType>>}
    * @memberof Transformer
    */
-  private transformSet (subject: string, context: types.SpecContext, c: types.PrimitiveType[])
+  private transformSet (subject: string, context: xiberia.SpecContext, c: types.PrimitiveType[])
     : ITransformResult<Set<types.PrimitiveType>> {
     const init = new Set<types.CoercivePrimitiveType>();
     const resultSet = R.reduce((acc: Set<types.PrimitiveType>, val: types.PrimitiveType)
@@ -779,7 +780,7 @@ export interface ITransformResult<T> {
  * @template T The type of the transform result payload.
  */
 export interface ITransformFunction<T> {
-  (subject: string, rawValue: T, c: types.SpecContext): ITransformResult<T>;
+  (subject: string, rawValue: T, c: xiberia.SpecContext): ITransformResult<T>;
 }
 
 /**

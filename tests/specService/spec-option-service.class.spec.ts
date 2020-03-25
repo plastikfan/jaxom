@@ -1,12 +1,12 @@
 import { expect, use } from 'chai';
 import * as R from 'ramda';
 import 'xmldom-ts';
-import * as types from '../../lib/types';
+import * as xiberia from 'xiberia';
 import { SpecOptionService, Specs } from '../../lib/specService/spec-option-service.class';
 import dirtyChai = require('dirty-chai');
 use(dirtyChai);
 
-const testSpec: types.ISpec = Object.freeze({
+const testSpec: xiberia.ISpec = Object.freeze({
   name: 'test-spec-with-attributes',
   labels: {
     element: '_',
@@ -187,7 +187,7 @@ describe('SpecOptionService.getSpec', () => {
   context('given: a constructed SpecOptionService', () => {
     it('should: be able to get the current spec', () => {
       const converter = new SpecOptionService();
-      const spec: types.ISpec = converter.getSpec();
+      const spec: xiberia.ISpec = converter.getSpec();
       expect(spec).to.not.be.undefined();
     });
   });
@@ -196,7 +196,7 @@ describe('SpecOptionService.getSpec', () => {
 describe('SpecOptionService.validateSpec', () => {
   context('given: invalid spec with identical collection/delim & collection/assoc/delim delimiters', () => {
     it('should: throw', () => {
-      const invalidSpec: types.ISpec = Object.freeze({
+      const invalidSpec: xiberia.ISpec = Object.freeze({
         name: 'invalid-spec-with-identical-delimiters',
         attributes: {
           trim: true,

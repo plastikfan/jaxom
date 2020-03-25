@@ -2,6 +2,7 @@
 import { expect, assert, use } from 'chai';
 import * as sinon from 'sinon';
 import * as R from 'ramda';
+import * as xiberia from 'xiberia';
 import 'xmldom-ts';
 import * as types from '../../lib/types';
 import { Transformer, ITransformFunction } from '../../lib/transformer/transformer.class';
@@ -117,7 +118,7 @@ describe('Transformer for "attributes" context', () => {
           const transformer = new Transformer(stub);
           const transform: ITransformFunction<any> = transformer.getTransform(t.valueType as types.MatcherStr);
           const subject = '/SUBJECT';
-          const result = transform.call(transformer, subject, t.raw, t.context as types.SpecContext);
+          const result = transform.call(transformer, subject, t.raw, t.context as xiberia.SpecContext);
 
           expect(result.succeeded).to.be.true(`succeeded RESULT: ${result.succeeded}`);
           expect(result.value).to.equal(t.expected);
@@ -291,7 +292,7 @@ describe('Transformer for "attributes" context', () => {
 
 describe('Transformer.transformCollection for "attributes" context', () => {
   class Stub {
-    constructor (private spec: types.ISpec) {
+    constructor (private spec: xiberia.ISpec) {
       this.elementLabel = '_';
       this.descendantsLabel = '_children';
       this.textLabel = '_text';
@@ -309,12 +310,12 @@ describe('Transformer.transformCollection for "attributes" context', () => {
     readonly elementLabel: string;
     readonly descendantsLabel: string;
     readonly textLabel: string;
-    getSpec (): types.ISpec {
+    getSpec (): xiberia.ISpec {
       return this.spec;
     }
   }
 
-  const contextType: types.SpecContext = 'attributes';
+  const contextType: xiberia.SpecContext = 'attributes';
   const matcher: types.MatcherStr = 'collection';
 
   context('Array collection', () => {
@@ -850,7 +851,7 @@ describe('Transformer.getTransform for typed collection', () => {
     context(`given: "${t.collectionType}" defined as the collection type`, () => {
       it(`should: return ${t.collectionType} collection ok`, () => {
         const open = `!<${t.collectionType}>[`;
-        const spec: types.ISpec = {
+        const spec: xiberia.ISpec = {
           name: 'collection-spec-with-custom-open-pattern',
           attributes: {
             coercion: {
@@ -875,7 +876,7 @@ describe('Transformer.getTransform for typed collection', () => {
   context('given: non-numeric value defined in a numeric typed array', () => {
     it('should: throw', () => {
       const value = '!<Int8Array>[bad-robot,2,3,4]'; // <-- !!
-      const spec: types.ISpec = {
+      const spec: xiberia.ISpec = {
         name: 'collection-spec-with-custom-open-pattern',
         attributes: {
           coercion: {

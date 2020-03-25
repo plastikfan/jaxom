@@ -1,5 +1,6 @@
 import { functify } from 'jinxed';
 import * as R from 'ramda';
+import * as xiberia from 'xiberia';
 import * as e from '../exceptions';
 import * as types from '../types';
 import * as utils from '../utils/utils';
@@ -10,7 +11,7 @@ import * as utils from '../utils/utils';
  * @description: Handles normalisation characteristics of an element's direct descendants.
  */
 export class Normaliser {
-  constructor (private options: types.ISpecService) { }
+  constructor (private options: xiberia.ISpecService) { }
 
   /**
    * @method combineDescendants
@@ -28,7 +29,7 @@ export class Normaliser {
    */
 
   public combineDescendants (subject: string, parentElement: any,
-    parseInfo: types.IParseInfo): any {
+    parseInfo: xiberia.IParseInfo): any {
     const self = this;
     const children: [] = parentElement[this.options.descendantsLabel];
 
@@ -116,12 +117,12 @@ export class Normaliser {
    * to combine to map objects that contain common keys.
    *
    * @private
-   * @param {types.IndexableObjByStr} first
-   * @param {types.IndexableObjByStr} second
+   * @param {xiberia.PlainObject} first
+   * @param {xiberia.PlainObject} second
    * @returns {boolean}
    * @memberof Normaliser
    */
-  private clashingKeys (first: types.IndexableObjByStr, second: types.IndexableObjByStr): boolean {
+  private clashingKeys (first: xiberia.PlainObject, second: xiberia.PlainObject): boolean {
     const firstKeys = R.keys(first[this.options.descendantsLabel]);
     const secondKeys = R.keys(second[this.options.descendantsLabel]);
     const foundClash = R.intersection(firstKeys, secondKeys).length > 0;
@@ -133,11 +134,11 @@ export class Normaliser {
    *
    * @param {string} subject
    * @param {*} parentElement
-   * @param {types.IElementInfo} elementInfo
+   * @param {xiberia.IElementInfo} elementInfo
    * @returns {*} The parentElement with descendants that have been normalised
    * @memberof Normaliser
    */
-  public normaliseDescendants (subject: string, parentElement: any, elementInfo: types.IElementInfo): any {
+  public normaliseDescendants (subject: string, parentElement: any, elementInfo: xiberia.IElementInfo): any {
     const descendants: Array<{}> = parentElement[this.options.descendantsLabel];
 
     let normalisedDescendants;
@@ -181,9 +182,9 @@ export class Normaliser {
         return normalised;
       }
     } else if /* istanbul ignore next */ (elementInfo?.descendants?.throwIfMissing) {
-      const missing: any = R.find(
-        R.complement(R.has(id))
-      )(descendants) /* istanbul ignore next */ ?? {};
+      const missing: any = R.find(R.complement(R.has(id)))(descendants) ??
+      /* istanbul ignore next */
+      {};
       throw new e.JaxSolicitedError(
         `Element is missing key attribute "${id}": (${functify(missing)})`,
         subject);

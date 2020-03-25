@@ -3,6 +3,7 @@ import { expect, assert, use } from 'chai';
 import * as R from 'ramda';
 import * as xp from 'xpath-ts';
 import 'xmldom-ts';
+import * as xiberia from 'xiberia';
 import * as types from '../../lib/types';
 import * as Helpers from '../test-helpers';
 import { XpathConverter as Jaxom } from '../../lib/converter/xpath-converter.class';
@@ -12,8 +13,8 @@ use(dirtyChai);
 const parser = new DOMParser();
 const { functify } = require('jinxed');
 
-const testParseInfo: types.IParseInfo = {
-  elements: new Map<string, types.IElementInfo>([
+const testParseInfo: xiberia.IParseInfo = {
+  elements: new Map<string, xiberia.IElementInfo>([
     ['Commands', {
       descendants: {
         id: 'name'
@@ -184,7 +185,7 @@ describe('xpath-converter.build', () => {
         const converter = new Jaxom();
 
         const element: {} = converter.build(expressionNode, {
-          elements: new Map<string, types.IElementInfo>([
+          elements: new Map<string, xiberia.IElementInfo>([
             ['Expression', {
               id: 'name',
               descendants: {
@@ -227,7 +228,7 @@ describe('xpath-converter.build', () => {
         const converter = new Jaxom();
 
         const source: {} = converter.build(sourceNode, {
-          elements: new Map<string, types.IElementInfo>([
+          elements: new Map<string, xiberia.IElementInfo>([
             ['Source', {
               id: 'name',
               descendants: {
@@ -272,7 +273,7 @@ describe('xpath-converter.build', () => {
         const converter = new Jaxom();
 
         const source: {} = converter.build(argumentNode, {
-          elements: new Map<string, types.IElementInfo>([
+          elements: new Map<string, xiberia.IElementInfo>([
             ['Source', {
               id: 'name',
               descendants: {
@@ -318,7 +319,7 @@ describe('xpath-converter.build', () => {
         const converter = new Jaxom();
 
         const tree: {} = converter.build(treeNode, {
-          elements: new Map<string, types.IElementInfo>([
+          elements: new Map<string, xiberia.IElementInfo>([
             ['Tree', {
               id: 'alias',
               descendants: {
@@ -734,8 +735,8 @@ describe('xpath-converter.build', () => {
         </Cli>
       </Application>`;
 
-    const parseInfo: types.IParseInfo = {
-      elements: new Map<string, types.IElementInfo>([
+    const parseInfo: xiberia.IParseInfo = {
+      elements: new Map<string, xiberia.IElementInfo>([
         ['Commands', {
           descendants: {
             id: 'name',
@@ -843,8 +844,8 @@ describe('xpath-converter.build', () => {
         </Cli>
       </Application>`;
 
-    const info: types.IParseInfo = {
-      elements: new Map<string, types.IElementInfo>([
+    const info: xiberia.IParseInfo = {
+      elements: new Map<string, xiberia.IElementInfo>([
         ['Commands', {
           descendants: {
             id: 'name'

@@ -1,7 +1,7 @@
 import { expect, use } from 'chai';
 import * as path from 'path';
 import * as fs from 'fs';
-import * as types from '../../lib/types';
+import * as xiberia from 'xiberia';
 import { ParseInfoFactory } from '../../lib/cli/parseinfo-factory.class';
 import dirtyChai = require('dirty-chai');
 use(dirtyChai);
@@ -13,7 +13,7 @@ describe('ParseInfoFactory', () => {
       const source: string = fs.readFileSync(resolved, 'utf8');
 
       const factory = new ParseInfoFactory();
-      const parseInfo: types.IParseInfo = factory.construct(source);
+      const parseInfo: xiberia.IParseInfo = factory.construct(source);
       expect(parseInfo.elements.size).to.equal(3);
       expect(parseInfo.common).not.to.be.undefined();
       expect(parseInfo.def).not.to.be.undefined();
@@ -26,7 +26,7 @@ describe('ParseInfoFactory', () => {
       const source: string = fs.readFileSync(resolved, 'utf8');
 
       const factory = new ParseInfoFactory();
-      const parseInfo: types.IParseInfo = factory.construct(source);
+      const parseInfo: xiberia.IParseInfo = factory.construct(source);
       expect(parseInfo.elements.size).to.equal(3);
       expect(parseInfo.common).to.be.undefined();
       expect(parseInfo.def).not.to.be.undefined();
@@ -39,7 +39,7 @@ describe('ParseInfoFactory', () => {
       const source: string = fs.readFileSync(resolved, 'utf8');
 
       const factory = new ParseInfoFactory();
-      const parseInfo: types.IParseInfo = factory.construct(source);
+      const parseInfo: xiberia.IParseInfo = factory.construct(source);
       expect(parseInfo.elements.size).to.equal(3);
       expect(parseInfo.common).not.to.be.undefined();
       expect(parseInfo.def).to.be.undefined();

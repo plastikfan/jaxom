@@ -1,4 +1,5 @@
 import * as R from 'ramda';
+import * as xiberia from 'xiberia';
 import * as xpath from 'xpath-ts';
 import * as types from '../types';
 import * as e from '../exceptions';
@@ -8,8 +9,8 @@ import { Normaliser } from '../normaliser/normaliser.class';
 import * as utils from '../utils/utils';
 
 export interface IConverterImpl {
-  build (elementNode: Node, parseInfo: types.IParseInfo, previouslySeen: string[]): any;
-  buildElement (elementNode: Node, parseInfo: types.IParseInfo, previouslySeen: string[]): any;
+  build (elementNode: Node, parseInfo: xiberia.IParseInfo, previouslySeen: string[]): any;
+  buildElement (elementNode: Node, parseInfo: xiberia.IParseInfo, previouslySeen: string[]): any;
 }
 
 /**
@@ -29,7 +30,7 @@ export class XpathConverterImpl implements IConverterImpl {
    *
    * @memberof XpathConverterImpl
    */
-  constructor (private options: types.ISpecService = new SpecOptionService()) {
+  constructor (private options: xiberia.ISpecService = new SpecOptionService()) {
     // Control freak!
     //
     this.transformer = new Transformer(options);
@@ -45,13 +46,13 @@ export class XpathConverterImpl implements IConverterImpl {
    * by the "recurse" attribute (usually "inherits") and via the element's direct descendants.
    * @private
    * @param {Node} elementNode
-   * @param {types.IParseInfo} parseInfo
+   * @param {xiberia.IParseInfo} parseInfo
    * @param {string[]} [previouslySeen=[]]
-   * @returns
+   * @returns {xiberia.PlainObject}
    * @memberof XpathConverterImpl
    */
-  build (elementNode: Node, parseInfo: types.IParseInfo,
-    previouslySeen: string[] = []): any {
+  build (elementNode: Node, parseInfo: xiberia.IParseInfo,
+    previouslySeen: string[] = []): xiberia.PlainObject {
     const abstractValue = getAttributeValue(elementNode, 'abstract');
 
     if (abstractValue && abstractValue === 'true') {
@@ -72,12 +73,12 @@ export class XpathConverterImpl implements IConverterImpl {
    * by the "recurse" attribute (usually "inherits") and via the element's direct descendants.
    * @private
    * @param {Node} elementNode
-   * @param {types.IParseInfo} parseInfo
+   * @param {xiberia.IParseInfo} parseInfo
    * @param {string[]} [previouslySeen=[]]
    * @returns
    * @memberof XpathConverterImpl
    */
-  buildElement (elementNode: Node, parseInfo: types.IParseInfo, previouslySeen: string[]): any {
+  buildElement (elementNode: Node, parseInfo: xiberia.IParseInfo, previouslySeen: string[]): any {
     const elementInfo = utils.composeElementInfo(elementNode.nodeName, parseInfo);
     const { recurse = '', discards = [], id = '' } = elementInfo;
     const subject = composeElementPath(elementNode, id);
@@ -109,7 +110,7 @@ export class XpathConverterImpl implements IConverterImpl {
     // Finally, filter out attributes we don't need on the final built native element
     //
     R.forEach(at => {
-      element = R.dissoc(at, element);
+      element = R.dissoc(at as string, element);
     }, discards);
 
     type AttrObjType = { [key: string]: string };
@@ -227,13 +228,13 @@ export class XpathConverterImpl implements IConverterImpl {
    * @param {string} subject: Identifies the current xml entity
    * @param {*} element
    * @param {Element} elementNode
-   * @param {types.IParseInfo} parseInfo
+   * @param {xiberia.IParseInfo} parseInfo
    * @param {string[]} previouslySeen
    * @returns {{}}
    * @memberof XpathConverterImpl
    */
   private recurseThroughAttribute (subject: string, element: any, elementNode: Element,
-    parseInfo: types.IParseInfo, previouslySeen: string[]): {} {
+    parseInfo: xiberia.IParseInfo, previouslySeen: string[]): {} {
     const ei = utils.composeElementInfo(elementNode.nodeName, parseInfo);
     /* istanbul ignore next: recurseThroughAttribute won't be called unless these are set */
     const { id = '', recurse = '' } = ei;
@@ -364,13 +365,13 @@ export class XpathConverterImpl implements IConverterImpl {
    * @param {string} subject: Identifies the current xml entity
    * @param {*} element: The native object being built that represents "elementNode"
    * @param {Node} elementNode: The XML node being built into JSON
-   * @param {types.IParseInfo} parseInfo: Element parsing info
+   * @param {xiberia.IParseInfo} parseInfo: Element parsing info
    * @param {string[]} previouslySeen: Used internally to guard against circular references.
    * @returns {*}: The JSON representing the elementNode
    *
    * @memberof XpathConverterImpl
    */
-  public buildChildren (subject: string, element: any, elementNode: Node, parseInfo: types.IParseInfo,
+  public buildChildren (subject: string, element: any, elementNode: Node, parseInfo: xiberia.IParseInfo,
     previouslySeen: string[]): {} {
     const selectionResult: any = xpath.select('./*', elementNode);
 
@@ -453,12 +454,12 @@ export class XpathConverterImpl implements IConverterImpl {
    * @description
    *
    * @param {string} subject
-   * @param {types.IElementInfo} elementInfo
+   * @param {xiberia.IElementInfo} elementInfo
    * @param {{}} element
    * @returns {boolean}
    * @memberof XpathConverterImpl
    */
-  public isNormalisable (subject: string, elementInfo: types.IElementInfo, element: {}): boolean {
+  public isNormalisable (subject: string, elementInfo: xiberia.IElementInfo, element: {}): boolean {
     return R.hasPath(['descendants', 'by'], elementInfo) &&
       R.hasPath(['descendants', 'id'], elementInfo);
   } // isNormalisable

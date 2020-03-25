@@ -2,6 +2,7 @@ import { expect, assert, use } from 'chai';
 import * as R from 'ramda';
 import * as xp from 'xpath-ts';
 import 'xmldom-ts';
+import * as xiberia from 'xiberia';
 import * as types from '../../lib/types';
 import * as utils from '../../lib/utils/utils';
 import { XpathConverterImpl as Impl, composeElementPath }
@@ -13,8 +14,8 @@ import sinonChai = require('sinon-chai');
 use(sinonChai);
 const parser = new DOMParser();
 
-const testParseInfo: types.IParseInfo = {
-  elements: new Map<string, types.IElementInfo>([
+const testParseInfo: xiberia.IParseInfo = {
+  elements: new Map<string, xiberia.IElementInfo>([
     ['Command', {
       id: 'name',
       recurse: 'inherits',
@@ -201,8 +202,8 @@ describe('XpathConverterImpl.composeText', () => {
 
 describe('converter.impl.buildLocalAttributes', () => {
   context('attributes as array', () => {
-    const parseInfo: types.IParseInfo = {
-      elements: new Map<string, types.IElementInfo>([
+    const parseInfo: xiberia.IParseInfo = {
+      elements: new Map<string, xiberia.IElementInfo>([
         ['Commands', {
           descendants: {
             id: 'name',
@@ -375,7 +376,7 @@ describe('converter.impl.buildLocalAttributes', () => {
           const directory = converter.build(directoryNode, testParseInfo);
 
           expect(R.has('_attributes')(directory));
-          const attributes: string[] = R.prop('_attributes')(directory);
+          const attributes: string[] = utils.prop('_attributes', directory);
           const attributeKeys: string[] = R.reduce((acc: [], val: string): any => {
             return R.concat(acc, R.keys(val));
           }, [])(attributes);
@@ -454,8 +455,8 @@ describe('converter.impl.buildLocalAttributes', () => {
             </Cli>
           </Application>`;
 
-        const parseInfo: types.IParseInfo = {
-          elements: new Map<string, types.IElementInfo>([
+        const parseInfo: xiberia.IParseInfo = {
+          elements: new Map<string, xiberia.IElementInfo>([
             ['Commands', {
               descendants: {
                 id: 'name',
@@ -573,8 +574,8 @@ describe('composeElementPath', () => {
 
 describe('utils.composeElementInfo', () => {
   context('IParseInfo without common or def', () => {
-    const withoutCommonOrDefInfo: types.IParseInfo = {
-      elements: new Map<string, types.IElementInfo>([
+    const withoutCommonOrDefInfo: xiberia.IParseInfo = {
+      elements: new Map<string, xiberia.IElementInfo>([
         [
           'Command',
           {
@@ -607,8 +608,8 @@ describe('utils.composeElementInfo', () => {
   }); // IParseInfo without common or def
 
   context('IParseInfo with common', () => {
-    const withCommonInfo: types.IParseInfo = {
-      elements: new Map<string, types.IElementInfo>([
+    const withCommonInfo: xiberia.IParseInfo = {
+      elements: new Map<string, xiberia.IElementInfo>([
         ['Command', { id: 'cmd' }]
       ]),
       common: {
@@ -641,8 +642,8 @@ describe('utils.composeElementInfo', () => {
   }); // IParseInfo with common
 
   context('IParseInfo with def', () => {
-    const withDefInfo: types.IParseInfo = {
-      elements: new Map<string, types.IElementInfo>([
+    const withDefInfo: xiberia.IParseInfo = {
+      elements: new Map<string, xiberia.IElementInfo>([
         ['Command', { id: 'cmd' }]
       ]),
       def: {
@@ -675,8 +676,8 @@ describe('utils.composeElementInfo', () => {
   }); // IParseInfo with def
 
   context('IParseInfo with common and def', () => {
-    const withCommonAndDefInfo: types.IParseInfo = {
-      elements: new Map<string, types.IElementInfo>([
+    const withCommonAndDefInfo: xiberia.IParseInfo = {
+      elements: new Map<string, xiberia.IElementInfo>([
         ['Command', { id: 'cmd' }]
       ]),
       common: {

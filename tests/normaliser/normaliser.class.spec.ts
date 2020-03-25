@@ -1,9 +1,9 @@
 import { Normaliser } from './../../lib/normaliser/normaliser.class';
 /// <reference types="../../lib/declarations" />
 import { expect, assert, use } from 'chai';
-import * as R from 'ramda';
 import * as xp from 'xpath-ts';
-import * as types from '../../lib/types';
+import * as xiberia from 'xiberia';
+import * as utils from '../../lib/utils/utils';
 import { XpathConverterImpl as Impl } from '../../lib/converter/xpath-converter.impl';
 import { SpecOptionService } from '../../lib/specService/spec-option-service.class';
 import dirtyChai = require('dirty-chai');
@@ -14,8 +14,8 @@ use(sinonChai);
 const parser = new DOMParser();
 
 describe('Normaliser.combineDescendants error handling', () => {
-  const testParseInfo: types.IParseInfo = {
-    elements: new Map<string, types.IElementInfo>([
+  const testParseInfo: xiberia.IParseInfo = {
+    elements: new Map<string, xiberia.IElementInfo>([
       ['Command', {
         id: 'name',
         recurse: 'inherits'
@@ -114,8 +114,8 @@ describe('Normaliser.combineDescendants error handling', () => {
 }); // Normaliser.combineDescendants error handling
 
 describe('build => Normaliser.normaliseDescendants', () => {
-  const byIndexParseInfo: types.IParseInfo = {
-    elements: new Map<string, types.IElementInfo>([
+  const byIndexParseInfo: xiberia.IParseInfo = {
+    elements: new Map<string, xiberia.IElementInfo>([
       ['Arguments', {
         descendants: {
           by: 'index',
@@ -129,8 +129,8 @@ describe('build => Normaliser.normaliseDescendants', () => {
       }]
     ])
   };
-  const byGroupParseInfo: types.IParseInfo = {
-    elements: new Map<string, types.IElementInfo>([
+  const byGroupParseInfo: xiberia.IParseInfo = {
+    elements: new Map<string, xiberia.IElementInfo>([
       ['Arguments', {
         descendants: {
           by: 'group',
@@ -144,8 +144,8 @@ describe('build => Normaliser.normaliseDescendants', () => {
       }]
     ])
   };
-  const byIndexParseInfoWithParam: types.IParseInfo = {
-    elements: new Map<string, types.IElementInfo>([
+  const byIndexParseInfoWithParam: xiberia.IParseInfo = {
+    elements: new Map<string, xiberia.IElementInfo>([
       ['Arguments', {
         descendants: {
           by: 'index',
@@ -162,8 +162,8 @@ describe('build => Normaliser.normaliseDescendants', () => {
       }]
     ])
   };
-  const byGroupParseInfoWithParam: types.IParseInfo = {
-    elements: new Map<string, types.IElementInfo>([
+  const byGroupParseInfoWithParam: xiberia.IParseInfo = {
+    elements: new Map<string, xiberia.IElementInfo>([
       ['Arguments', {
         descendants: {
           by: 'group',
@@ -185,7 +185,7 @@ describe('build => Normaliser.normaliseDescendants', () => {
     interface IUnitTestInfo {
       given: string;
       should: string;
-      parseInfo: () => types.IParseInfo;
+      parseInfo: () => xiberia.IParseInfo;
       data: string;
       query: string;
       verify: (children: any) => void;
@@ -487,7 +487,7 @@ describe('build => Normaliser.normaliseDescendants', () => {
           if (selectedNode instanceof Node) {
             const converter = new Impl();
             const buildResult = converter.build(selectedNode, t.parseInfo());
-            const children: { [key: string]: any } = R.prop('_children')(buildResult);
+            const children: { [key: string]: any } = utils.prop('_children', buildResult);
             t.verify(children);
           } else {
             assert.fail('Couldn\'t get selected node');
@@ -517,11 +517,11 @@ describe('build => Normaliser.normaliseDescendants', () => {
             '/Application/Cli/Commands/Command[@name="list-command"]',
             document, true) as Node;
 
-          const parseInfo: types.IParseInfo = {
+          const parseInfo: xiberia.IParseInfo = {
             // There is no common id attribute between Command and AlphaChild/BetaChild, so
             // neither of these should be normalised; children entries are just an array.
             //
-            elements: new Map<string, types.IElementInfo>([
+            elements: new Map<string, xiberia.IElementInfo>([
               ['Command', {
                 id: 'name',
                 recurse: 'inherits'
@@ -577,8 +577,8 @@ describe('build => Normaliser.normaliseDescendants', () => {
             '/Application/Cli/Commands/Command[@name="list-command"]',
             document, true) as Node;
 
-          const parseInfo: types.IParseInfo = {
-            elements: new Map<string, types.IElementInfo>([
+          const parseInfo: xiberia.IParseInfo = {
+            elements: new Map<string, xiberia.IElementInfo>([
               ['Command', {
                 id: 'name',
                 descendants: {
@@ -637,8 +637,8 @@ describe('build => Normaliser.normaliseDescendants', () => {
             </Cli>
           </Application>`;
 
-        const parseInfo: types.IParseInfo = {
-          elements: new Map<string, types.IElementInfo>([
+        const parseInfo: xiberia.IParseInfo = {
+          elements: new Map<string, xiberia.IElementInfo>([
             ['GrandParent', {
               descendants: {
                 id: 'rank',
@@ -705,8 +705,8 @@ describe('build => Normaliser.normaliseDescendants', () => {
   }); // Normaliser.normalise
 
   context('error handling', () => {
-    const byIndexParseInfoWithParamThrows: types.IParseInfo = {
-      elements: new Map<string, types.IElementInfo>([
+    const byIndexParseInfoWithParamThrows: xiberia.IParseInfo = {
+      elements: new Map<string, xiberia.IElementInfo>([
         ['Arguments', {
           descendants: {
             by: 'index',
@@ -724,8 +724,8 @@ describe('build => Normaliser.normaliseDescendants', () => {
       ])
     };
 
-    const byGroupParseInfoWithParamThrows: types.IParseInfo = {
-      elements: new Map<string, types.IElementInfo>([
+    const byGroupParseInfoWithParamThrows: xiberia.IParseInfo = {
+      elements: new Map<string, xiberia.IElementInfo>([
         ['Arguments', {
           descendants: {
             by: 'group',
@@ -746,7 +746,7 @@ describe('build => Normaliser.normaliseDescendants', () => {
     interface IUnitTestInfo {
       given: string;
       should: string;
-      parseInfo: () => types.IParseInfo;
+      parseInfo: () => xiberia.IParseInfo;
       data: string;
       query: string;
     }
@@ -859,8 +859,8 @@ describe('Normaliser.combineDescendants', () => {
     normaliser = new Normaliser(options);
   });
 
-  const parseInfo: types.IParseInfo = {
-    elements: new Map<string, types.IElementInfo>([
+  const parseInfo: xiberia.IParseInfo = {
+    elements: new Map<string, xiberia.IElementInfo>([
       ['Commands', {
         descendants: {
           id: 'name',
@@ -1076,8 +1076,8 @@ describe('Normaliser.combineDescendants', () => {
 
   context('given: un-normalised built entity, with mixed child element types', () => {
     it('should: combine children of inherited elements via id', () => {
-      const mixedInfo: types.IParseInfo = {
-        elements: new Map<string, types.IElementInfo>([
+      const mixedInfo: xiberia.IParseInfo = {
+        elements: new Map<string, xiberia.IElementInfo>([
           ['Commands', {
             descendants: {
               id: 'name',
@@ -1167,8 +1167,8 @@ describe('Normaliser.combineDescendants', () => {
   }); // un-normalised built entity, with mixed child element types'
 
   context('anon id', () => {
-    const info: types.IParseInfo = {
-      elements: new Map<string, types.IElementInfo>([
+    const info: xiberia.IParseInfo = {
+      elements: new Map<string, xiberia.IElementInfo>([
         ['Commands', {
           descendants: {
             by: 'index',

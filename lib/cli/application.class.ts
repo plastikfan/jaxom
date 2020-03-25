@@ -1,6 +1,7 @@
 import * as xp from 'xpath-ts';
 import 'xmldom-ts';
 import * as R from 'ramda';
+import * as xiberia from 'xiberia';
 import * as types from '../types';
 import { XpathConverter } from '../converter/xpath-converter.class';
 import * as cli from './cli-types';
@@ -35,7 +36,7 @@ export class Application {
 
       // get the parse info
       //
-      const parseInfo: types.IParseInfo = this.parseInfoFactory.construct(this.inputs.parseInfoContent);
+      const parseInfo: xiberia.IParseInfo = this.parseInfoFactory.construct(this.inputs.parseInfoContent);
 
       /* istanbul ignore else */
       if (selectResult instanceof Array) {

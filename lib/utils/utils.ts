@@ -1,20 +1,20 @@
 
 import * as R from 'ramda';
-import * as types from '../types';
+import * as xiberia from 'xiberia';
 
 /**
  * @method composeElementInfo
  * @description Retrieves the elementInfo for the name specified.
  *
  * @param {string} elementName
- * @param {types.IParseInfo} parseInfo
- * @returns {types.IElementInfo}
+ * @param {xiberia.IParseInfo} parseInfo
+ * @returns {xiberia.IElementInfo}
  */
-export function composeElementInfo (elementName: string, parseInfo: types.IParseInfo): types.IElementInfo {
-  const namedOrDefaultElementInfo: types.IElementInfo | undefined = parseInfo.elements.get(
+export function composeElementInfo (elementName: string, parseInfo: xiberia.IParseInfo): xiberia.IElementInfo {
+  const namedOrDefaultElementInfo: xiberia.IElementInfo | undefined = parseInfo.elements.get(
     elementName) ?? parseInfo.def;
 
-  let result: types.IElementInfo = {};
+  let result: xiberia.IElementInfo = {};
 
   if (namedOrDefaultElementInfo) {
     result = parseInfo.common
@@ -31,4 +31,17 @@ export function composeElementInfo (elementName: string, parseInfo: types.IParse
 //
 export function isNumeric (n: any) {
   return !isNaN(parseFloat(n)) && isFinite(n);
+}
+
+/**
+ * @description Type safe version of Ramda's prop function
+ *
+ * @export
+ * @template R
+ * @param {string} key: The name of the property in the container object
+ * @param {{ [_k: string]: any }} container
+ * @returns {R}
+ */
+export function prop<R> (key: string, container: { [_k: string]: any }): R {
+  return (key in container) ? R.prop(key, container) : R.empty(key);
 }

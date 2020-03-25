@@ -1,4 +1,5 @@
 
+import * as xiberia from 'xiberia';
 import * as types from '../types';
 import { XpathConverterImpl, IConverterImpl } from './xpath-converter.impl';
 import { SpecOptionService, Specs } from '../specService/spec-option-service.class';
@@ -11,7 +12,7 @@ import { SpecOptionService, Specs } from '../specService/spec-option-service.cla
 export class XpathConverter implements types.IConverter {
   /**
    * Creates an instance of XpathConverter.
-   * @param {types.ISpec} [spec=Specs.default] The XpathConverter uses a spec to define
+   * @param {xiberia.ISpec} [spec=Specs.default] The XpathConverter uses a spec to define
    * the conversion behaviour. A user may wish to override some of these settings, in which
    * case, they can pass in a partial spec (Partial here means that the custom spec does
    * not have to repeat all of the default fields that it does not wish to override). If
@@ -20,7 +21,7 @@ export class XpathConverter implements types.IConverter {
    *
    * @memberof XpathConverter
    */
-  constructor (spec: types.ISpec = Specs.default) {
+  constructor (spec: xiberia.ISpec = Specs.default) {
     // Control freak!
     //
     this.impl = new XpathConverterImpl(new SpecOptionService(spec));
@@ -34,11 +35,11 @@ export class XpathConverter implements types.IConverter {
    * by the "recurse" attribute (usually "inherits") and via the element's direct descendants.
    *
    * @param {*} elementNode
-   * @param {types.IParseInfo} parseInfo
-   * @returns
+   * @param {xiberia.IParseInfo} parseInfo
+   * @returns {xiberia.PlainObject}
    * @memberof XpathConverter
    */
-  build (elementNode: Node, parseInfo: types.IParseInfo): any {
+  build (elementNode: Node, parseInfo: xiberia.IParseInfo): xiberia.PlainObject {
     const previouslySeen: any[] = [];
     return this.impl.build(elementNode, parseInfo, previouslySeen);
   }

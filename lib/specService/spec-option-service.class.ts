@@ -1,10 +1,10 @@
 
 import * as R from 'ramda';
-import * as types from '../types';
+import * as xiberia from 'xiberia';
 import * as e from '../exceptions';
 
-export class SpecOptionService implements types.ISpecService {
-  constructor (private spec: types.ISpec = defaultSpec) {
+export class SpecOptionService implements xiberia.ISpecService {
+  constructor (private spec: xiberia.ISpec = defaultSpec) {
     this.labels = new MandatoryLabels(this);
     this.elementLabel = this.labels.element;
     this.descendantsLabel = this.labels.descendants;
@@ -53,7 +53,7 @@ export class SpecOptionService implements types.ISpecService {
   readonly descendantsLabel: string;
   readonly textLabel: string;
 
-  getSpec (): types.ISpec {
+  getSpec (): xiberia.ISpec {
     return this.spec;
   }
 
@@ -75,7 +75,7 @@ export class SpecOptionService implements types.ISpecService {
 } // class SpecOptionService
 
 class MandatoryLabels {
-  constructor (options: types.ISpecService) {
+  constructor (options: xiberia.ISpecService) {
     this.element = options.fetchOption('labels/element') as string;
     this.descendants = options.fetchOption('labels/descendants') as string;
     this.text = options.fetchOption('labels/text') as string;
@@ -94,7 +94,7 @@ export const CollectionTypePlaceHolder = '<type>';
 // which are applicable for specialised scenarios and we shouldn't pay the overhead of
 // using them for general scenarios.
 //
-const defaultSpec: types.ISpec = Object.freeze({
+const defaultSpec: xiberia.ISpec = Object.freeze({
   name: 'default-spec',
   labels: {
     element: '_',
@@ -152,7 +152,7 @@ const defaultSpec: types.ISpec = Object.freeze({
 // This is used as the fall-back spec; ie, when the custom spec is missing a particular
 // field, then it will be retrieved from this one.
 //
-const fallBackSpec: types.ISpec = Object.freeze({
+const fallBackSpec: xiberia.ISpec = Object.freeze({
   name: 'full-with-defaults-spec',
   labels: {
     element: '_',
@@ -216,11 +216,11 @@ const fallBackSpec: types.ISpec = Object.freeze({
   }
 });
 
-const withoutCoercionSpec: types.ISpec = Object.freeze({
+const withoutCoercionSpec: xiberia.ISpec = Object.freeze({
   name: 'without-coercion-spec'
 });
 
-const attributesAsArraySpec: types.ISpec = Object.freeze({
+const attributesAsArraySpec: xiberia.ISpec = Object.freeze({
   name: 'attributes-as-array-spec',
   labels: {
     attributes: '_attributes',
@@ -236,7 +236,7 @@ const attributesAsArraySpec: types.ISpec = Object.freeze({
   }
 });
 
-const attributesAsArrayWithoutCoercionSpec: types.ISpec = Object.freeze({
+const attributesAsArrayWithoutCoercionSpec: xiberia.ISpec = Object.freeze({
   name: 'attributes-as-array-without-coercion-spec',
   labels: {
     attributes: '_attributes',
