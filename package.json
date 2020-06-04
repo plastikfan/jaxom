@@ -79,7 +79,7 @@
   "homepage": "https://github.com/plastikfan/jaxom-ts#readme",
   "dependencies": {
     "jinxed": "0.0.3",
-    "@types/yargs": "^15.0.4",
+    "@types/yargs": "^15.0.5",
     "@types/ramda": "^0.27.0",
     "memfs": "^3.1.2",
     "moment": "^2.24.0",
